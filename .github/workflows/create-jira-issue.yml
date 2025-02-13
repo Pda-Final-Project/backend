@@ -60,8 +60,8 @@ jobs:
           fields: |
             {
               "parent": { "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}" },
-              "duedate": "${{ env.dueDate }}",
-              "customfield_10038": "${{ env.startDate }}"
+              "duedate": "${{ env.DUE_DATE }}",
+              "customfield_10038": "${{ env.START_DATE }}"
             }
 
       - name: Log created issue

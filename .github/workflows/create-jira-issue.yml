@@ -58,7 +58,7 @@ jobs:
             {
               "parent": { "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}" },
               "duedate": "${{ steps.issue-parser.outputs.startDate }}" ,
-              "startdate": "${{ steps.issue-parser.outputs.dueDate }}"
+              "Start date": "${{ steps.issue-parser.outputs.dueDate }}"
             }
 
       - name: Log created issue

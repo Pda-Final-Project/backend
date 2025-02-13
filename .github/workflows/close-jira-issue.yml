@@ -1,23 +1,5 @@
 name: Close Jira issue
-on:
-  issues:
-    types:
-      - closed
 
-jobs:
-  close-issue:
-    name: Close Jira issue
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Login to Jira
-        uses: atlassian/gajira-login@v3
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-
-     name: Close Jira issue
 on:
   issues:
     types:
@@ -45,7 +27,7 @@ jobs:
           echo "Extracted Jira Title: $JIRA_TITLE"
 
       - name: Close Jira issue
-        if: env.JIRA_KEY != ''
+        if: env.JIRA_TITLE != ''
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ env.JIRA_TITLE }}

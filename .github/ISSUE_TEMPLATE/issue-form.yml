@@ -38,3 +38,21 @@ body:
         - [ ] Task2
     validations:
       required: true
+      
+  - type: input
+    id: startDate
+    attributes:
+      label: '📅 시작일 (Start Date)'
+      description: '이슈의 시작일을 입력하세요 (YYYY-MM-DD 형식)'
+      placeholder: '2025-02-13'
+    validations:
+      required: true
+
+  - type: input
+    id: dueDate
+    attributes:
+      label: '📅 기한 (Due Date)'
+      description: '이슈의 기한을 입력하세요 (YYYY-MM-DD 형식)'
+      placeholder: '2025-02-20'
+    validations:
+      required: true

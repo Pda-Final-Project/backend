@@ -32,6 +32,8 @@ jobs:
           echo '${{ steps.issue-parser.outputs.issueparser_parentKey }}'
           echo '${{ steps.issue-parser.outputs.__ticket_number }}'
           echo '${{ steps.issue-parser.outputs.jsonString }}'
+          echo '${{ steps.issue-parser.outputs.startDate }}'
+          echo '${{ steps.issue-parser.outputs.dueDate }}'
 
       - name: Convert markdown to Jira Syntax
         uses: peter-evans/jira2md@v1
@@ -55,8 +57,8 @@ jobs:
           fields: |
             {
               "parent": { "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}" },
-              "duedate": "${{ github.event.issue.dueDate }}" ,
-              "startdate": "${{ github.event.issue.startDate }}"
+              "duedate": "${{ steps.issue-parser.outputs.startDate }}" ,
+              "startdate": "${{ steps.issue-parser.outputs.dueDate }}"
             }
 
       - name: Log created issue

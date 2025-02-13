@@ -58,7 +58,9 @@ jobs:
             {
               "parent": {
                 "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}"
-              }
+              },
+              "duedate": "${{ github.event.issue.dueDate }}",  # 기한
+              "startdate": "${{ github.event.issue.startDate }}"  # 시작일
             }
 
       - name: Log created issue

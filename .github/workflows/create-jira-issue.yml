@@ -55,7 +55,10 @@ jobs:
       
           # Extract Due Date (📅 기한)
           DUE_DATE=$(echo "$MD2JIRA_OUTPUT" | awk '/### 📅 기한 \(Due Date\)/{getline; print $0}' | tr -d '\r' | sed 's/^[[:space:]]*//')
-
+          
+          echo "startDate=$START_DATE" >> $GITHUB_ENV
+          echo "dueDate=$DUE_DATE" >> $GITHUB_ENV
+          
       - name: Create Issue
         id: create
         uses: atlassian/gajira-create@v3
@@ -67,8 +70,8 @@ jobs:
           fields: |
             {
               "parent": { "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}" },
-              "duedate": DUE_DATE,
-              "customfield_10038": START_DATE
+              "duedate": "${{ env.dueDate }}",
+              "customfield_10038": "${{ env.startDate }}"
             }
 
       - name: Log created issue

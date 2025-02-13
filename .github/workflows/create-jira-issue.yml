@@ -1,7 +1,5 @@
 name: Create Jira issue
 
-permissions:
-  contents: write
 on:
   issues:
     types:
@@ -50,7 +48,7 @@ jobs:
         id: create
         uses: atlassian/gajira-create@v3
         with:
-          project: P3
+          project: 'P3'
           issuetype: Task
           summary: '${{ github.event.issue.title }}'
           description: '${{ steps.md2jira.outputs.output-text }}'

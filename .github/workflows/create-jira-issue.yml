@@ -35,32 +35,6 @@ jobs:
           echo '${{ steps.issue-parser.outputs.startDate }}'
           echo '${{ steps.issue-parser.outputs.dueDate }}'
       
-      - name: Extract Issue Fields
-        id: extract-fields
-        run: |
-          BODY="${{ github.event.issue.body }}"
-
-          # 🎟️ 상위 작업 (Ticket Number)
-          PARENT_KEY=$(echo "$BODY" | grep -A1 '🎟️ 상위 작업 (Ticket Number)' | tail -n1 | tr -d '\r')
-
-          # 🌳 브랜치명 (Branch)
-          BRANCH_NAME=$(echo "$BODY" | grep -A1 '🌳 브랜치명 (Branch)' | tail -n1 | tr -d '\r')
-
-          # 📝 상세 내용 (Description)
-          DESCRIPTION=$(echo "$BODY" | grep -A1 '📝 상세 내용(Description)' | tail -n1 | tr -d '\r')
-
-          # 📅 시작일 (Start Date)
-          START_DATE=$(echo "$BODY" | grep -A1 '📅 시작일 (Start Date)' | tail -n1 | tr -d '\r')
-
-          # 📅 기한 (Due Date)
-          DUE_DATE=$(echo "$BODY" | grep -A1 '📅 기한 (Due Date)' | tail -n1 | tr -d '\r')
-
-          echo "parentKey=$PARENT_KEY" >> $GITHUB_ENV
-          echo "branch=$BRANCH_NAME" >> $GITHUB_ENV
-          echo "description=$DESCRIPTION" >> $GITHUB_ENV
-          echo "startDate=$START_DATE" >> $GITHUB_ENV
-          echo "dueDate=$DUE_DATE" >> $GITHUB_ENV
-
       - name: Convert markdown to Jira Syntax
         uses: peter-evans/jira2md@v1
         id: md2jira
@@ -83,8 +57,8 @@ jobs:
           fields: |
             {
               "parent": { "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}" },
-              "duedate": "${{ env.dueDate }}" ,
-              "customfield_10038": "${{ env.startDate }}"
+              "duedate": "${{ steps.issue-parser.outputs.issueparser_dueDate }}" ,
+              "customfield_10038": "${{ steps.issue-parser.outputs.issueparser_startDate }}"
             }
 
       - name: Log created issue

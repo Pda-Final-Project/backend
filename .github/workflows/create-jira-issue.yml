@@ -32,42 +32,6 @@ jobs:
           echo '${{ steps.issue-parser.outputs.issueparser_parentKey }}'
           echo '${{ steps.issue-parser.outputs.__ticket_number }}'
           echo '${{ steps.issue-parser.outputs.jsonString }}'
-          echo '${{ steps.issue-parser.outputs.startDate }}'
-          echo '${{ steps.issue-parser.outputs.dueDate }}'
-            
-      - name: Extract Issue Fields
-        id: extract-fields
-        run: |
-          BODY="${{ github.event.issue.body }}"
-
-          # 🎟️ 상위 작업 (Ticket Number)
-          PARENT_KEY=$(echo "$BODY" | awk '/### 🎟️ 상위 작업 \(Ticket Number\)/{getline; print $0}' | tr -d '\r' | sed 's/^[[:space:]]*//')
-          
-          # 🌳 브랜치명 (Branch)
-          BRANCH_NAME=$(echo "$BODY" | awk '/### 🌳 브랜치명 \(Branch\)/{getline; print $0}' | tr -d '\r' | sed 's/^[[:space:]]*//')
-          
-          # 📝 상세 내용 (Description)
-          DESCRIPTION=$(echo "$BODY" | awk '/### 📝 상세 내용\(Description\)/{getline; print $0}' | tr -d '\r' | sed 's/^[[:space:]]*//')
-          
-          # 📅 시작일 (Start Date)
-          START_DATE=$(echo "$BODY" | awk '/### 📅 시작일 \(Start Date\)/{getline; print $0}' | tr -d '\r' | awk '{print $1}' | sed 's/^[[:space:]]*//')
-          
-          # 📅 기한 (Due Date)
-          DUE_DATE=$(echo "$BODY" | awk '/### 📅 기한 \(Due Date\)/{getline; print $0}' | tr -d '\r' | awk '{print $1}' | sed 's/^[[:space:]]*//')
-
-          echo "Extracted Values:"
-          echo "🎟️ 상위 작업 (Ticket Number): $PARENT_KEY"
-          echo "🌳 브랜치명 (Branch): $BRANCH_NAME"
-          echo "📝 상세 내용 (Description): $DESCRIPTION"
-          echo "📅 시작일 (Start Date): $START_DATE"
-          echo "📅 기한 (Due Date): $DUE_DATE"
-    
-          echo "parentKey=$PARENT_KEY" >> $GITHUB_ENV
-          echo "branch=$BRANCH_NAME" >> $GITHUB_ENV
-          echo "description=$DESCRIPTION" >> $GITHUB_ENV
-          echo "startDate=$START_DATE" >> $GITHUB_ENV
-          echo "dueDate=$DUE_DATE" >> $GITHUB_ENV
-
       
       - name: Convert markdown to Jira Syntax
         uses: peter-evans/jira2md@v1
@@ -80,6 +44,18 @@ jobs:
             ${{ github.event.issue.body }}
           mode: md2jira
       
+      - name: Extract startDate and dueDate from md2jira output
+        id: extract-dates
+        run: |
+          # Store the md2jira output text in a variable
+          MD2JIRA_OUTPUT="${{ steps.md2jira.outputs.output-text }}"
+      
+          # Extract Start Date (📅 시작일)
+          START_DATE=$(echo "$MD2JIRA_OUTPUT" | awk '/### 📅 시작일 \(Start Date\)/{getline; print $0}' | tr -d '\r' | sed 's/^[[:space:]]*//')
+      
+          # Extract Due Date (📅 기한)
+          DUE_DATE=$(echo "$MD2JIRA_OUTPUT" | awk '/### 📅 기한 \(Due Date\)/{getline; print $0}' | tr -d '\r' | sed 's/^[[:space:]]*//')
+
       - name: Create Issue
         id: create
         uses: atlassian/gajira-create@v3
@@ -91,8 +67,8 @@ jobs:
           fields: |
             {
               "parent": { "key": "${{ steps.issue-parser.outputs.issueparser_parentKey }}" },
-              "duedate": "${{ env.dueDate }}" ,
-              "customfield_10038": "${{ env.startDate }}"
+              "duedate": DUE_DATE,
+              "customfield_10038": START_DATE
             }
 
       - name: Log created issue

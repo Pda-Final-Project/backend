@@ -37,7 +37,7 @@ jobs:
           
           echo "START_DATE=${startDate}" >> $GITHUB_ENV
           echo "DUE_DATE=${dueDate}" >> $GITHUB_ENV
-          shell: /usr/bin/bash -e {0}
+        shell: bash
       
       - name: Convert markdown to Jira Syntax
         uses: peter-evans/jira2md@v1

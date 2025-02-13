@@ -41,20 +41,27 @@ jobs:
           BODY="${{ github.event.issue.body }}"
 
           # 🎟️ 상위 작업 (Ticket Number)
-          PARENT_KEY=$(echo "$BODY" | awk '/### 🎟️ 상위 작업 \(Ticket Number\)/{getline; print $0}' | tr -d '\r')
-
+          PARENT_KEY=$(echo "$BODY" | awk '/### 🎟️ 상위 작업 \(Ticket Number\)/{getline; print $0}' | tr -d '\r' | sed 's/^[[:space:]]*//')
+          
           # 🌳 브랜치명 (Branch)
-          BRANCH_NAME=$(echo "$BODY" | awk '/### 🌳 브랜치명 \(Branch\)/{getline; print $0}' | tr -d '\r')
-
+          BRANCH_NAME=$(echo "$BODY" | awk '/### 🌳 브랜치명 \(Branch\)/{getline; print $0}' | tr -d '\r' | sed 's/^[[:space:]]*//')
+          
           # 📝 상세 내용 (Description)
-          DESCRIPTION=$(echo "$BODY" | awk '/### 📝 상세 내용\(Description\)/{getline; print $0}' | tr -d '\r')
-
+          DESCRIPTION=$(echo "$BODY" | awk '/### 📝 상세 내용\(Description\)/{getline; print $0}' | tr -d '\r' | sed 's/^[[:space:]]*//')
+          
           # 📅 시작일 (Start Date)
-          START_DATE=$(echo "$BODY" | awk '/### 📅 시작일 \(Start Date\)/{getline; print $0}' | tr -d '\r' | awk '{print $1}')
-
+          START_DATE=$(echo "$BODY" | awk '/### 📅 시작일 \(Start Date\)/{getline; print $0}' | tr -d '\r' | awk '{print $1}' | sed 's/^[[:space:]]*//')
+          
           # 📅 기한 (Due Date)
-          DUE_DATE=$(echo "$BODY" | awk '/### 📅 기한 \(Due Date\)/{getline; print $0}' | tr -d '\r' | awk '{print $1}')
+          DUE_DATE=$(echo "$BODY" | awk '/### 📅 기한 \(Due Date\)/{getline; print $0}' | tr -d '\r' | awk '{print $1}' | sed 's/^[[:space:]]*//')
 
+          echo "Extracted Values:"
+          echo "🎟️ 상위 작업 (Ticket Number): $PARENT_KEY"
+          echo "🌳 브랜치명 (Branch): $BRANCH_NAME"
+          echo "📝 상세 내용 (Description): $DESCRIPTION"
+          echo "📅 시작일 (Start Date): $START_DATE"
+          echo "📅 기한 (Due Date): $DUE_DATE"
+    
           echo "parentKey=$PARENT_KEY" >> $GITHUB_ENV
           echo "branch=$BRANCH_NAME" >> $GITHUB_ENV
           echo "description=$DESCRIPTION" >> $GITHUB_ENV

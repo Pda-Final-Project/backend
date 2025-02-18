@@ -1,0 +1,13 @@
+rootProject.name = 'finpago'
+
+include 'user-service'
+include 'common'
+include 'matching-service'
+include 'order-service'
+include 'user-service'
+include 'execution-service'
+include 'settlement-service'
+include 'gateway'
+include 'filling-service'
+include 'notification-service'
+include 'service-discovery'

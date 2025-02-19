@@ -1,5 +1,5 @@
 spring:
   application:
-    name: execution-service
+    name: common
   profiles:
     active: dev

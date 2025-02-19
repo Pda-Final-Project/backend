@@ -7,12 +7,8 @@ if (userBalance.compareTo(orderAmount) < 0) {
 
 import finpago.common.global.exception.dto.CommonResponse;
 import finpago.common.global.exception.dto.ErrorResponse;
-import finpago.common.global.exception.error.ErrorCode;
-import finpago.common.global.exception.error.InsufficientBalanceException;
-import finpago.common.global.exception.error.NotFoundAccountException;
-import finpago.common.global.exception.error.NotFoundOrderException;
+import finpago.common.global.exception.error.*;
 import lombok.extern.slf4j.Slf4j;
-import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -41,11 +37,10 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
-
     // JWT 토큰 만료 예외 처리
     @ExceptionHandler(ExpiredJwtException.class)
     protected ResponseEntity<CommonResponse> handleExpiredJwtException(ExpiredJwtException exception) {
-        log.error("JWT 토큰 만료");
+        log.error("JWT 토큰 만료: {}", exception.getMessage());
 
         ErrorCode errorCode = ErrorCode.TOKEN_EXPIRED;
 
@@ -63,16 +58,79 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
-    // 로그인 실패 예외 처리 (잘못된 아이디 또는 비밀번호)
-    @ExceptionHandler(SecurityException.class)
-    protected ResponseEntity<CommonResponse> handleSecurityException(SecurityException exception) {
-        log.error("로그인 실패 (잘못된 아이디 또는 비밀번호)");
+    // JWT 검증 실패 예외 처리
+    @ExceptionHandler(JwtValidationException.class)
+    protected ResponseEntity<CommonResponse> handleJwtValidationException(JwtValidationException exception) {
+        log.error("JWT 검증 실패: {}", exception.getMessage());
+
+        ErrorCode errorCode = ErrorCode.TOKEN_INVALID;
+
+        ErrorResponse error = ErrorResponse.builder()
+                .status(errorCode.getStatus().value())
+                .message(errorCode.getMessage())
+                .code(errorCode.getCode())
+                .build();
+
+        CommonResponse response = CommonResponse.builder()
+                .success(false)
+                .error(error)
+                .build();
+
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    // 중복된 전화번호 예외 처리
+    @ExceptionHandler(DuplicateUserPhoneException.class)
+    protected ResponseEntity<CommonResponse> handleDuplicateUserPhoneException(DuplicateUserPhoneException exception) {
+        log.error("회원가입 실패 (중복된 전화번호)");
+
+        ErrorCode errorCode = ErrorCode.SIGNUP_DUPLICATE_USER;
+
+        ErrorResponse error = ErrorResponse.builder()
+                .status(errorCode.getStatus().value())
+                .message(exception.getMessage())
+                .code(errorCode.getCode())
+                .build();
+
+        CommonResponse response = CommonResponse.builder()
+                .success(false)
+                .error(error)
+                .build();
+
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    // 등록되지 않은 사용자 예외 처리
+    @ExceptionHandler(UserNotFoundException.class)
+    protected ResponseEntity<CommonResponse> handleUserNotFoundException(UserNotFoundException exception) {
+        log.error("로그인 실패 (미등록 전화번호)");
 
         ErrorCode errorCode = ErrorCode.LOGIN_INVALID_CREDENTIALS;
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(errorCode.getStatus().value())
-                .message(errorCode.getMessage())
+                .message(exception.getMessage())
+                .code(errorCode.getCode())
+                .build();
+
+        CommonResponse response = CommonResponse.builder()
+                .success(false)
+                .error(error)
+                .build();
+
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    // 잘못된 비밀번호 예외 처리
+    @ExceptionHandler(InvalidCredentialsException.class)
+    protected ResponseEntity<CommonResponse> handleInvalidCredentialsException(InvalidCredentialsException exception) {
+        log.error("로그인 실패 (잘못된 비밀번호)");
+
+        ErrorCode errorCode = ErrorCode.LOGIN_INVALID_CREDENTIALS;
+
+        ErrorResponse error = ErrorResponse.builder()
+                .status(errorCode.getStatus().value())
+                .message(exception.getMessage())
                 .code(errorCode.getCode())
                 .build();
 

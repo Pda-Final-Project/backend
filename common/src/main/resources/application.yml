@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: execution-service
+  profiles:
+    active: dev

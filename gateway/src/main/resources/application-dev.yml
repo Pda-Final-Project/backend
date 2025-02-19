@@ -1,0 +1,46 @@
+server:
+  port: 19091
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:19090/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+  instance:
+    instance-id: ${spring.application.name}:${server.port}
+    prefer-ip-address: true
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+            - Path=/api/v1/auth/**
+            - Path=/api/v1/stocks/**
+            - Path=/api/v1/likes/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/order/**
+        - id: execution-service
+          uri: lb://execution-service
+          predicates:
+            - Path=/api/v1/execution/**
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notification/**
+        - id: filling-service
+          uri: lb://filling-service
+          predicates:
+            - Path=/api/v1/filling/**
+            - Path=/api/v1/news/**
+
+      discovery:
+        locator:
+          enabled: true

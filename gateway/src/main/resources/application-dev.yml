@@ -44,3 +44,5 @@ spring:
       discovery:
         locator:
           enabled: true
+
+

@@ -1,6 +1,7 @@
-package finpago.userservice.config;
 
-import finpago.userservice.User;
+package finpago.userservice.user.config;
+
+import finpago.userservice.user.entity.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

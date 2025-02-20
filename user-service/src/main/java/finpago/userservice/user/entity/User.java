@@ -1,4 +1,5 @@
-package finpago.userservice;
+
+package finpago.userservice.user.entity;
 
 import finpago.common.global.common.BaseEntity;
 import jakarta.persistence.*;

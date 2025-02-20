@@ -1,8 +1,10 @@
-package finpago.userservice;
+
+package finpago.userservice.user.controller;
 
 import finpago.common.global.common.ApiResponse;
-import finpago.userservice.dto.JoinReqDto;
-import finpago.userservice.dto.LoginReqDto;
+import finpago.userservice.user.service.UserService;
+import finpago.userservice.user.dto.JoinReqDto;
+import finpago.userservice.user.dto.LoginReqDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

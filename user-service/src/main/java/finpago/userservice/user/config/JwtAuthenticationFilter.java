@@ -1,7 +1,8 @@
-package finpago.userservice.config;
+
+package finpago.userservice.user.config;
 
 import finpago.common.global.exception.error.JwtValidationException;
-import finpago.userservice.util.JwtUtil;
+import finpago.userservice.user.util.JwtUtil;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,45 +33,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String requestURI = request.getRequestURI();
-        // 회원가입 및 로그인 요청은 필터 제외
+
+        System.out.println("??");
+
         if (requestURI.startsWith("/v1/api/auth/signup") || requestURI.startsWith("/v1/api/auth/login")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 헤더에서 JWT 토큰 가져오기
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.error(" Authorization 헤더가 없음");
-            throw new JwtValidationException("Authorization 헤더가 없습니다.");
+            throw new JwtValidationException("Authorization header가 없습니다");
         }
 
         String token = authHeader.substring(7);
-        Long userId;
+        String userPhone;
 
         try {
-            userId = jwtUtil.extractUserId(token);
-            log.info("추출된 userId: {}", userId);
-        } catch (JwtException e) {
-            log.error("JWT 검증 실패: {}", e.getMessage());
-            throw new JwtValidationException("JWT 토큰 검증 실패", e);
+            userPhone = jwtUtil.extractUserPhone(token);
+        }catch (JwtException e) {
+            throw new JwtValidationException("JWT 토큰 검증 실패");
         }
 
-        // SecurityContext에 인증 정보가 없는 경우
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userId));
-
+        if (userPhone != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(userPhone)
             if (jwtUtil.validateToken(token)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-                log.info("SecurityContext에 userId({}) 인증 완료", userId);
             }
         }
 
         filterChain.doFilter(request, response);
     }
+
 }

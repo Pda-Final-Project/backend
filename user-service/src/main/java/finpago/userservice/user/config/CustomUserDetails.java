@@ -29,9 +29,10 @@ public class CustomUserDetails implements UserDetails {
         return user.getUserPassword();
     }
 
+    // userId를 String으로 변환하여 반환
     @Override
     public String getUsername() {
-        return user.getUserPhone();
+        return String.valueOf(user.getUserId());
     }
 
     @Override

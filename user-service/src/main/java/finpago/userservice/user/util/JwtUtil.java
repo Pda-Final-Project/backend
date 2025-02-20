@@ -1,6 +1,7 @@
 
 package finpago.userservice.user.util;
 
+
 import finpago.common.global.exception.error.ExpiredJwtException;
 import finpago.common.global.exception.error.JwtValidationException;
 import io.jsonwebtoken.*;
@@ -9,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 import java.util.function.Function;
 
@@ -23,10 +26,9 @@ public class JwtUtil {
     public JwtUtil(@Value("${jwt.secret}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
     }
-  
     public String generateToken(Long userId) {
-        return Jwts.builder
-                .setSubject(String.valueOf(userId))  
+        return Jwts.builder()
+                .setSubject(String.valueOf(userId))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -35,8 +37,8 @@ public class JwtUtil {
 
     public Long extractUserId(String token) {
         return Long.parseLong(extractClaim(token, Claims::getSubject));
+    }
 
-      
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
@@ -53,14 +55,11 @@ public class JwtUtil {
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            return true; // 검증 성공
-        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            return true;
+        } catch (ExpiredJwtException e) {
             throw new ExpiredJwtException("JWT 토큰이 만료되었습니다.", e);
         } catch (JwtException e) {
             throw new JwtValidationException("JWT 검증 실패", e);
         }
     }
-
 }
-
-

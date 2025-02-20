@@ -22,8 +22,8 @@ public class UserController {
      * @param joinReqDto 사용자 회원가입 정보
      * @return 성공 메시지 반환
      */
-    @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<String>> signup(@RequestBody JoinReqDto joinReqDto) {
+    @PostMapping("/join")
+    public ResponseEntity<ApiResponse<String>> join(@RequestBody JoinReqDto joinReqDto) {
         userService.join(joinReqDto);
         return ResponseEntity
                 .status(HttpStatus.CREATED)

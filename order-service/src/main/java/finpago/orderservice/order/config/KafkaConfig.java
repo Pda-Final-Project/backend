@@ -20,12 +20,9 @@ import java.util.Map;
 @EnableKafka
 public class KafkaConfig {
 
-    private static final String BOOTSTRAP_SERVERS = "kafka:9092";
+    private static final String BOOTSTRAP_SERVERS = "127.0.0.1:9092";
     private static final String GROUP_ID = "order-service-group";
 
-    /**
-     * 🔹 Kafka Producer 설정
-     */
     @Bean
     public ProducerFactory<String, OrderCreateReqEvent> producerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -41,9 +38,6 @@ public class KafkaConfig {
         return new KafkaTemplate<>(producerFactory());
     }
 
-    /**
-     * 🔹 Kafka Consumer 설정
-     */
     @Bean
     public ConsumerFactory<String, OrderCreateReqEvent> consumerFactory() {
         Map<String, Object> props = new HashMap<>();

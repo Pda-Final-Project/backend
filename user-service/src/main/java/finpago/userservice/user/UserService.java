@@ -48,6 +48,6 @@ public class UserService {
         User user = userRepository.findByUserPhone(loginReqDto.getUserPhone())
                 .orElseThrow(() -> new UsernameNotFoundException("등록되지 않은 전화번호입니다."));
 
-        return jwtUtil.generateToken(user.getUserPhone());
+        return jwtUtil.generateToken(user.getUserId());
     }
 }

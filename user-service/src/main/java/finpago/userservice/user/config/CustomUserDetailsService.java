@@ -1,7 +1,8 @@
-package finpago.userservice.config;
 
-import finpago.userservice.User;
-import finpago.userservice.UserRepository;
+package finpago.userservice.user.config;
+
+import finpago.userservice.user.entity.User;
+import finpago.userservice.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;

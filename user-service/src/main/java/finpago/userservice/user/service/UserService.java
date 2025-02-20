@@ -1,10 +1,12 @@
-package finpago.userservice;
+package finpago.userservice.user.service;
 
 
 import finpago.common.global.exception.error.DuplicateUserPhoneException;
-import finpago.userservice.dto.JoinReqDto;
-import finpago.userservice.dto.LoginReqDto;
-import finpago.userservice.util.JwtUtil;
+import finpago.userservice.user.dto.JoinReqDto;
+import finpago.userservice.user.dto.LoginReqDto;
+import finpago.userservice.user.entity.User;
+import finpago.userservice.user.repository.UserRepository;
+import finpago.userservice.user.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

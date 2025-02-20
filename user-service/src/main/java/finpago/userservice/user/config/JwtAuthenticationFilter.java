@@ -1,8 +1,7 @@
-package finpago.userservice.config;
+package finpago.userservice.user.config;
 
 import finpago.common.global.exception.error.JwtValidationException;
-import finpago.userservice.util.JwtUtil;
-import io.jsonwebtoken.ExpiredJwtException;
+import finpago.userservice.user.util.JwtUtil;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

@@ -1,7 +1,6 @@
-package finpago.userservice.config;
+package finpago.userservice.user.config;
 
-import finpago.userservice.util.JwtUtil;
-import jakarta.servlet.http.HttpServletResponse;
+import finpago.userservice.user.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

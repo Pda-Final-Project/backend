@@ -1,4 +1,4 @@
-package finpago.userservice.dto;
+package finpago.userservice.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

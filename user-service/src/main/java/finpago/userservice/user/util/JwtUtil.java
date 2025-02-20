@@ -1,4 +1,4 @@
-package finpago.userservice.util;
+package finpago.userservice.user.util;
 
 import finpago.common.global.exception.error.ExpiredJwtException;
 import finpago.common.global.exception.error.JwtValidationException;

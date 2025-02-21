@@ -13,7 +13,7 @@ services:
 
       # 리스너 설정
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT'
-      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093'
+      KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:9093'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://localhost:9092'  # order-service가 접근 가능하도록 설정
 
       # KRaft 모드 설정
@@ -34,10 +34,10 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
-      - "8080:8080"  # Kafka UI 포트
+      - "9090:8080"  # Kafka UI 포트
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=localhost:9092  # Kafka 브로커 주소
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
     networks:
       - order_network
     depends_on:

@@ -21,9 +21,7 @@ public class OrderService {
     private final JwtUtil jwtUtil;
     private final OrderProducer orderProducer;
 
-    public UUID createOrder(String token, OrderCreateReqDto orderCreateReqDto) {
-        Long userId = jwtUtil.extractUserId(token);
-
+    public UUID createOrder(Long userId, OrderCreateReqDto orderCreateReqDto) {
         Order order = Order.builder()
                 .offerStatus(OrderStatus.PENDING) // 주문 상태: PENDING
                 .offerType(OrderType.valueOf(orderCreateReqDto.getOfferType())) // 매수/매도

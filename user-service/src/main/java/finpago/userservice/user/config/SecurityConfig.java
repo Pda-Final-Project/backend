@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -26,20 +27,26 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println("start");
+        System.out.println(" Security Filter Chain 설정 시작...");
+
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.disable()) // CORS 설정
+                .csrf(csrf -> csrf.disable())  // CSRF 완전 비활성화
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v1/api/auth/join", "/v1/api/auth/login").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterAfter(jwtAuthenticationFilter,UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        System.out.println("finish");
+        System.out.println("Security Filter Chain 설정 완료!");
         return http.build();
     }
+
 
 
     @Bean

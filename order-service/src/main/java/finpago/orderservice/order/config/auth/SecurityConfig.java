@@ -1,15 +1,11 @@
+package finpago.orderservice.order.config.auth;
 
-package finpago.userservice.user.config;
 
-import finpago.userservice.user.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -23,43 +19,24 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomUserDetailsService userDetailsService;
-    private final JwtUtil jwtUtil;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println(" Security Filter Chain 설정 시작...");
-
         http
-                .cors(cors -> cors.disable()) // CORS 설정
-                .csrf(csrf -> csrf.disable())  // CSRF 완전 비활성화
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // ✅ 세션 사용 X
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v1/api/auth/join", "/v1/api/auth/login").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().authenticated() // 모든 API에 대해 JWT 인증 필요
                 )
-                .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // JWT 필터 추가
 
-        System.out.println("Security Filter Chain 설정 완료!");
         return http.build();
     }
-
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
     }
 
     @Bean

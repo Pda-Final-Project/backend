@@ -15,4 +15,8 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> success(HttpStatus status, String message, T data) {
         return new ApiResponse<>(status, message, data);
     }
+
+    public static <T> ApiResponse<T> fail(HttpStatus status, String message) {
+        return new ApiResponse<>(status, message, null); //  `data`는 실패 시 `null`
+    }
 }

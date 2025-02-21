@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 public class RouteValidator {
 
     public static final List<String> openApiEndpoints = List.of(
-            "/v1/api/auth/signup",
+            "/v1/api/auth/join",
             "/v1/api/auth/login"
     );
 

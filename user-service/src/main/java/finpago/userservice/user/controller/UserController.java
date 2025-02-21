@@ -6,10 +6,12 @@ import finpago.userservice.user.service.UserService;
 import finpago.userservice.user.dto.JoinReqDto;
 import finpago.userservice.user.dto.LoginReqDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1/api/auth")
 @RequiredArgsConstructor
@@ -37,6 +39,7 @@ public class UserController {
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginReqDto loginReqDto) {
+        System.out.println("dd");
         String token = userService.login(loginReqDto);
         return ResponseEntity
                 .status(HttpStatus.OK)

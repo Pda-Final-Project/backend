@@ -24,7 +24,7 @@ public class Order extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "offer_status", length = 10, nullable = false)
-    private OrderStatus offerStatus; // 주문 상태 (PENDING, CANCELED, FINISHED)
+    private OrderStatus offerStatus; // 주문 상태 (PENDING, CANCELED, FAILED)
 
     @Enumerated(EnumType.STRING)
     @Column(name = "offer_type", length = 10, nullable = false)

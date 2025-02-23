@@ -1,5 +1,6 @@
 package finpago.orderservice.order.messaging.events;
 
+import finpago.orderservice.order.enums.OrderStatus;
 import finpago.orderservice.order.enums.OrderType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,4 +18,5 @@ public class OrderCreateReqEvent {
     private Float offerQuantity;
     private Long offerPrice;
     private String stockTicker;
+    private OrderStatus orderStatus;
 }

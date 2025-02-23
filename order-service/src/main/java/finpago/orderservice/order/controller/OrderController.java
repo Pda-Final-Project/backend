@@ -22,7 +22,7 @@ public class OrderController {
     private final OrderService orderService;
 
     /**
-     * 🔹 매수/매도 주문 요청
+     * 🔹매수/매도 주문 요청
      *
      * @param orderCreateReqDto 주문 정보 DTO
      * @return 주문 생성 결과

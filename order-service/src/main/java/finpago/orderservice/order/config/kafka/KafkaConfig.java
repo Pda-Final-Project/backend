@@ -1,4 +1,4 @@
-package finpago.orderservice.order.config;
+package finpago.orderservice.order.config.kafka;
 
 import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

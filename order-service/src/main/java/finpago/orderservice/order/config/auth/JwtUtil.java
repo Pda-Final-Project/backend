@@ -32,6 +32,7 @@ public class JwtUtil {
                 .compact();
     }
 
+
     public Long extractUserId(String token) {
         return Long.parseLong(extractClaim(token, Claims::getSubject));
     }

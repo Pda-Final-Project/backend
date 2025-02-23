@@ -23,7 +23,7 @@ public class OrderService {
 
     public UUID createOrder(Long userId, OrderCreateReqDto orderCreateReqDto) {
         Order order = Order.builder()
-                .offerStatus(OrderStatus.PENDING) // 주문 상태: PENDING
+                .offerStatus(OrderStatus.SENT) // 주문 상태: 주문접수
                 .offerType(OrderType.valueOf(orderCreateReqDto.getOfferType())) // 매수/매도
                 .offerQuantity(orderCreateReqDto.getOfferQuantity())
                 .offerPrice(orderCreateReqDto.getOfferPrice())
@@ -39,7 +39,8 @@ public class OrderService {
                 order.getOfferType(),
                 order.getOfferQuantity(),
                 order.getOfferPrice(),
-                order.getStockTicker()
+                order.getStockTicker(),
+                order.getOfferStatus()
         );
 
         orderProducer.sendOrder(orderCreateReqEvent);

@@ -1,6 +1,6 @@
-package finpago.executionservice.execution.config;
+package finpago.settlementservice.config.kafka;
 
-import finpago.executionservice.execution.messaging.events.OrderCreateReqEvent;
+import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.*;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
@@ -21,7 +20,7 @@ import java.util.Map;
 public class KafkaConfig {
 
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
-    private static final String GROUP_ID = "execution-service-group";
+    private static final String GROUP_ID = "order-service-group";
 
     @Bean
     public ProducerFactory<String, OrderCreateReqEvent> producerFactory() {

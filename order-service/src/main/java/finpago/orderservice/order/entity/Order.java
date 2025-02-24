@@ -31,7 +31,7 @@ public class Order extends BaseEntity {
     private OrderType offerType; // 주문 유형 (BUY, SELL)
 
     @Column(name = "offer_quantity", nullable = false)
-    private Float offerQuantity;
+    private Long offerQuantity;
 
     @Column(name = "offer_price", nullable = false)
     private Long offerPrice;

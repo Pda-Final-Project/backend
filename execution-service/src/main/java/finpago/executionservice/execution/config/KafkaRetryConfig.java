@@ -1,6 +1,6 @@
-package finpago.matchingservice.matching.config;
+package finpago.executionservice.execution.config;
 
-import finpago.matchingservice.matching.messaging.events.OrderCreateReqEvent;
+import finpago.executionservice.execution.messaging.events.OrderCreateReqEvent;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +15,7 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 public class KafkaRetryConfig {
 
-    private static final String DLT_TOPIC = "matching-dlt-topic"; //DLT 토픽
+    private static final String DLT_TOPIC = "execution-dlt-topic"; //DLT 토픽
     private static final long RETRY_INTERVAL = 1000L; // 재시도 간격 (1초)
     private static final int RETRY_COUNT = 3; // 최대 재시도 횟수
 

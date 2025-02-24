@@ -6,7 +6,13 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'develop', url: 'https://github.com/Pda-Final-Project/backend.git'
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/develop']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/Pda-Final-Project/backend.git',
+                        credentialsId: 'github-credentials'
+                    ]]
+                ])
             }
         }
         stage('Build Docker Image') {

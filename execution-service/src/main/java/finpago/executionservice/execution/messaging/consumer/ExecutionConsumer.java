@@ -22,8 +22,8 @@ public class ExecutionConsumer {
 
     @KafkaListener(topics = "settlement-failure-topic", groupId = "execution-service-group")
     public void handleFailedSettlement(TradeMatchingEvent event) {
-        log.warn("⚠️ 정산 실패 처리: {}", event);
-        executionService.handleSettlementFailure(event); // ✅ 이벤트 전체 전달
+        log.warn("정산 실패 처리: {}", event);
+        executionService.handleSettlementFailure(event);
     }
 
 }

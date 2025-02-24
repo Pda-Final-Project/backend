@@ -21,7 +21,7 @@ import java.util.Map;
 public class KafkaConfig {
 
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
-    private static final String GROUP_ID = "matching-service-group";
+    private static final String GROUP_ID = "execution-service-group";
 
     @Bean
     public ProducerFactory<String, OrderCreateReqEvent> producerFactory() {

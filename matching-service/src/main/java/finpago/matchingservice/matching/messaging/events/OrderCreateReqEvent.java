@@ -1,7 +1,7 @@
-package finpago.orderservice.order.messaging.events;
+package finpago.matchingservice.matching.messaging.events;
 
-import finpago.orderservice.order.enums.OrderStatus;
-import finpago.orderservice.order.enums.OrderType;
+import finpago.matchingservice.order.OrderStatus;
+import finpago.matchingservice.order.OrderType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

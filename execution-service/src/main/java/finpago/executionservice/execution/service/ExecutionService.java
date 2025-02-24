@@ -2,8 +2,11 @@ package finpago.executionservice.execution.service;
 
 import finpago.common.global.exception.error.InsufficientBalanceException;
 import finpago.common.global.exception.error.InsufficientStockException;
+import finpago.executionservice.OrderStatus;
+import finpago.executionservice.OrderType;
 import finpago.executionservice.execution.TradeStatus;
 import finpago.executionservice.execution.entity.Trade;
+import finpago.executionservice.execution.messaging.events.OrderCreateReqEvent;
 import finpago.executionservice.execution.messaging.events.TradeMatchingEvent;
 import finpago.executionservice.execution.messaging.producer.ExecutionProducer;
 import finpago.executionservice.execution.repository.TradeRepository;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 @Service
 @RequiredArgsConstructor
@@ -72,26 +76,76 @@ public class ExecutionService {
         tradeRepository.save(trade);
 
         // 체결 성공 시 Settlement 모듈로 Kafka 메시지 전송
-        executionProducer.sendTradeToSettlement(new TradeMatchingEvent(trade));
+        executionProducer.sendTradeToSettlement(event);
     }
 
     private Long getCachedBalance(Long userId) {
         String balanceKey = "user:" + userId + ":balance";
         String balanceStr = redisTemplate.opsForValue().get(balanceKey);
-        return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE; // ✅ 기본값 적용
+        return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE;
     }
 
     private Long getCachedStocks(Long userId, String stockTicker) {
         String stockKey = "user:" + userId + ":stocks:" + stockTicker;
         String stockStr = redisTemplate.opsForValue().get(stockKey);
-        return stockStr != null ? Long.parseLong(stockStr) : DEFAULT_STOCKS; // ✅ 기본값 적용
+        return stockStr != null ? Long.parseLong(stockStr) : DEFAULT_STOCKS;
     }
 
     private Float getExchangeRate(String stockTicker) {
         String exchangeRateKey = "stock:" + stockTicker + ":exchange_rate";
         String exchangeRateStr = redisTemplate.opsForValue().get(exchangeRateKey);
-        return exchangeRateStr != null ? Float.parseFloat(exchangeRateStr) : DEFAULT_EXCHANGE_RATE; // ✅ 기본값 적용
+        return exchangeRateStr != null ? Float.parseFloat(exchangeRateStr) : DEFAULT_EXCHANGE_RATE;
     }
+
+    @Transactional
+    public void handleSettlementFailure(TradeMatchingEvent event) {
+        log.warn("체결 실패 처리 시작: {}", event);
+
+        // 체결 테이블에서 해당 거래 조회
+        Optional<Trade> tradeOptional = tradeRepository.findById(event.getTradeId());
+
+        if (tradeOptional.isPresent()) {
+            Trade trade = tradeOptional.get();
+
+            // 체결 상태를 FAILED로 업데이트
+            trade.setTradeStatus(TradeStatus.FAILED);
+            tradeRepository.save(trade);
+
+            log.warn("체결 상태 FAILED로 업데이트 완료: {}", trade);
+
+            // 체결 실패 시 주문을 다시 매칭 모듈로 전송
+            OrderCreateReqEvent buyOrder = new OrderCreateReqEvent(
+                    event.getBuyOfferNumber(),
+                    event.getBuyerUserId(),
+                    OrderType.BUY,
+                    event.getTradeQuantity(),
+                    event.getTradePrice(),
+                    event.getStockTicker(),
+                    OrderStatus.CREATED,
+                    event.getTradeTimestamp()
+            );
+
+            OrderCreateReqEvent sellOrder = new OrderCreateReqEvent(
+                    event.getSellOfferNumber(),
+                    event.getSellerUserId(),
+                    OrderType.SELL,
+                    event.getTradeQuantity(),
+                    event.getTradePrice(),
+                    event.getStockTicker(),
+                    OrderStatus.CREATED,
+                    event.getTradeTimestamp()
+            );
+
+            // Matching 모듈로 전송
+            executionProducer.sendFailedTradeToMatching(buyOrder);
+            executionProducer.sendFailedTradeToMatching(sellOrder);
+
+            log.warn("체결 실패 주문 재매칭 요청 완료: 매수={}, 매도={}", buyOrder, sellOrder);
+        } else {
+            log.error("정산 실패 처리 중 해당 체결을 찾을 수 없음: {}", event.getTradeId());
+        }
+    }
+
 
     @Transactional(readOnly = true)
     public List<Trade> getUserTrades(Long userId) {

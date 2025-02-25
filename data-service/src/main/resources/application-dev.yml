@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: data-service
+
+server:
+  port: 19099

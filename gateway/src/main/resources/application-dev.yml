@@ -27,6 +27,7 @@ spring:
 #          filters:
 #            - RewritePath=/(?<segment>.*), /$\{segment}
 
+
         - id: order-service
           uri: lb://order-service
           predicates:

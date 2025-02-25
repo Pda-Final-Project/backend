@@ -1,6 +1,7 @@
 package finpago.executionservice.execution.config.kafka;
 
 import finpago.executionservice.execution.messaging.events.OrderCreateReqEvent;
+import finpago.executionservice.execution.messaging.events.TradeMatchingEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -23,8 +24,9 @@ public class KafkaConfig {
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
     private static final String GROUP_ID = "execution-service-group";
 
+    // ProducerFactory: TradeMatchingEvent 및 OrderCreateReqEvent 지원
     @Bean
-    public ProducerFactory<String, OrderCreateReqEvent> producerFactory() {
+    public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -34,12 +36,29 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, OrderCreateReqEvent> kafkaTemplate() {
+    public KafkaTemplate<String, Object> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
+    // ConsumerFactory: TradeMatchingEvent 지원
     @Bean
-    public ConsumerFactory<String, OrderCreateReqEvent> consumerFactory() {
+    public ConsumerFactory<String, TradeMatchingEvent> tradeConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*"); // 모든 패키지 허용
+
+        JsonDeserializer<TradeMatchingEvent> deserializer = new JsonDeserializer<>(TradeMatchingEvent.class, false);
+        deserializer.addTrustedPackages("*");
+
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
+    }
+
+    // ConsumerFactory: OrderCreateReqEvent 지원
+    @Bean
+    public ConsumerFactory<String, OrderCreateReqEvent> orderConsumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
@@ -54,9 +73,16 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, OrderCreateReqEvent> kafkaListenerContainerFactory() {
+    public ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> tradeKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(tradeConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, OrderCreateReqEvent> orderKafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, OrderCreateReqEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
+        factory.setConsumerFactory(orderConsumerFactory());
         return factory;
     }
 }

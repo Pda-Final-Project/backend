@@ -3,28 +3,30 @@ server:
 
 eureka:
   client:
+    register-with-eureka: false
+    fetch-registry: false
     service-url:
-      defaultZone: http://localhost:19090/eureka/
-    register-with-eureka: true
-    fetch-registry: true
+      defaultZone: http://localhost:19090/eureka
 
-  instance:
-    instance-id: ${spring.application.name}:${server.port}
-    prefer-ip-address: true
+
+#  instance:
+#    instance-id: ${spring.application.name}:${server.port}
+#    prefer-ip-address: true
 
 spring:
   cloud:
     gateway:
       routes:
         - id: user-service
-          uri: lb://user-service
+          uri: http://localhost:19092/
           predicates:
             - Path=/v1/api/users/**
             - Path=/v1/api/auth/**
             - Path=/v1/api/stocks/**
             - Path=/v1/api/likes/**
 #          filters:
-#            - PreserveHostHeader
+#            - RewritePath=/(?<segment>.*), /$\{segment}
+
 
         - id: order-service
           uri: lb://order-service

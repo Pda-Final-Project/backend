@@ -1,4 +1,4 @@
-package finpago.settlementservice.config.redis;
+package finpago.settlementservice.settlement.config.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.redisson.Redisson;

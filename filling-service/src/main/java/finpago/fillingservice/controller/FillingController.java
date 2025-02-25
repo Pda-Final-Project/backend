@@ -21,15 +21,17 @@ public class FillingController {
 
     private final FillingService fillingService;
 
-    @GetMapping("/ticker/{ticker}")
-    @Operation(summary = "특정 티커의 공시 리스트 조회", description = "특정 티커의 공시 리스트를 조회합니다.")
-    public ResponseEntity<ApiResponse<FillingsResponseDto>> getFillingsByTicker(
-            @Parameter(description = "티커") @PathVariable(name = "ticker") String ticker,
+    @GetMapping
+    @Operation(summary = "공시 리스트 조회", description = "티커별 공시 타입별 공시 리스트를 조회합니다.")
+    public ResponseEntity<ApiResponse<FillingsResponseDto>> getFillings(
+            @Parameter(description = "티커") @RequestParam(name = "ticker", required = false) String ticker,
             @Parameter(description = "공시 타입") @RequestParam(name = "fillingType", required = false) String fillingType,
+            @Parameter(description = "시작 날짜") @RequestParam(name = "startDate", required = false) String startDate,
+            @Parameter(description = "종료 날짜") @RequestParam(name = "endDate", required = false) String endDate,
             @Parameter(description = "페이지 번호", schema = @Schema(defaultValue = "0")) @RequestParam(name = "page", defaultValue = "0", required = false) int page,
             @Parameter(description = "페이지 크기", schema = @Schema(defaultValue = "10")) @RequestParam(name = "size", defaultValue = "10", required = false) int size) {
 
-        FillingsResponseDto fillingsResponseDto = fillingService.getFillingsByTicker(ticker, fillingType, page, size);
+        FillingsResponseDto fillingsResponseDto = fillingService.getFillings(ticker, fillingType, startDate, endDate, page, size);
 
         return ResponseEntity
                 .status(HttpStatus.FOUND)

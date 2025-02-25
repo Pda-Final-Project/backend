@@ -2,6 +2,31 @@ spring:
   application:
     name: filling-service
 
+  datasource:
+    url: jdbc:mysql://localhost:3306/filling
+    username: root
+    password: admin
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 1800000
+
+  jpa:
+    database: mysql
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        show_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 3306
+
 server:
   port: 19098
 

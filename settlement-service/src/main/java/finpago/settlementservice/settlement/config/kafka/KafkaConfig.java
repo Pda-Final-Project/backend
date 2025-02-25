@@ -1,6 +1,6 @@
 package finpago.settlementservice.settlement.config.kafka;
 
-import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
+import finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.*;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
@@ -20,10 +21,10 @@ import java.util.Map;
 public class KafkaConfig {
 
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
-    private static final String GROUP_ID = "order-service-group";
+    private static final String GROUP_ID = "settlement-service-group";
 
     @Bean
-    public ProducerFactory<String, OrderCreateReqEvent> producerFactory() {
+    public ProducerFactory<String, TradeMatchingEvent> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -33,12 +34,12 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, OrderCreateReqEvent> kafkaTemplate() {
+    public KafkaTemplate<String, TradeMatchingEvent> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
     @Bean
-    public ConsumerFactory<String, OrderCreateReqEvent> consumerFactory() {
+    public ConsumerFactory<String, TradeMatchingEvent> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
@@ -46,15 +47,15 @@ public class KafkaConfig {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*"); // 모든 패키지 허용
 
-        JsonDeserializer<OrderCreateReqEvent> deserializer = new JsonDeserializer<>(OrderCreateReqEvent.class, false);
+        JsonDeserializer<TradeMatchingEvent> deserializer = new JsonDeserializer<>(TradeMatchingEvent.class, false);
         deserializer.addTrustedPackages("*");
 
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, OrderCreateReqEvent> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, OrderCreateReqEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         return factory;
     }

@@ -14,7 +14,8 @@ public class SettlementConsumer {
 
     private final SettlementService settlementService;
 
-    @KafkaListener(topics = "trade-execution-topic", groupId = "settlement-service-group")
+    @KafkaListener(topics = "trade-execution-topic", groupId = "settlement-service-group",
+            containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleTradeExecution(TradeMatchingEvent event) {
         log.info("체결된 주문 수신: {}", event);
         settlementService.processSettlement(event);

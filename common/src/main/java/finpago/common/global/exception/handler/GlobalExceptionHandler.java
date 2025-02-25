@@ -37,6 +37,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
+
     // JWT 토큰 만료 예외 처리
     @ExceptionHandler(ExpiredJwtException.class)
     protected ResponseEntity<CommonResponse> handleExpiredJwtException(ExpiredJwtException exception) {
@@ -190,6 +191,27 @@ public class GlobalExceptionHandler {
         log.error("예수금이 부족합니다.");
 
         ErrorCode errorCode = ErrorCode.INSUFFICIENT_FUNDS;
+
+        ErrorResponse error = ErrorResponse.builder()
+                .status(errorCode.getStatus().value())
+                .message(exception.getMessage())
+                .code(errorCode.getCode())
+                .build();
+
+        CommonResponse response = CommonResponse.builder()
+                .success(false)
+                .error(error)
+                .build();
+
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    // 존재하지 않는 티커로 공시 리스트 조회
+    @ExceptionHandler(NotFoundFillingException.class)
+    protected ResponseEntity<CommonResponse> handleNotFoundFillingsByTicker(NotFoundFillingException exception) {
+        log.error("해당 종목의 보고서가 존재하지 않습니다.");
+
+        ErrorCode errorCode = ErrorCode.FILLING_NOT_FOUND;
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(errorCode.getStatus().value())

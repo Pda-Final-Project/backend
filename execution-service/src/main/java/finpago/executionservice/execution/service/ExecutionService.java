@@ -1,7 +1,5 @@
 package finpago.executionservice.execution.service;
 
-import finpago.common.global.exception.error.InsufficientBalanceException;
-import finpago.common.global.exception.error.InsufficientStockException;
 import finpago.executionservice.OrderStatus;
 import finpago.executionservice.OrderType;
 import finpago.executionservice.execution.TradeStatus;
@@ -49,13 +47,15 @@ public class ExecutionService {
         if (!isFundsAvailable) {
             log.error("예수금 부족 - User ID: {}, 필요 금액: {}, 보유 금액: {}",
                     event.getBuyerUserId(), event.getTradePrice(), buyerAvailableBalance);
-            throw new InsufficientBalanceException("예수금 부족");
+            sendFailedTradeToMatching(event);
+            return;
         }
 
         if (!isStocksAvailable) {
             log.error("보유 주식 부족 - User ID: {}, 필요 주식: {}, 보유 주식: {}",
                     event.getSellerUserId(), event.getTradeQuantity(), sellerAvailableStocks);
-            throw new InsufficientStockException("보유 주식 부족");
+            sendFailedTradeToMatching(event);
+            return;
         }
 
         // 검증 통과 후 체결 저장
@@ -146,6 +146,41 @@ public class ExecutionService {
         }
     }
 
+    /**
+     * 체결 실패 주문을 `Matching` 모듈로 다시 전송
+     * @param event TradeMatchingEvent (체결 이벤트)
+     */
+    private void sendFailedTradeToMatching(TradeMatchingEvent event) {
+        log.warn("체결 실패 - Matching 모듈로 재전송: {}", event);
+
+        // 매수 주문 복원
+        OrderCreateReqEvent buyOrder = new OrderCreateReqEvent(
+                event.getBuyOfferNumber(),
+                event.getBuyerUserId(),
+                OrderType.BUY,
+                event.getTradeQuantity(),
+                event.getTradePrice(),
+                event.getStockTicker(),
+                OrderStatus.CREATED,
+                event.getTradeTimestamp()
+        );
+
+        OrderCreateReqEvent sellOrder = new OrderCreateReqEvent(
+                event.getSellOfferNumber(),
+                event.getSellerUserId(),
+                OrderType.SELL,
+                event.getTradeQuantity(),
+                event.getTradePrice(),
+                event.getStockTicker(),
+                OrderStatus.CREATED,
+                event.getTradeTimestamp()
+        );
+
+        executionProducer.sendFailedTradeToMatching(buyOrder);
+        executionProducer.sendFailedTradeToMatching(sellOrder);
+
+        log.warn("체결 실패 주문 재매칭 요청 완료: 매수={}, 매도={}", buyOrder, sellOrder);
+    }
 
     @Transactional(readOnly = true)
     public List<Trade> getUserTrades(Long userId) {

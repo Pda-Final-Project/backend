@@ -1,4 +1,4 @@
-package finpago.executionservice.execution.config;
+package finpago.executionservice.execution.config.kafka;
 
 import finpago.executionservice.execution.messaging.events.OrderCreateReqEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

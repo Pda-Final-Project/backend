@@ -1,5 +1,6 @@
 package finpago.settlementservice.settlement.config.kafka;
 
+import finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent;
 import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
@@ -15,16 +16,16 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 public class KafkaRetryConfig {
 
-    private static final String DLT_TOPIC = "order-dlt-topic"; //DLT 토픽
+    private static final String DLT_TOPIC = "settlement-dlt-topic"; // DLT 토픽
     private static final long RETRY_INTERVAL = 1000L; // 재시도 간격 (1초)
     private static final int RETRY_COUNT = 3; // 최대 재시도 횟수
 
     @Bean(name = "kafkaRetryListenerContainerFactory")
-    public ConcurrentKafkaListenerContainerFactory<String, OrderCreateReqEvent> kafkaRetryListenerContainerFactory(
-            ConsumerFactory<String, OrderCreateReqEvent> consumerFactory,
-            KafkaTemplate<String, OrderCreateReqEvent> kafkaTemplate) {
+    public ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> kafkaRetryListenerContainerFactory(
+            ConsumerFactory<String, TradeMatchingEvent> consumerFactory,
+            KafkaTemplate<String, TradeMatchingEvent> kafkaTemplate) {
 
-        ConcurrentKafkaListenerContainerFactory<String, OrderCreateReqEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
 
         // 실패한 메시지를 DLT(Dead Letter Topic)으로 이동하는 Recoverer 설정

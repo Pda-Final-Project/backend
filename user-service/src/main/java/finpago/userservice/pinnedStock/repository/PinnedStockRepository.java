@@ -1,6 +1,6 @@
 package finpago.userservice.pinnedStock.repository;
 
-import finpago.userservice.pinnedStock.entity.PinnedStock;
+import finpago.userservice.pinnedStock.PinnedStock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

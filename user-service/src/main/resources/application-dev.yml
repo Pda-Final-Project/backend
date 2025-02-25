@@ -27,15 +27,18 @@ server:
   port: 19092
 
 eureka:
+  instance:
+    instance-id: ${spring.cloud.client.hostname}:${spring.application.instance_id:${random.value}}
   client:
-    service-url:
-      defaultZone: http://localhost:19090/eureka/
     register-with-eureka: true
     fetch-registry: true
+    service-url:
+      defaultZone: http://127.0.0.1:19090/eureka
 
-  instance:
-    instance-id: ${spring.application.name}:${server.port}
-    prefer-ip-address: true
+
+#  instance:
+#    instance-id: ${spring.application.name}:${server.port}
+#    prefer-ip-address: true
 
 
 jwt:

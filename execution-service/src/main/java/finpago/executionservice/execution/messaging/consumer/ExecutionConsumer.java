@@ -14,13 +14,15 @@ public class ExecutionConsumer {
 
     private final ExecutionService executionService;
 
-    @KafkaListener(topics = "trade-matching-topic", groupId = "execution-service-group")
+    @KafkaListener(topics = "trade-matching-topic", groupId = "execution-service-group",
+            containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleTradeMatching(TradeMatchingEvent event) {
         log.info("체결 요청 수신: {}", event);
         executionService.processTrade(event);
     }
 
-    @KafkaListener(topics = "settlement-failure-topic", groupId = "execution-service-group")
+    @KafkaListener(topics = "settlement-failure-topic", groupId = "execution-service-group",
+            containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleFailedSettlement(TradeMatchingEvent event) {
         log.warn("정산 실패 처리: {}", event);
         executionService.handleSettlementFailure(event);

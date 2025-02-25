@@ -1,6 +1,7 @@
 package finpago.settlementservice.settlement.config.kafka;
 
 import finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent;
+import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;

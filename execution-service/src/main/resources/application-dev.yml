@@ -13,30 +13,30 @@ spring:
       idle-timeout: 30000
       max-lifetime: 1800000
 
-    jpa:
-      database: mysql
+  jpa:
+    database: mysql
+    hibernate:
+      ddl-auto: update
+    properties:
       hibernate:
-        ddl-auto: update
-      properties:
-        hibernate:
-          dialect: org.hibernate.dialect.MySQL8Dialect
-          format_sql: true
-          show_sql: true
-    data:
-      redis:
-        host: localhost
-        port: 6379
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        show_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: execution-service-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+kafka:
+  bootstrap-servers: localhost:9092
+  consumer:
+    group-id: execution-service-group
+    auto-offset-reset: earliest
+    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 server:
   port: 19095

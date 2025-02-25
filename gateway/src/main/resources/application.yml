@@ -1,7 +1,10 @@
 spring:
   main:
     web-application-type: reactive
+    allow-bean-definition-overriding: true
   application:
     name: gateway
   profiles:
     active: dev
+
+

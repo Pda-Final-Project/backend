@@ -23,8 +23,8 @@ spring:
             - Path=/v1/api/auth/**
             - Path=/v1/api/stocks/**
             - Path=/v1/api/likes/**
-          filters:
-            - PreserveHostHeader
+#          filters:
+#            - PreserveHostHeader
 
         - id: order-service
           uri: lb://order-service

@@ -93,14 +93,15 @@ public class SettlementService {
     private void updateBalance(Long userId, Long amount) {
         String balanceKey = "user:" + userId + ":balance";
         Long currentBalance = getCachedBalance(userId);
-        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 5, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 30, TimeUnit.DAYS);
     }
 
     private void updateStocks(Long userId, String stockTicker, Long quantity) {
         String stockKey = "user:" + userId + ":stocks:" + stockTicker;
         Long currentStocks = getCachedStocks(userId, stockTicker);
-        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 5, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 30, TimeUnit.DAYS);
     }
+
 
     /**
      * 환차손익 계산을 위해 체결 당시 환율 및 수량을 Redis에 저장

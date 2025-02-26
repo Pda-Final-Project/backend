@@ -21,50 +21,55 @@ public class SettlementService {
     private static final long DEFAULT_STOCKS = 100L; // 기본 보유 주식 수량 (100주)
     private static final float DEFAULT_EXCHANGE_RATE = 1.0f; // 기본 환율 (1.0)
 
-
     @Transactional
     public void processSettlement(TradeMatchingEvent event) {
-        // Redis에서 예수금 및 보유 주식 조회 (없을 경우 기본값 적용)
-        Long buyerAvailableBalance = getCachedBalance(event.getBuyerUserId());
-        Long sellerAvailableStocks = getCachedStocks(event.getSellerUserId(), event.getStockTicker());
+        validateBuyerBalance(event);
+        validateSellerStocks(event);
 
         // Redis에서 환율 조회 (없을 경우 기본값 적용)
         Float exchangeRate = getExchangeRate(event.getStockTicker());
 
-        // 예수금 & 보유 주식 검증
-        boolean isFundsAvailable = buyerAvailableBalance >= event.getTradePrice();
-        boolean isStocksAvailable = sellerAvailableStocks >= event.getTradeQuantity();
-
-        if (!isFundsAvailable) {
-            log.error("예수금 부족 - User ID: {}, 필요 금액: {}, 보유 금액: {}",
-                    event.getBuyerUserId(), event.getTradePrice(), buyerAvailableBalance);
-
-            //정산 실패 메시지 발행 (Execution 모듈에서 롤백 수행)
-            settlementProducer.sendSettlementFailure(event);
-            return; // 트랜잭션 종료
-        }
-
-        if (!isStocksAvailable) {
-            log.error("보유 주식 부족 - User ID: {}, 필요 주식: {}, 보유 주식: {}",
-                    event.getSellerUserId(), event.getTradeQuantity(), sellerAvailableStocks);
-
-            // 정산 실패 메시지 발행 (Execution 모듈에서 롤백 수행)
-            settlementProducer.sendSettlementFailure(event);
-            return;
-        }
-
-        //정산 수행
-        updateBalance(event.getBuyerUserId(), -event.getTradePrice());
+        // 정산 수행
+        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
         updateStocks(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity());
-        updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate); //환율 이력 저장
+        updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate);
 
-        updateBalance(event.getSellerUserId(), event.getTradePrice());
+        updateBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity());
         updateStocks(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity());
-        updateStockForFxTracking(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity(), exchangeRate); //환율 이력 저장
+        updateStockForFxTracking(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity(), exchangeRate);
 
         // 정산 완료 후 메시지 발행
         settlementProducer.sendSettlementSuccess(event);
         log.info("정산 완료: {}", event);
+    }
+
+    /**
+     * 매수자의 예수금 검증
+     */
+    private void validateBuyerBalance(TradeMatchingEvent event) {
+        Long buyerAvailableBalance = getCachedBalance(event.getBuyerUserId());
+        Long requiredAmount = event.getTradePrice() * event.getTradeQuantity();
+
+        if (buyerAvailableBalance < requiredAmount) {
+            log.error("예수금 부족 - 매수자 ID: {}, 필요 금액: {}, 보유 금액: {}",
+                    event.getBuyerUserId(), requiredAmount, buyerAvailableBalance);
+            settlementProducer.sendSettlementFailure(event);
+            throw new IllegalStateException("예수금 부족으로 정산 실패");
+        }
+    }
+
+    /**
+     * 매도자의 보유 주식 검증
+     */
+    private void validateSellerStocks(TradeMatchingEvent event) {
+        Long sellerAvailableStocks = getCachedStocks(event.getSellerUserId(), event.getStockTicker());
+
+        if (sellerAvailableStocks < event.getTradeQuantity()) {
+            log.error("보유 주식 부족 - 매도자 ID: {}, 필요 주식: {}, 보유 주식: {}",
+                    event.getSellerUserId(), event.getTradeQuantity(), sellerAvailableStocks);
+            settlementProducer.sendSettlementFailure(event);
+            throw new IllegalStateException("보유 주식 부족으로 정산 실패");
+        }
     }
 
     private Long getCachedBalance(Long userId) {
@@ -99,11 +104,6 @@ public class SettlementService {
 
     /**
      * 환차손익 계산을 위해 체결 당시 환율 및 수량을 Redis에 저장
-     *
-     * @param userId 사용자 ID
-     * @param stockTicker 주식 종목 (티커)
-     * @param quantity 체결된 주식 수량
-     * @param exchangeRate 체결 당시 환율
      */
     private void updateStockForFxTracking(Long userId, String stockTicker, Long quantity, Float exchangeRate) {
         String holdingsFxKey = "user:" + userId + ":holdings-fx:" + stockTicker;
@@ -117,8 +117,7 @@ public class SettlementService {
         // 데이터 유효기간 설정 (30일 후 자동 삭제)
         redisTemplate.expire(holdingsFxKey, 30, TimeUnit.DAYS);
 
-        log.info("[환차손익계산용 데이터 저장] 사용자ID: {}, 주식: {}, 체결 환율: {}, 체결 수량: {}",
+        log.info("[환차손익 데이터 저장] 사용자ID: {}, 주식: {}, 체결 환율: {}, 체결 수량: {}",
                 userId, stockTicker, exchangeRate, quantity);
     }
-
 }

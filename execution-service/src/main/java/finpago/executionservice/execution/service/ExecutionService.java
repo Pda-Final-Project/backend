@@ -33,32 +33,11 @@ public class ExecutionService {
 
     @Transactional
     public void processTrade(TradeMatchingEvent event) {
-        // Redis에서 예수금 및 보유 주식 조회 (없을 경우 기본값 적용)
-        Long buyerAvailableBalance = getCachedBalance(event.getBuyerUserId());
-        Long sellerAvailableStocks = getCachedStocks(event.getSellerUserId(), event.getStockTicker());
+        validateBuyerBalance(event);
+        validateSellerStocks(event);
 
-        // Redis에서 환율 조회 (없을 경우 기본값 적용)
         Float exchangeRate = getExchangeRate(event.getStockTicker());
 
-        // 예수금 & 보유 주식 검증
-        boolean isFundsAvailable = buyerAvailableBalance >= event.getTradePrice();
-        boolean isStocksAvailable = sellerAvailableStocks >= event.getTradeQuantity();
-
-        if (!isFundsAvailable) {
-            log.error("예수금 부족 - User ID: {}, 필요 금액: {}, 보유 금액: {}",
-                    event.getBuyerUserId(), event.getTradePrice(), buyerAvailableBalance);
-            sendFailedTradeToMatching(event);
-            return;
-        }
-
-        if (!isStocksAvailable) {
-            log.error("보유 주식 부족 - User ID: {}, 필요 주식: {}, 보유 주식: {}",
-                    event.getSellerUserId(), event.getTradeQuantity(), sellerAvailableStocks);
-            sendFailedTradeToMatching(event);
-            return;
-        }
-
-        // 검증 통과 후 체결 저장
         Trade trade = Trade.builder()
                 .tradeNumber(UUID.randomUUID())
                 .buyOfferNumber(event.getBuyOfferNumber())
@@ -69,7 +48,7 @@ public class ExecutionService {
                 .tradeDate(LocalDateTime.now())
                 .tradeQuantity(event.getTradeQuantity())
                 .tradePrice(event.getTradePrice())
-                .tradeExchangeRate(exchangeRate) // Redis에서 가져온 환율 적용
+                .tradeExchangeRate(exchangeRate)
                 .tradeStatus(TradeStatus.SUCCESS)
                 .build();
 
@@ -77,6 +56,35 @@ public class ExecutionService {
 
         // 체결 성공 시 Settlement 모듈로 Kafka 메시지 전송
         executionProducer.sendTradeToSettlement(event);
+    }
+
+    /**
+     * 매수자의 예수금 검증
+     */
+    private void validateBuyerBalance(TradeMatchingEvent event) {
+        Long buyerAvailableBalance = getCachedBalance(event.getBuyerUserId());
+        Long requiredAmount = event.getTradePrice() * event.getTradeQuantity();
+
+        if (buyerAvailableBalance < requiredAmount) {
+            log.error("예수금 부족 - 매수자 ID: {}, 필요 금액: {}, 보유 금액: {}",
+                    event.getBuyerUserId(), requiredAmount, buyerAvailableBalance);
+            sendFailedTradeToMatching(event);
+            throw new IllegalStateException("예수금 부족으로 거래 실패");
+        }
+    }
+
+    /**
+     * 매도자의 보유 주식 검증
+     */
+    private void validateSellerStocks(TradeMatchingEvent event) {
+        Long sellerAvailableStocks = getCachedStocks(event.getSellerUserId(), event.getStockTicker());
+
+        if (sellerAvailableStocks < event.getTradeQuantity()) {
+            log.error("보유 주식 부족 - 매도자 ID: {}, 필요 주식: {}, 보유 주식: {}",
+                    event.getSellerUserId(), event.getTradeQuantity(), sellerAvailableStocks);
+            sendFailedTradeToMatching(event);
+            throw new IllegalStateException("보유 주식 부족으로 거래 실패");
+        }
     }
 
     private Long getCachedBalance(Long userId) {
@@ -114,33 +122,7 @@ public class ExecutionService {
             log.warn("체결 상태 FAILED로 업데이트 완료: {}", trade);
 
             // 체결 실패 시 주문을 다시 매칭 모듈로 전송
-            OrderCreateReqEvent buyOrder = new OrderCreateReqEvent(
-                    event.getBuyOfferNumber(),
-                    event.getBuyerUserId(),
-                    OrderType.BUY,
-                    event.getTradeQuantity(),
-                    event.getTradePrice(),
-                    event.getStockTicker(),
-                    OrderStatus.CREATED,
-                    event.getTradeTimestamp()
-            );
-
-            OrderCreateReqEvent sellOrder = new OrderCreateReqEvent(
-                    event.getSellOfferNumber(),
-                    event.getSellerUserId(),
-                    OrderType.SELL,
-                    event.getTradeQuantity(),
-                    event.getTradePrice(),
-                    event.getStockTicker(),
-                    OrderStatus.CREATED,
-                    event.getTradeTimestamp()
-            );
-
-            // Matching 모듈로 전송
-            executionProducer.sendFailedTradeToMatching(buyOrder);
-            executionProducer.sendFailedTradeToMatching(sellOrder);
-
-            log.warn("체결 실패 주문 재매칭 요청 완료: 매수={}, 매도={}", buyOrder, sellOrder);
+            sendFailedTradeToMatching(event);
         } else {
             log.error("정산 실패 처리 중 해당 체결을 찾을 수 없음: {}", event.getTradeId());
         }
@@ -148,7 +130,6 @@ public class ExecutionService {
 
     /**
      * 체결 실패 주문을 `Matching` 모듈로 다시 전송
-     * @param event TradeMatchingEvent (체결 이벤트)
      */
     private void sendFailedTradeToMatching(TradeMatchingEvent event) {
         log.warn("체결 실패 - Matching 모듈로 재전송: {}", event);

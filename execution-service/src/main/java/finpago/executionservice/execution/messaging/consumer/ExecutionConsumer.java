@@ -1,6 +1,6 @@
 package finpago.executionservice.execution.messaging.consumer;
 
-import finpago.executionservice.execution.messaging.events.TradeMatchingEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.executionservice.execution.service.ExecutionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,7 +1,6 @@
 package finpago.settlementservice.settlement.config.kafka;
 
-import finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent;
-import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;

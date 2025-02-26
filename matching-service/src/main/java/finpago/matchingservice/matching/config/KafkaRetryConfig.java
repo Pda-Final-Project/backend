@@ -1,6 +1,6 @@
 package finpago.matchingservice.matching.config;
 
-import finpago.matchingservice.matching.messaging.events.OrderCreateReqEvent;
+import finpago.common.global.messaging.OrderCreateReqEvent;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;

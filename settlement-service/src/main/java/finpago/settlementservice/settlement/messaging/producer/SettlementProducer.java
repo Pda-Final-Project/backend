@@ -1,6 +1,6 @@
 package finpago.settlementservice.settlement.messaging.producer;
 
-import finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;

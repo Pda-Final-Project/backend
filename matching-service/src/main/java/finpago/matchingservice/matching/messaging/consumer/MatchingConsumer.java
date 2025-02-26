@@ -18,7 +18,7 @@ public class MatchingConsumer {
 
     @KafkaListener(topics = ORDER_TOPIC, groupId = "matching-service-group")
     public void handleNewOrder(OrderCreateReqEvent order) {
-        log.info("새 주문 수신: {}", order);
+        log.info("새 주문 매칭 모듈에서 수신: {}", order);
         matchingService.processOrder(order);
     }
 

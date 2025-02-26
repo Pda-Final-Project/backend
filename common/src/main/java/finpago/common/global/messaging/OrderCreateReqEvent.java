@@ -1,7 +1,7 @@
-package finpago.executionservice.execution.messaging.events;
+package finpago.common.global.messaging;
 
-import finpago.executionservice.OrderStatus;
-import finpago.executionservice.OrderType;
+import finpago.common.global.enums.OrderStatus;
+import finpago.common.global.enums.OrderType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

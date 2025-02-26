@@ -1,6 +1,6 @@
 package finpago.matchingservice.matching.messaging.consumer;
 
-import finpago.matchingservice.matching.messaging.events.OrderCreateReqEvent;
+import finpago.common.global.messaging.OrderCreateReqEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;

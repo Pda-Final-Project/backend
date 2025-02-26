@@ -1,6 +1,6 @@
 package finpago.settlementservice.settlement.messaging.consumer;
 
-import finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.settlementservice.settlement.messaging.producer.SettlementProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

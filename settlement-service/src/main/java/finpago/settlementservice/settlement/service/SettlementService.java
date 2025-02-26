@@ -1,6 +1,6 @@
 package finpago.settlementservice.settlement.service;
 
-import finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.settlementservice.settlement.messaging.producer.SettlementProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ public class SettlementService {
     private final SettlementProducer settlementProducer;
 
     private static final long DEFAULT_BALANCE = 1_000_000L; // 기본 예수금 (1,000,000)
-    private static final long DEFAULT_STOCKS = 100L; // 기본 보유 주식 수량 (100주)
+    private static final long DEFAULT_STOCKS = 1000000; // 기본 보유 주식 수량 (100주)
     private static final float DEFAULT_EXCHANGE_RATE = 1.0f; // 기본 환율 (1.0)
 
     @Transactional
@@ -93,14 +93,15 @@ public class SettlementService {
     private void updateBalance(Long userId, Long amount) {
         String balanceKey = "user:" + userId + ":balance";
         Long currentBalance = getCachedBalance(userId);
-        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 5, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 30, TimeUnit.DAYS);
     }
 
     private void updateStocks(Long userId, String stockTicker, Long quantity) {
         String stockKey = "user:" + userId + ":stocks:" + stockTicker;
         Long currentStocks = getCachedStocks(userId, stockTicker);
-        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 5, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 30, TimeUnit.DAYS);
     }
+
 
     /**
      * 환차손익 계산을 위해 체결 당시 환율 및 수량을 Redis에 저장

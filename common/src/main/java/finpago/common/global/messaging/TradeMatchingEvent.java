@@ -1,4 +1,4 @@
-package finpago.executionservice.execution.messaging.events;
+package finpago.common.global.messaging;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,3 +20,4 @@ public class TradeMatchingEvent {
     private long tradePrice;    // 체결 가격
     private LocalDateTime tradeTimestamp; // 체결 시각
 }
+

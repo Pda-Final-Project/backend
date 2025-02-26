@@ -1,6 +1,6 @@
 package finpago.orderservice.order.config.kafka;
 
-import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
+import finpago.common.global.messaging.OrderCreateReqEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;

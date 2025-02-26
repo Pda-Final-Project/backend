@@ -1,7 +1,7 @@
 package finpago.matchingservice.matching.config;
 
-import finpago.matchingservice.matching.messaging.events.OrderCreateReqEvent;
-import finpago.matchingservice.matching.messaging.events.TradeMatchingEvent;
+import finpago.common.global.messaging.OrderCreateReqEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -24,14 +24,14 @@ public class KafkaConfig {
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
     private static final String GROUP_ID = "matching-service-group";
 
-    //OrderCreateReqEvent ProducerFactory
+    // OrderCreateReqEvent ProducerFactory
     @Bean
     public ProducerFactory<String, OrderCreateReqEvent> orderProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, true);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false); // 헤더 제거
         return new DefaultKafkaProducerFactory<>(props);
     }
 
@@ -56,7 +56,7 @@ public class KafkaConfig {
         return new KafkaTemplate<>(tradeProducerFactory());
     }
 
-    //ConsumerFactory (OrderCreateReqEvent 수신)
+    // ConsumerFactory (OrderCreateReqEvent 수신)
     @Bean
     public ConsumerFactory<String, OrderCreateReqEvent> orderConsumerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -65,7 +65,9 @@ public class KafkaConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.matchingservice.matching.messaging.events.OrderCreateReqEvent");
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.OrderCreateReqEvent");
+
 
         return new DefaultKafkaConsumerFactory<>(props);
     }

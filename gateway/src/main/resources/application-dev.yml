@@ -3,46 +3,53 @@ server:
 
 eureka:
   client:
+    register-with-eureka: false
+    fetch-registry: false
     service-url:
-      defaultZone: http://localhost:19090/eureka/
-    register-with-eureka: true
-    fetch-registry: true
+      defaultZone: http://localhost:19090/eureka
 
-  instance:
-    instance-id: ${spring.application.name}:${server.port}
-    prefer-ip-address: true
+
+#  instance:
+#    instance-id: ${spring.application.name}:${server.port}
+#    prefer-ip-address: true
 
 spring:
   cloud:
     gateway:
       routes:
         - id: user-service
-          uri: lb://user-service
+          uri: http://localhost:19092/
           predicates:
-            - Path=/api/v1/users/**
-            - Path=/api/v1/auth/**
-            - Path=/api/v1/stocks/**
-            - Path=/api/v1/likes/**
+            - Path=/v1/api/users/**
+            - Path=/v1/api/auth/**
+            - Path=/v1/api/stocks/**
+            - Path=/v1/api/likes/**
+#          filters:
+#            - RewritePath=/(?<segment>.*), /$\{segment}
+
+
         - id: order-service
           uri: lb://order-service
           predicates:
-            - Path=/api/v1/order/**
+            - Path=/v1/api/order/**
         - id: execution-service
           uri: lb://execution-service
           predicates:
-            - Path=/api/v1/execution/**
+            - Path=/v1/api/execution/**
         - id: notification-service
           uri: lb://notification-service
           predicates:
-            - Path=/api/v1/notification/**
+            - Path=/v1/api/notification/**
         - id: filling-service
           uri: lb://filling-service
           predicates:
-            - Path=/api/v1/filling/**
-            - Path=/api/v1/news/**
+            - Path=/v1/api/filling/**
+            - Path=/v1/api/news/**
 
       discovery:
         locator:
           enabled: true
 
-
+jwt:
+  secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
+  expiration: 86400000

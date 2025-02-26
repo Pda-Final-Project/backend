@@ -2,6 +2,31 @@ spring:
   application:
     name: order-service
 
+  datasource:
+    url: jdbc:mysql://localhost:3306/orders
+    username: root
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 1800000
+
+  jpa:
+    database: mysql
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        show_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
 server:
   port: 19093
 
@@ -15,3 +40,7 @@ eureka:
   instance:
     instance-id: ${spring.application.name}:${server.port}
     prefer-ip-address: true
+
+jwt:
+  secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
+  expiration: 86400000

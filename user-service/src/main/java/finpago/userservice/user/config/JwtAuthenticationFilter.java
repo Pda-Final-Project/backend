@@ -8,51 +8,56 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String requestURI = request.getRequestURI();
-        System.out.println("??");
-
-        if (requestURI.startsWith("/v1/api/auth/signup") || requestURI.startsWith("/v1/api/auth/login")) {
+        System.out.println("okokokok");
+        if (requestURI.startsWith("/v1/api/auth/join") || requestURI.startsWith("/v1/api/auth/login")) {
             filterChain.doFilter(request, response);
             return;
         }
+        System.out.println("nononono");
 
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new JwtValidationException("Authorization header가 없습니다");
+            log.warn("Authorization header가 없습니다.");
+            filterChain.doFilter(request, response);
+            return;
         }
 
         String token = authHeader.substring(7);
-        String userPhone;
+        Long userId;
 
         try {
-            userPhone = jwtUtil.extractUserPhone(token);
-        }catch (JwtException e) {
-            throw new JwtValidationException("JWT 토큰 검증 실패");
+            userId = jwtUtil.extractUserId(token);
+        } catch (JwtException e) {
+            log.error("JWT 토큰 검증 실패: {}", e.getMessage());
+            throw new JwtValidationException("JWT 토큰 검증 실패", e);
         }
 
-        if (userPhone != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(userPhone);
+        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = userDetailsService.loadUserById(userId);
 
             if (jwtUtil.validateToken(token)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -65,5 +70,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
 }
+

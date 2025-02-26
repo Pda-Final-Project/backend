@@ -34,7 +34,7 @@ public class ExchangeRateService {
 
                 for (String ticker: tickers){
                     String redisKey = "stock:" + ticker + ":exchange_rate";
-                    redisTemplate.opsForValue().set(redisKey, exchangeRate.toString(), Duration.ofMinutes(5));
+                    redisTemplate.opsForValue().set(redisKey, exchangeRate.toString());
                 }
 
                 return exchangeRate;

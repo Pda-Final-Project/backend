@@ -24,15 +24,7 @@ public class ExchangeRateService {
         this.redisTemplate = redisTemplate;
     }
 
-    public Double getExchangeRate(String ticker) {
-        String redisKey = "stock:" + ticker + ":exchange_rate";
-
-        // Redis에서 조회
-        String cachedRate = redisTemplate.opsForValue().get(redisKey);
-        if (cachedRate != null) {
-            return Double.parseDouble(cachedRate);
-        }
-
+    public Double getExchangeRate(String[] tickers) {
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(URL, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
@@ -40,8 +32,10 @@ public class ExchangeRateService {
                 String exchangeRateStr = jsonNode.get("country").get(1).get("value").asText();
                 Double exchangeRate = Double.parseDouble(exchangeRateStr.replace(",", ""));
 
-                // Redis에 저장 (TTL: 5분)
-                redisTemplate.opsForValue().set(redisKey, exchangeRate.toString(), Duration.ofMinutes(5));
+                for (String ticker: tickers){
+                    String redisKey = "stock:" + ticker + ":exchange_rate";
+                    redisTemplate.opsForValue().set(redisKey, exchangeRate.toString(), Duration.ofMinutes(5));
+                }
 
                 return exchangeRate;
             }

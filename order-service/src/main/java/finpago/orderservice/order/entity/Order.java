@@ -1,8 +1,8 @@
 package finpago.orderservice.order.entity;
 
 import finpago.common.global.common.BaseEntity;
-import finpago.orderservice.order.enums.OrderStatus;
-import finpago.orderservice.order.enums.OrderType;
+import finpago.common.global.enums.OrderStatus;
+import finpago.common.global.enums.OrderType;
 import jakarta.persistence.*;
 import lombok.*;
 

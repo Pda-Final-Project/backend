@@ -1,6 +1,6 @@
 package finpago.orderservice.order.config.kafka;
 
-import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
+import finpago.common.global.messaging.OrderCreateReqEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;

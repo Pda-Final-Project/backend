@@ -1,8 +1,8 @@
 package finpago.orderservice.order.messaging.consumer;
 
-import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
+import finpago.common.global.enums.OrderStatus;
+import finpago.common.global.messaging.OrderCreateReqEvent;
 import finpago.orderservice.order.entity.Order;
-import finpago.orderservice.order.enums.OrderStatus;
 import finpago.orderservice.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,12 +1,12 @@
 package finpago.orderservice.order.service;
 
+import finpago.common.global.enums.OrderStatus;
+import finpago.common.global.enums.OrderType;
 import finpago.common.global.exception.error.InsufficientBalanceException;
 import finpago.common.global.exception.error.InsufficientStockException;
+import finpago.common.global.messaging.OrderCreateReqEvent;
 import finpago.orderservice.order.dto.OrderCreateReqDto;
 import finpago.orderservice.order.entity.Order;
-import finpago.orderservice.order.enums.OrderStatus;
-import finpago.orderservice.order.enums.OrderType;
-import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
 import finpago.orderservice.order.messaging.producer.OrderProducer;
 import finpago.orderservice.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +47,8 @@ public class OrderService {
                 .userId(userId)
                 .stockTicker(orderCreateReqDto.getStockTicker())
                 .build();
+
+        System.out.println(order);
 
         orderRepository.save(order);
 

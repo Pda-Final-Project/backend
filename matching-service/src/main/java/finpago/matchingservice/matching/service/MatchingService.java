@@ -1,10 +1,9 @@
 package finpago.matchingservice.matching.service;
 
-
+import finpago.common.global.enums.OrderType;
+import finpago.common.global.messaging.OrderCreateReqEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.matchingservice.matching.messaging.producer.MatchingProducer;
-import finpago.matchingservice.matching.messaging.events.OrderCreateReqEvent;
-import finpago.matchingservice.matching.messaging.events.TradeMatchingEvent;
-import finpago.matchingservice.order.OrderType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

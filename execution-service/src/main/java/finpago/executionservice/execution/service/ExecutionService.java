@@ -1,11 +1,11 @@
 package finpago.executionservice.execution.service;
 
-import finpago.executionservice.OrderStatus;
-import finpago.executionservice.OrderType;
-import finpago.executionservice.execution.TradeStatus;
+import finpago.common.global.enums.OrderStatus;
+import finpago.common.global.enums.OrderType;
+import finpago.common.global.enums.TradeStatus;
+import finpago.common.global.messaging.OrderCreateReqEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.executionservice.execution.entity.Trade;
-import finpago.executionservice.execution.messaging.events.OrderCreateReqEvent;
-import finpago.executionservice.execution.messaging.events.TradeMatchingEvent;
 import finpago.executionservice.execution.messaging.producer.ExecutionProducer;
 import finpago.executionservice.execution.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +37,7 @@ public class ExecutionService {
         validateSellerStocks(event);
 
         Float exchangeRate = getExchangeRate(event.getStockTicker());
-
         Trade trade = Trade.builder()
-                .tradeNumber(UUID.randomUUID())
                 .buyOfferNumber(event.getBuyOfferNumber())
                 .sellOfferNumber(event.getSellOfferNumber())
                 .tradeTicker(event.getStockTicker())
@@ -51,20 +49,21 @@ public class ExecutionService {
                 .tradeExchangeRate(exchangeRate)
                 .tradeStatus(TradeStatus.SUCCESS)
                 .build();
+        System.out.println(trade.getTradeNumber());
 
         tradeRepository.save(trade);
-
         // 체결 성공 시 Settlement 모듈로 Kafka 메시지 전송
         executionProducer.sendTradeToSettlement(event);
     }
 
-    /**
-     * 매수자의 예수금 검증
+  /**
+    * 매수자의 예수금 검증
      */
     private void validateBuyerBalance(TradeMatchingEvent event) {
         Long buyerAvailableBalance = getCachedBalance(event.getBuyerUserId());
+        System.out.println(buyerAvailableBalance);
         Long requiredAmount = event.getTradePrice() * event.getTradeQuantity();
-
+        System.out.println(requiredAmount);
         if (buyerAvailableBalance < requiredAmount) {
             log.error("예수금 부족 - 매수자 ID: {}, 필요 금액: {}, 보유 금액: {}",
                     event.getBuyerUserId(), requiredAmount, buyerAvailableBalance);
@@ -131,7 +130,7 @@ public class ExecutionService {
     /**
      * 체결 실패 주문을 `Matching` 모듈로 다시 전송
      */
-    private void sendFailedTradeToMatching(TradeMatchingEvent event) {
+    public void sendFailedTradeToMatching(TradeMatchingEvent event) {
         log.warn("체결 실패 - Matching 모듈로 재전송: {}", event);
 
         // 매수 주문 복원

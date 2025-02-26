@@ -1,4 +1,4 @@
-package finpago.orderservice.order.enums;
+package finpago.common.global.enums;
 
 public enum OrderStatus {
     CREATED,    //생성됨

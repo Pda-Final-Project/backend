@@ -1,3 +1,4 @@
+
 package finpago.userservice.user.controller;
 
 import finpago.common.global.common.ApiResponse;
@@ -5,10 +6,12 @@ import finpago.userservice.user.service.UserService;
 import finpago.userservice.user.dto.JoinReqDto;
 import finpago.userservice.user.dto.LoginReqDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1/api/auth")
 @RequiredArgsConstructor
@@ -21,8 +24,8 @@ public class UserController {
      * @param joinReqDto 사용자 회원가입 정보
      * @return 성공 메시지 반환
      */
-    @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<String>> signup(@RequestBody JoinReqDto joinReqDto) {
+    @PostMapping("/join")
+    public ResponseEntity<ApiResponse<String>> join(@RequestBody JoinReqDto joinReqDto) {
         userService.join(joinReqDto);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -36,6 +39,7 @@ public class UserController {
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginReqDto loginReqDto) {
+        System.out.println("dd");
         String token = userService.login(loginReqDto);
         return ResponseEntity
                 .status(HttpStatus.OK)

@@ -1,9 +1,12 @@
 package finpago.userservice.pinnedStock.repository;
 
-import finpago.userservice.pinnedStock.PinnedStock;
+import finpago.userservice.pinnedStock.entity.PinnedStock;
+import finpago.userservice.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.Optional;
 
-public interface PinnedStockRepository extends JpaRepository<PinnedStock, String> {
-    Optional<PinnedStock> findByUserIdAndStockTicker(String userId, String stockTicker);
+import java.util.List;
+import java.util.UUID;
+
+public interface PinnedStockRepository extends JpaRepository<PinnedStock, UUID> {
+    List<PinnedStock> findByUser(User user);
 }

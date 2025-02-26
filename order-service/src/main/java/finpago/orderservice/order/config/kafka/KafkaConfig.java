@@ -45,12 +45,10 @@ public class KafkaConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*"); // 모든 패키지 허용
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false); // 헤더 정보 추가 안 함
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 
-        JsonDeserializer<OrderCreateReqEvent> deserializer = new JsonDeserializer<>(OrderCreateReqEvent.class, false);
-        deserializer.addTrustedPackages("*");
-
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
+        return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean

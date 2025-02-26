@@ -1,6 +1,6 @@
 package finpago.executionservice.execution.messaging.consumer;
 
-import finpago.executionservice.execution.messaging.events.TradeMatchingEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.executionservice.execution.service.ExecutionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +17,6 @@ public class ExecutionDLTConsumer {
     public void handleExecutionDLT(TradeMatchingEvent event) {
         log.error("체결 메시지 DLT 처리: {}", event);
 
-        executionService.handleSettlementFailure(event);
+        executionService.sendFailedTradeToMatching(event);
     }
 }

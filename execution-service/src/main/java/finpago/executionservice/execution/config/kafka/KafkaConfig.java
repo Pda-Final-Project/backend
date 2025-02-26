@@ -1,7 +1,7 @@
 package finpago.executionservice.execution.config.kafka;
 
-import finpago.executionservice.execution.messaging.events.OrderCreateReqEvent;
-import finpago.executionservice.execution.messaging.events.TradeMatchingEvent;
+import finpago.common.global.messaging.OrderCreateReqEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -24,14 +24,14 @@ public class KafkaConfig {
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
     private static final String GROUP_ID = "execution-service-group";
 
-    //OrderCreateReqEvent ProducerFactory
+    // OrderCreateReqEvent ProducerFactory
     @Bean
     public ProducerFactory<String, OrderCreateReqEvent> orderProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, true);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
         return new DefaultKafkaProducerFactory<>(props);
     }
 
@@ -65,11 +65,11 @@ public class KafkaConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.executionservice.execution.messaging.events.TradeMatchingEvent");
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.TradeMatchingEvent");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
-
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> tradeKafkaListenerContainerFactory() {
@@ -77,5 +77,4 @@ public class KafkaConfig {
         factory.setConsumerFactory(tradeConsumerFactory());
         return factory;
     }
-
 }

@@ -1,6 +1,6 @@
 package finpago.settlementservice.settlement.service;
 
-import finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.settlementservice.settlement.messaging.producer.SettlementProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ public class SettlementService {
     private final SettlementProducer settlementProducer;
 
     private static final long DEFAULT_BALANCE = 1_000_000L; // 기본 예수금 (1,000,000)
-    private static final long DEFAULT_STOCKS = 100L; // 기본 보유 주식 수량 (100주)
+    private static final long DEFAULT_STOCKS = 1000000; // 기본 보유 주식 수량 (100주)
     private static final float DEFAULT_EXCHANGE_RATE = 1.0f; // 기본 환율 (1.0)
 
     @Transactional

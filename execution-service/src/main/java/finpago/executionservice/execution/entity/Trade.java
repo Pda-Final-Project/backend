@@ -1,7 +1,7 @@
 package finpago.executionservice.execution.entity;
 
 import finpago.common.global.common.BaseEntity;
-import finpago.executionservice.execution.TradeStatus;
+import finpago.common.global.enums.TradeStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -54,3 +54,4 @@ public class Trade extends BaseEntity {
     private TradeStatus tradeStatus; // 체결 상태 (SUCCESS / FAILED)
 
 }
+

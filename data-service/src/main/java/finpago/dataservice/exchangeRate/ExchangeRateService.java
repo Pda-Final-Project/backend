@@ -7,8 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 
-import java.time.Duration;
-
 @Service
 public class ExchangeRateService {
 
@@ -16,16 +14,15 @@ public class ExchangeRateService {
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final String URL = "https://m.search.naver.com/p/csearch/content/qapirender.nhn"
-            + "?key=calculator&pkid=141&q=환율&where=m&u1=keb"
-            + "&u6=standardUnit&u7=0&u3=USD&u4=KRW&u8=down&u2=1";
-
     public ExchangeRateService(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
     public Double getExchangeRate(String[] tickers) {
         try {
+            String URL = "https://m.search.naver.com/p/csearch/content/qapirender.nhn"
+                    + "?key=calculator&pkid=141&q=환율&where=m&u1=keb"
+                    + "&u6=standardUnit&u7=0&u3=USD&u4=KRW&u8=down&u2=1";
             ResponseEntity<String> response = restTemplate.getForEntity(URL, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());

@@ -4,6 +4,8 @@ import lombok.Getter;
 
 @Getter
 public class OrderCreateReqDto {
+    private Long orderId;
+    private Long userId;
     private Long offerQuantity;
     private Long offerPrice;
     private String stockTicker;

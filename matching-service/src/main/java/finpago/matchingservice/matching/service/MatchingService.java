@@ -4,6 +4,7 @@ package finpago.matchingservice.matching.service;
 import finpago.matchingservice.matching.messaging.producer.MatchingProducer;
 import finpago.matchingservice.matching.messaging.events.OrderCreateReqEvent;
 import finpago.matchingservice.matching.messaging.events.TradeMatchingEvent;
+import finpago.matchingservice.order.OrderType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,19 +33,26 @@ public class MatchingService {
 
 
     public void processOrder(OrderCreateReqEvent order) {
-        if (order.getOfferType().equals("BUY")) {
+        System.out.println("Processing order: " + order);
+        if (order.getOfferType() == OrderType.BUY) {
             buyOrders.offer(order);
+            System.out.println("Buy order: " + order);
         } else {
             sellOrders.offer(order);
+            System.out.println("Sell order: " + order);
         }
         processMatching();
     }
 
     private void processMatching() {
+        System.out.println("매칭시작");
+        System.out.println("buyOrders: " + buyOrders);
+        System.out.println("sellOrders: " + sellOrders);
+
         while (!buyOrders.isEmpty() && !sellOrders.isEmpty()) {
             OrderCreateReqEvent buyOrder = buyOrders.poll();
             OrderCreateReqEvent sellOrder = sellOrders.poll();
-
+            System.out.println("매칭조건확인시작");
             // 매칭 조건 확인: 매수 가격 >= 매도 가격
             if (buyOrder.getOfferPrice() >= sellOrder.getOfferPrice()) {
                 long matchedQuantity = Math.min(buyOrder.getOfferQuantity(), sellOrder.getOfferQuantity());
@@ -53,6 +61,7 @@ public class MatchingService {
                 buyOrder.setOfferQuantity(buyOrder.getOfferQuantity() - matchedQuantity);
                 sellOrder.setOfferQuantity(sellOrder.getOfferQuantity() - matchedQuantity);
 
+                System.out.println("체결모듈로 전달한 객체 생성시작");
                 // 체결된 주문을 Execution 모듈로 전달
                 TradeMatchingEvent tradeEvent = new TradeMatchingEvent(
                         UUID.randomUUID(),               // 새로운 체결 ID
@@ -67,9 +76,6 @@ public class MatchingService {
                 );
 
                 // Kafka Producer를 통해 Execution 모듈로 전송
-                matchingProducer.sendTradeToExecution(tradeEvent);
-
-
                 matchingProducer.sendTradeToExecution(tradeEvent);
 
                 // 부분 체결된 주문을 다시 정렬하여 삽입

@@ -22,17 +22,37 @@ configurations {
 repositories {
     mavenCentral()
 }
+ext {
+    set('springCloudVersion', "2024.0.0")
+}
 
 dependencies {
+    //common
+    implementation project(':common')
+    //eureka
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    //redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    // FeignClient
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
     implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+//
 //tasks.named('test') {
 //    useJUnitPlatform()
 //}

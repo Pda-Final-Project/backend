@@ -20,13 +20,7 @@ spring:
         - id: user-service
           uri: http://localhost:19092/
           predicates:
-            - Path=/v1/api/users/**
-            - Path=/v1/api/auth/**
-            - Path=/v1/api/stocks/**
-            - Path=/v1/api/likes/**
-#          filters:
-#            - RewritePath=/(?<segment>.*), /$\{segment}
-
+            - Path=/v1/api/users/**, /v1/api/auth/**, /v1/api/stocks/**, /v1/api/likes/**
 
         - id: order-service
           uri: lb://order-service
@@ -43,8 +37,7 @@ spring:
         - id: filling-service
           uri: lb://filling-service
           predicates:
-            - Path=/v1/api/filling/**
-            - Path=/v1/api/news/**
+            - Path=/v1/api/filling/**, Path=/v1/api/news/**
 
       discovery:
         locator:

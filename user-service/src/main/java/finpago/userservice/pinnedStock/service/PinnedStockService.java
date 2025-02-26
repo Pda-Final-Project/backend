@@ -27,7 +27,8 @@ public class PinnedStockService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 유저입니다."));
 
-        Optional<PinnedStock> existingPinnedStock = pinnedStockRepository.findByUserIdAndStockTicker(userId, stockTicker);
+        Optional<PinnedStock> existingPinnedStock = pinnedStockRepository.findByUserAndStockTicker(user, stockTicker);
+
         if (existingPinnedStock.isPresent()) {
             throw new IllegalArgumentException("이미 등록된 관심 종목입니다.");
         }

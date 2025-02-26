@@ -17,7 +17,7 @@ public class ExecutionConsumer {
     @KafkaListener(topics = "trade-matching-topic", groupId = "execution-service-group",
             containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleTradeMatching(TradeMatchingEvent event) {
-        log.info("체결 요청 수신: {}", event);
+        log.info("매칭 건 체결 모듈에서 수신: {}", event);
         executionService.processTrade(event);
     }
 

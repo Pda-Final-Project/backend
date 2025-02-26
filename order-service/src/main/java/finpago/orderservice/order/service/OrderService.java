@@ -1,5 +1,7 @@
 package finpago.orderservice.order.service;
 
+import finpago.common.global.exception.error.InsufficientBalanceException;
+import finpago.common.global.exception.error.InsufficientStockException;
 import finpago.orderservice.order.dto.OrderCreateReqDto;
 import finpago.orderservice.order.entity.Order;
 import finpago.orderservice.order.enums.OrderStatus;
@@ -23,26 +25,23 @@ public class OrderService {
     private final OrderProducer orderProducer;
     private final StringRedisTemplate redisTemplate;
 
+    private static final long DEFAULT_BALANCE = 1000000; // 기본 예수금 (1,000,000)
+    private static final long DEFAULT_STOCKS = 100L; // 기본 보유 주식 수량 (100주)
+
     @Transactional
     public UUID createOrder(Long userId, OrderCreateReqDto orderCreateReqDto) {
-        String balanceKey = "user:" + userId + ":balance";
-        String stockKey = "user:" + userId + ":stocks:" + orderCreateReqDto.getStockTicker();
+        OrderType orderType = OrderType.valueOf(orderCreateReqDto.getOfferType());
 
-        Long availableBalance = getCachedBalance(userId, balanceKey);
-        Long availableStocks = getCachedStocks(userId, stockKey, orderCreateReqDto.getStockTicker());
-
-        if (orderCreateReqDto.getOfferType().equals("BUY") && (availableBalance == null || availableBalance < orderCreateReqDto.getOfferPrice())) {
-            throw new IllegalStateException("사용 가능 예수금 부족");
-        }
-
-        if (orderCreateReqDto.getOfferType().equals("SELL") && (availableStocks == null || availableStocks < orderCreateReqDto.getOfferQuantity())) {
-            throw new IllegalStateException("보유 주식 부족");
+        if (orderType == OrderType.BUY) {
+            validateBalance(orderCreateReqDto);
+        } else if (orderType == OrderType.SELL) {
+            validateStocks(orderCreateReqDto);
         }
 
         // 검증 통과 후 주문 저장 & Kafka 메시지 발행
         Order order = Order.builder()
                 .offerStatus(OrderStatus.CREATED)
-                .offerType(OrderType.valueOf(orderCreateReqDto.getOfferType()))
+                .offerType(orderType)
                 .offerQuantity(orderCreateReqDto.getOfferQuantity())
                 .offerPrice(orderCreateReqDto.getOfferPrice())
                 .userId(userId)
@@ -68,26 +67,40 @@ public class OrderService {
     }
 
     /**
-     * Redis에서 사용 가능 예수금을 조회하는 메서드
+     * BUY 주문 시 예수금 검증
      */
-    private Long getCachedBalance(Long userId, String balanceKey) {
-        String balanceStr = redisTemplate.opsForValue().get(balanceKey);
-        if (balanceStr != null) {
-            return Long.parseLong(balanceStr);
+    private void validateBalance(OrderCreateReqDto orderCreateReqDto) {
+        Long buyerAvailableBalance = getCachedBalance(orderCreateReqDto.getUserId());
+
+        if (buyerAvailableBalance < orderCreateReqDto.getOfferPrice()) {
+            log.error("예수금 부족 - User ID: {}, 필요 금액: {}, 보유 금액: {}",
+                    orderCreateReqDto.getUserId(), orderCreateReqDto.getOfferPrice(), buyerAvailableBalance);
+            throw new InsufficientBalanceException("예수금이 부족합니다");
         }
-        log.warn("Redis에 예수금 데이터 없음, 정산 모듈에서 조회 필요!");
-        return null;
     }
 
     /**
-     * Redis에서 보유 주식 정보를 조회하는 메서드
+     * SELL 주문 시 보유 주식 검증
      */
-    private Long getCachedStocks(Long userId, String stockKey, String stockTicker) {
-        String stockStr = redisTemplate.opsForValue().get(stockKey);
-        if (stockStr != null) {
-            return Long.parseLong(stockStr);
+    private void validateStocks(OrderCreateReqDto orderCreateReqDto) {
+        Long sellerAvailableStocks = getCachedStocks(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker());
+
+        if (sellerAvailableStocks < orderCreateReqDto.getOfferQuantity()) {
+            log.error("보유 주식 부족 - User ID: {}, 필요 주식: {}, 보유 주식: {}",
+                    orderCreateReqDto.getUserId(), orderCreateReqDto.getOfferQuantity(), sellerAvailableStocks);
+            throw new InsufficientStockException("보유주식이 부족합니다");
         }
-        log.warn("Redis에 보유 주식 데이터 없음, 체결 모듈에서 조회 필요!");
-        return null;
+    }
+
+    private Long getCachedBalance(Long userId) {
+        String balanceKey = "user:" + userId + ":balance";
+        String balanceStr = redisTemplate.opsForValue().get(balanceKey);
+        return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE;
+    }
+
+    private Long getCachedStocks(Long userId, String stockTicker) {
+        String stockKey = "user:" + userId + ":stocks:" + stockTicker;
+        String stockStr = redisTemplate.opsForValue().get(stockKey);
+        return stockStr != null ? Long.parseLong(stockStr) : DEFAULT_STOCKS;
     }
 }

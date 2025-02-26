@@ -1,7 +1,6 @@
 package finpago.settlementservice.settlement.config.kafka;
 
-import finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent;
-import finpago.orderservice.order.messaging.events.OrderCreateReqEvent;
+import finpago.common.global.messaging.TradeMatchingEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -48,8 +47,9 @@ public class KafkaConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.settlementservice.settlement.messaging.events.TradeMatchingEvent");
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.TradeMatchingEvent");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }

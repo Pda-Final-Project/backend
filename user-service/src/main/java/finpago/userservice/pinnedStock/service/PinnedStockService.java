@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +40,7 @@ public class PinnedStockService {
         }
 
         PinnedStock pinnedStock = PinnedStock.builder()
+                .pinnedStockId(UUID.randomUUID())
                 .user(user)
                 .stockTicker(stockTicker)
                 .build();

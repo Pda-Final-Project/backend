@@ -21,6 +21,7 @@ public class TradingSettlementBatchService {
     private final StringRedisTemplate redisTemplate;
     private final AccountRepository accountRepository;
     private final HoldingsRepository holdingsRepository;
+    private static final long EXPIRATION_DAYS = 30;
 
     /**
      * 매일 00:00 실행 → 2일 후(D+2)에 업데이트할 데이터 저장 (예약)
@@ -88,9 +89,14 @@ public class TradingSettlementBatchService {
             String balanceStr = redisTemplate.opsForValue().get(balanceKey);
 
             if (balanceStr != null) {
-                Long newBalance = Long.parseLong(balanceStr);
-                accountRepository.updateAccountWithholding(Long.parseLong(userId), newBalance);
+                String newBalance = balanceStr;
+                accountRepository.updateAccountWithholding(Long.parseLong(userId), Long.parseLong(newBalance));
+
                 log.info("사용자 {} 예수금 DB 업데이트 (D+2 반영): {}", userId, newBalance);
+                String userBalanceKey = "user:" + userId + ":balance";
+
+                redisTemplate.opsForValue().set(userBalanceKey, newBalance, EXPIRATION_DAYS, TimeUnit.DAYS);
+                log.info("Redis 사용자 {} 실제 예수금 업데이트: {}", userId, newBalance);
             }
 
             Set<String> stockKeys = redisTemplate.keys(pendingUpdateKey + ":stocks:" + userId + ":*");
@@ -106,13 +112,17 @@ public class TradingSettlementBatchService {
 
                         holdingsRepository.updateHoldings(Long.parseLong(userId), stockTicker, newQuantity, totalPrice);
                         log.info("사용자 {}의 {} 보유량 DB 업데이트 (D+2 반영): {}주 (총 {}원)", userId, stockTicker, newQuantity, totalPrice);
+
+                        String userStockKey = "user:" + userId + ":holdings:" + stockTicker;
+                        redisTemplate.opsForValue().set(userStockKey, quantityStr, EXPIRATION_DAYS, TimeUnit.DAYS);
+                        log.info("Redis 사용자 {} 실제 보유 주식 업데이트: {} - {}주", userId, stockTicker, newQuantity);
                     }
                 }
             }
         }
 
-        // D-2 데이터 삭제 (불필요한 데이터 정리)
-        redisTemplate.delete(balanceKeys);
+//        // D-2 데이터 삭제 (불필요한 데이터 정리)
+//        redisTemplate.delete(balanceKeys);
         log.info("[D+2 반영 배치 완료]");
     }
 

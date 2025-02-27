@@ -81,9 +81,9 @@ public class OrderService {
         }
 
         updateAvailableBalance(orderCreateReqDto.getUserId(), -requiredAmount);
-        updateBalance(orderCreateReqDto.getUserId(), -requiredAmount);
+//        updateBalance(orderCreateReqDto.getUserId(), -requiredAmount);
         updateAvailableStocks(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
-        updateHoldings(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
+//        updateHoldings(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
     }
 
     /**
@@ -97,7 +97,7 @@ public class OrderService {
         }
 
         updateAvailableStocks(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
-        updateHoldings(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
+//        updateHoldings(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
         updateAvailableBalance(orderCreateReqDto.getUserId(), orderCreateReqDto.getOfferPrice() * orderCreateReqDto.getOfferQuantity());
     }
 

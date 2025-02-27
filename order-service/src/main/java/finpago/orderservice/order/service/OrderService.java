@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -25,17 +26,17 @@ public class OrderService {
     private final OrderProducer orderProducer;
     private final StringRedisTemplate redisTemplate;
 
-    private static final long DEFAULT_BALANCE = 1000000; // 기본 예수금 (1,000,000)
-    private static final long DEFAULT_STOCKS = 100L; // 기본 보유 주식 수량 (100주)
+    private static final long DEFAULT_BALANCE = 1_000_000L; // 기본 예수금
+    private static final long DEFAULT_STOCKS = 100L; // 기본 보유 주식 수량
 
     @Transactional
     public UUID createOrder(Long userId, OrderCreateReqDto orderCreateReqDto) {
         OrderType orderType = OrderType.valueOf(orderCreateReqDto.getOfferType());
 
         if (orderType == OrderType.BUY) {
-            validateBalance(orderCreateReqDto);
+            validateAndDeductAvailableBalance(orderCreateReqDto);
         } else if (orderType == OrderType.SELL) {
-            validateStocks(orderCreateReqDto);
+            validateAndDeductAvailableStocks(orderCreateReqDto);
         }
 
         // 검증 통과 후 주문 저장 & Kafka 메시지 발행
@@ -47,8 +48,6 @@ public class OrderService {
                 .userId(userId)
                 .stockTicker(orderCreateReqDto.getStockTicker())
                 .build();
-
-        System.out.println(order);
 
         orderRepository.save(order);
 
@@ -69,40 +68,74 @@ public class OrderService {
     }
 
     /**
-     * BUY 주문 시 예수금 검증
+     * 매수 주문 시 사용 가능 예수금 검증 후 차감
      */
-    private void validateBalance(OrderCreateReqDto orderCreateReqDto) {
-        Long buyerAvailableBalance = getCachedBalance(orderCreateReqDto.getUserId());
+    private void validateAndDeductAvailableBalance(OrderCreateReqDto orderCreateReqDto) {
+        Long availableBalance = getCachedAvailableBalance(orderCreateReqDto.getUserId());
+        Long requiredAmount = orderCreateReqDto.getOfferPrice() * orderCreateReqDto.getOfferQuantity();
 
-        if (buyerAvailableBalance < orderCreateReqDto.getOfferPrice()) {
+        if (availableBalance < requiredAmount) {
             log.error("예수금 부족 - User ID: {}, 필요 금액: {}, 보유 금액: {}",
-                    orderCreateReqDto.getUserId(), orderCreateReqDto.getOfferPrice(), buyerAvailableBalance);
+                    orderCreateReqDto.getUserId(), requiredAmount, availableBalance);
             throw new InsufficientBalanceException("예수금이 부족합니다");
         }
+
+        // 사용 가능 예수금 차감
+        updateAvailableBalance(orderCreateReqDto.getUserId(), -requiredAmount);
+        log.info("매수 주문 - 사용 가능 예수금 차감: 사용자 {}, 차감 금액 {}", orderCreateReqDto.getUserId(), requiredAmount);
     }
 
     /**
-     * SELL 주문 시 보유 주식 검증
+     * 매도 주문 시 사용 가능 주식 검증 후 차감
      */
-    private void validateStocks(OrderCreateReqDto orderCreateReqDto) {
-        Long sellerAvailableStocks = getCachedStocks(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker());
+    private void validateAndDeductAvailableStocks(OrderCreateReqDto orderCreateReqDto) {
+        Long availableStocks = getCachedAvailableStocks(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker());
 
-        if (sellerAvailableStocks < orderCreateReqDto.getOfferQuantity()) {
+        if (availableStocks < orderCreateReqDto.getOfferQuantity()) {
             log.error("보유 주식 부족 - User ID: {}, 필요 주식: {}, 보유 주식: {}",
-                    orderCreateReqDto.getUserId(), orderCreateReqDto.getOfferQuantity(), sellerAvailableStocks);
-            throw new InsufficientStockException("보유주식이 부족합니다");
+                    orderCreateReqDto.getUserId(), orderCreateReqDto.getOfferQuantity(), availableStocks);
+            throw new InsufficientStockException("보유 주식이 부족합니다");
         }
+
+        // 사용 가능 주식 차감
+        updateAvailableStocks(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
+        log.info("매도 주문 - 사용 가능 주식 차감: 사용자 {}, 종목 {}, 차감 수량 {}",
+                orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
     }
 
-    private Long getCachedBalance(Long userId) {
-        String balanceKey = "user:" + userId + ":balance";
+    /**
+     * 사용 가능 예수금 조회
+     */
+    private Long getCachedAvailableBalance(Long userId) {
+        String balanceKey = "user:" + userId + ":available_balance";
         String balanceStr = redisTemplate.opsForValue().get(balanceKey);
         return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE;
     }
 
-    private Long getCachedStocks(Long userId, String stockTicker) {
-        String stockKey = "user:" + userId + ":stocks:" + stockTicker;
+    /**
+     * 사용 가능 주식 조회
+     */
+    private Long getCachedAvailableStocks(Long userId, String stockTicker) {
+        String stockKey = "user:" + userId + ":available_stocks:" + stockTicker;
         String stockStr = redisTemplate.opsForValue().get(stockKey);
         return stockStr != null ? Long.parseLong(stockStr) : DEFAULT_STOCKS;
+    }
+
+    /**
+     * 사용 가능 예수금 업데이트
+     */
+    private void updateAvailableBalance(Long userId, Long amount) {
+        String balanceKey = "user:" + userId + ":available_balance";
+        Long currentBalance = getCachedAvailableBalance(userId);
+        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 5, TimeUnit.MINUTES);
+    }
+
+    /**
+     * 사용 가능 주식 업데이트
+     */
+    private void updateAvailableStocks(Long userId, String stockTicker, Long quantity) {
+        String stockKey = "user:" + userId + ":available_stocks:" + stockTicker;
+        Long currentStocks = getCachedAvailableStocks(userId, stockTicker);
+        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 5, TimeUnit.MINUTES);
     }
 }

@@ -20,8 +20,8 @@ public class Holdings extends BaseEntity {
     @Column(name = "stock_ticker", length = 10, nullable = false)
     private String stockTicker;
 
-    @Column(name = "user_id", length = 64, nullable = false)
-    private String userId;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     //보유 종목 수량
     @Column(name = "holding_quantity")

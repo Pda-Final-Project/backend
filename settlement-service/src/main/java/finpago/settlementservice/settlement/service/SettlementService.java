@@ -124,7 +124,7 @@ public class SettlementService {
     }
 
     /**
-     * 실제 예수금 업데이트 (배치)
+     * 실제 예수금 업데이트
      */
     private void updateBalance(Long userId, Long amount) {
         String balanceKey = "user:" + userId + ":balance";

@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Table(name = "pinned_stock")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,7 +16,7 @@ import java.util.UUID;
 public class PinnedStock {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "BINARY(16)")
     private UUID pinnedStockId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -25,9 +26,18 @@ public class PinnedStock {
     @Column(nullable = false, length = 10)
     private String stockTicker;
 
+    @Builder.Default
     @Column(nullable = false, updatable = false)
     private LocalDateTime creationTimestamp = LocalDateTime.now();
 
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime updateTimestamp = LocalDateTime.now();
+
+    @PrePersist
+    public void generateUUID() {
+        if (pinnedStockId == null) {
+            pinnedStockId = UUID.randomUUID();
+        }
+    }
 }

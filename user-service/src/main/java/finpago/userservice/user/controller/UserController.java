@@ -39,7 +39,6 @@ public class UserController {
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginReqDto loginReqDto) {
-        System.out.println("dd");
         String token = userService.login(loginReqDto);
         return ResponseEntity
                 .status(HttpStatus.OK)

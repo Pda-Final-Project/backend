@@ -26,7 +26,7 @@ public class RedisDummyDataInitializer {
         log.info("[Redis 초기 더미 데이터 삽입 시작]");
 
         // D+2 날짜 계산
-        String executionDate = LocalDate.now().plusDays(2).toString();
+        String executionDate = LocalDate.now().toString();
 
         // 사용자 예수금 더미 데이터 (배치 반영을 위한 batch_balance 사용)
         String balanceKey1 = "pending_update:" + executionDate + ":batch_balance:9";

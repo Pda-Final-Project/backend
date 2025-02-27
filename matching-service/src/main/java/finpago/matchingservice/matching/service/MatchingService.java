@@ -71,6 +71,8 @@ public class MatchingService {
 
             // 매칭 조건 확인: 매수 가격 >= 매도 가격
             if (buyOrder.getOfferPrice() >= sellOrder.getOfferPrice()) {
+                Long buyerOrderQuentity=buyOrder.getOfferQuantity();
+                Long sellerOrderQuentity=sellOrder.getOfferQuantity();
                 long matchedQuantity = Math.min(buyOrder.getOfferQuantity(), sellOrder.getOfferQuantity());
 
                 // 부분 체결 발생
@@ -87,7 +89,9 @@ public class MatchingService {
                         buyOrder.getStockTicker(),
                         matchedQuantity,
                         buyOrder.getOfferPrice(),
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        buyerOrderQuentity, // 매수자가 원래 주문한 수량
+                        sellerOrderQuentity  // 매도자가 원래 주문한 수량
                 );
 
                 matchingProducer.sendTradeToExecution(tradeEvent);

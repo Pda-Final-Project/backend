@@ -16,8 +16,10 @@ public class TradeMatchingEvent {
     private Long buyerUserId;       // 매수자 ID
     private Long sellerUserId;      // 매도자 ID
     private String stockTicker; // 주식 티커
-    private long tradeQuantity; // 체결 수량
-    private long tradePrice;    // 체결 가격
+    private Long tradeQuantity; // 체결 수량
+    private Long tradePrice;    // 체결 가격
     private LocalDateTime tradeTimestamp; // 체결 시각
+    private Long buyerOrderQuentity; //매도자가 주문넣엇던 수향
+    private Long sellerOrderQuentity; //매수자가 주문넣엇던 수량
 }
 

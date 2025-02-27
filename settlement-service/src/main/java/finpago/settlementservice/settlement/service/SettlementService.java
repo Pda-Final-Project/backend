@@ -31,16 +31,10 @@ public class SettlementService {
         // Redis에서 환율 조회 (없을 경우 기본값 적용)
         Float exchangeRate = getExchangeRate(event.getStockTicker());
 
-        // 매수자(BUY) 처리
-        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity()); // 실제 예수금 감소
-        updateAvailableStocks(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity()); // 사용 가능 주식 증가
-        updateHoldings(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity()); // 보유 주식 증가 (배치)
+        //매수자는 처리할거없음 주문 모듈에서 다 처리함
 
         // 매도자(SELL) 처리
-        updateAvailableBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity()); // 사용 가능 예수금 증가
         updateBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity()); // 실제 예수금 증가 (배치)
-        updateAvailableStocks(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity()); // 사용 가능 주식 감소
-        updateHoldings(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity()); // 보유 주식 감소 (즉시 반영)
 
         // 환차손익 저장
         updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate);
@@ -103,25 +97,6 @@ public class SettlementService {
         return exchangeRateStr != null ? Float.parseFloat(exchangeRateStr) : DEFAULT_EXCHANGE_RATE;
     }
 
-
-    /**
-     * 사용 가능 예수금 업데이트
-     */
-    private void updateAvailableBalance(Long userId, Long amount) {
-        String balanceKey = "user:" + userId + ":available_balance";
-        Long currentBalance = getCachedAvailableBalance(userId);
-        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 30, TimeUnit.DAYS);
-    }
-
-    /**
-     * 사용 가능 주식 업데이트
-     */
-    private void updateAvailableStocks(Long userId, String stockTicker, Long quantity) {
-        String stockKey = "user:" + userId + ":available_stocks:" + stockTicker;
-        Long currentStocks = getCachedAvailableStocks(userId, stockTicker);
-        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 30, TimeUnit.DAYS);
-    }
-
     /**
      * 실제 예수금 업데이트 (배치)
      */
@@ -130,16 +105,6 @@ public class SettlementService {
         Long currentBalance = getCachedAvailableBalance(userId);
         redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 30, TimeUnit.DAYS);
     }
-
-    /**
-     * 보유 주식 업데이트 (배치)
-     */
-    private void updateHoldings(Long userId, String stockTicker, Long quantity) {
-        String stockKey = "user:" + userId + ":holdings:" + stockTicker;
-        Long currentStocks = getCachedAvailableStocks(userId, stockTicker);
-        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 30, TimeUnit.DAYS);
-    }
-
 
     /**
      * 환차손익 계산을 위해 체결 당시 환율 및 수량을 Redis에 저장

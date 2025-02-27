@@ -25,9 +25,11 @@ public class PinnedStock {
     @Column(nullable = false, length = 10)
     private String stockTicker;
 
+    @Builder.Default
     @Column(nullable = false, updatable = false)
     private LocalDateTime creationTimestamp = LocalDateTime.now();
 
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime updateTimestamp = LocalDateTime.now();
 }

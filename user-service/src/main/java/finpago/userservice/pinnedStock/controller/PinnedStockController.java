@@ -60,4 +60,28 @@ public class PinnedStockController {
         ApiResponse<List<PinnedStockResDto>> pinnedStocksResponse = pinnedStockService.getPinnedStocks(userId);
         return ResponseEntity.ok(pinnedStocksResponse);
     }
+
+    /**
+     * 관심 종목 삭제
+     */
+    @DeleteMapping("/like/{stockTicker}")
+    public ResponseEntity<ApiResponse<String>> deletePinnedStock(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String stockTicker
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.fail(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰"));
+        }
+
+        Long userId = userDetails.getUser().getUserId();
+        boolean deleted = pinnedStockService.deletePinnedStock(userId, stockTicker);
+
+        if (deleted) {
+            return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "관심 종목 삭제 완료", ""));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.fail(HttpStatus.NOT_FOUND, "해당 종목이 존재하지 않습니다."));
+        }
+    }
 }

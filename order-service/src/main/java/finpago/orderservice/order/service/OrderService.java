@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,7 @@ public class OrderService {
 
     private static final long DEFAULT_BALANCE = 1_000_000L; // 기본 예수금
     private static final long DEFAULT_STOCKS = 100L; // 기본 보유 주식 수량
+    private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
     @Transactional
     public UUID createOrder(Long userId, OrderCreateReqDto orderCreateReqDto) {
@@ -39,7 +42,6 @@ public class OrderService {
             validateAndDeductAvailableStocks(orderCreateReqDto);
         }
 
-        // 검증 통과 후 주문 저장 & Kafka 메시지 발행
         Order order = Order.builder()
                 .offerStatus(OrderStatus.CREATED)
                 .offerType(orderType)
@@ -63,9 +65,9 @@ public class OrderService {
         );
 
         orderProducer.sendOrder(event);
-
         return order.getOfferNumber();
     }
+
 
     /**
      * 매수 주문 시 사용 가능 예수금 검증 후 차감
@@ -75,14 +77,13 @@ public class OrderService {
         Long requiredAmount = orderCreateReqDto.getOfferPrice() * orderCreateReqDto.getOfferQuantity();
 
         if (availableBalance < requiredAmount) {
-            log.error("예수금 부족 - User ID: {}, 필요 금액: {}, 보유 금액: {}",
-                    orderCreateReqDto.getUserId(), requiredAmount, availableBalance);
             throw new InsufficientBalanceException("예수금이 부족합니다");
         }
 
-        // 사용 가능 예수금 차감
         updateAvailableBalance(orderCreateReqDto.getUserId(), -requiredAmount);
-        log.info("매수 주문 - 사용 가능 예수금 차감: 사용자 {}, 차감 금액 {}", orderCreateReqDto.getUserId(), requiredAmount);
+//        updateBalance(orderCreateReqDto.getUserId(), -requiredAmount);
+        updateAvailableStocks(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
+//        updateHoldings(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
     }
 
     /**
@@ -92,50 +93,89 @@ public class OrderService {
         Long availableStocks = getCachedAvailableStocks(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker());
 
         if (availableStocks < orderCreateReqDto.getOfferQuantity()) {
-            log.error("보유 주식 부족 - User ID: {}, 필요 주식: {}, 보유 주식: {}",
-                    orderCreateReqDto.getUserId(), orderCreateReqDto.getOfferQuantity(), availableStocks);
             throw new InsufficientStockException("보유 주식이 부족합니다");
         }
 
-        // 사용 가능 주식 차감
         updateAvailableStocks(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
-        log.info("매도 주문 - 사용 가능 주식 차감: 사용자 {}, 종목 {}, 차감 수량 {}",
-                orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
+//        updateHoldings(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
+        updateAvailableBalance(orderCreateReqDto.getUserId(), orderCreateReqDto.getOfferPrice() * orderCreateReqDto.getOfferQuantity());
     }
 
-    /**
-     * 사용 가능 예수금 조회
-     */
     private Long getCachedAvailableBalance(Long userId) {
-        String balanceKey = "user:" + userId + ":available_balance";
-        String balanceStr = redisTemplate.opsForValue().get(balanceKey);
-        return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE;
+        String key = "user:" + userId + ":available_balance";
+        return redisTemplate.opsForValue().get(key) != null ? Long.parseLong(redisTemplate.opsForValue().get(key)) : DEFAULT_BALANCE;
     }
 
-    /**
-     * 사용 가능 주식 조회
-     */
     private Long getCachedAvailableStocks(Long userId, String stockTicker) {
-        String stockKey = "user:" + userId + ":available_stocks:" + stockTicker;
-        String stockStr = redisTemplate.opsForValue().get(stockKey);
-        return stockStr != null ? Long.parseLong(stockStr) : DEFAULT_STOCKS;
+        String key = "user:" + userId + ":available_stocks:" + stockTicker;
+        return redisTemplate.opsForValue().get(key) != null ? Long.parseLong(redisTemplate.opsForValue().get(key)) : DEFAULT_STOCKS;
     }
 
     /**
-     * 사용 가능 예수금 업데이트
+     * 사용 가능 예수금 업데이트 (30일 보관)
      */
     private void updateAvailableBalance(Long userId, Long amount) {
-        String balanceKey = "user:" + userId + ":available_balance";
-        Long currentBalance = getCachedAvailableBalance(userId);
-        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 5, TimeUnit.MINUTES);
+        String key = "user:" + userId + ":available_balance";
+        Long current = getCachedAvailableBalance(userId);
+        redisTemplate.opsForValue().set(key, String.valueOf(current + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
     }
 
     /**
-     * 사용 가능 주식 업데이트
+     * 실제 예수금 업데이트 (30일 보관)
+     */
+    private void updateBalance(Long userId, Long amount) {
+        String key = "user:" + userId + ":balance";
+        Long current = getCachedAvailableBalance(userId);
+        redisTemplate.opsForValue().set(key, String.valueOf(current + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
+    }
+
+    /**
+     * 사용 가능 주식 업데이트 (30일 보관)
      */
     private void updateAvailableStocks(Long userId, String stockTicker, Long quantity) {
-        String stockKey = "user:" + userId + ":available_stocks:" + stockTicker;
-        Long currentStocks = getCachedAvailableStocks(userId, stockTicker);
-        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 5, TimeUnit.MINUTES);
+        String key = "user:" + userId + ":available_stocks:" + stockTicker;
+        Long current = getCachedAvailableStocks(userId, stockTicker);
+        redisTemplate.opsForValue().set(key, String.valueOf(current + quantity), EXPIRATION_DAYS, TimeUnit.DAYS);
+    }
+
+    /**
+     * 보유 주식 업데이트 (30일 보관)
+     */
+    private void updateHoldings(Long userId, String stockTicker, Long quantity) {
+        String key = "user:" + userId + ":holdings:" + stockTicker;
+        Long current = getCachedAvailableStocks(userId, stockTicker);
+        redisTemplate.opsForValue().set(key, String.valueOf(current + quantity), EXPIRATION_DAYS, TimeUnit.DAYS);
+    }
+
+    @Transactional
+    public void retryUnmatchedOrder(OrderCreateReqEvent event) {
+        UUID orderId = event.getOfferNumber();
+        Optional<Order> existingOrder = orderRepository.findById(orderId);
+
+        Order order;
+        if (existingOrder.isPresent()) {
+            // 기존 주문이 있으면 상태만 PENDING으로 변경
+            order = existingOrder.get();
+            order.setOfferStatus(OrderStatus.PENDING);
+            log.info("기존 주문 PENDING 상태로 업데이트: {}", order);
+        } else {
+            // 주문이 존재하지 않으면 새로 저장
+            order = Order.builder()
+                    .offerNumber(orderId)
+                    .userId(event.getUserId())
+                    .offerType(event.getOfferType())
+                    .offerQuantity(event.getOfferQuantity())
+                    .offerPrice(event.getOfferPrice())
+                    .stockTicker(event.getStockTicker())
+                    .offerStatus(OrderStatus.PENDING) // PENDING 상태로 설정
+                    .build();
+            log.info("새로운 미체결 주문 저장: {}", order);
+        }
+
+        orderRepository.save(order);
+
+        // 다시 매칭 모듈로 전송
+        orderProducer.sendOrder(event);
+        log.info("미체결 주문을 매칭 모듈로 재전송 완료: {}", event);
     }
 }

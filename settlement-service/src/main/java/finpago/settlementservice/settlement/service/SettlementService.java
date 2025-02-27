@@ -22,6 +22,7 @@ public class SettlementService {
     private static final long DEFAULT_BALANCE = 1_000_000L; // 기본 예수금
     private static final long DEFAULT_STOCKS = 1000000; // 기본 보유 주식 수량
     private static final float DEFAULT_EXCHANGE_RATE = 1.0f; // 기본 환율 (1.0)
+    private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
     @Transactional
     public void processSettlement(TradeMatchingEvent event) {
@@ -31,16 +32,16 @@ public class SettlementService {
         // Redis에서 환율 조회 (없을 경우 기본값 적용)
         Float exchangeRate = getExchangeRate(event.getStockTicker());
 
-        // 매수자(BUY) 처리
-        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity()); // 실제 예수금 감소
-        updateAvailableStocks(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity()); // 사용 가능 주식 증가
+        //매수자
+        updateBatchBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
+        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());// 실제 예수금 감소
         updateHoldings(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity()); // 보유 주식 증가 (배치)
 
-        // 매도자(SELL) 처리
-        updateAvailableBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity()); // 사용 가능 예수금 증가
-        updateBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity()); // 실제 예수금 증가 (배치)
-        updateAvailableStocks(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity()); // 사용 가능 주식 감소
-        updateHoldings(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity()); // 보유 주식 감소 (즉시 반영)
+
+        // 매도자
+        updateBatchBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity());//배치용증가
+//        updateBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity()); //사용자에게 보여지는 출금가능 예수금은 그대로
+        updateHoldings(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity()); // 보유 주식 감소 (배치)
 
         // 환차손익 저장
         updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate);
@@ -110,7 +111,7 @@ public class SettlementService {
     private void updateAvailableBalance(Long userId, Long amount) {
         String balanceKey = "user:" + userId + ":available_balance";
         Long currentBalance = getCachedAvailableBalance(userId);
-        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 30, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
     }
 
     /**
@@ -119,7 +120,7 @@ public class SettlementService {
     private void updateAvailableStocks(Long userId, String stockTicker, Long quantity) {
         String stockKey = "user:" + userId + ":available_stocks:" + stockTicker;
         Long currentStocks = getCachedAvailableStocks(userId, stockTicker);
-        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 30, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), EXPIRATION_DAYS, TimeUnit.DAYS);
     }
 
     /**
@@ -128,7 +129,18 @@ public class SettlementService {
     private void updateBalance(Long userId, Long amount) {
         String balanceKey = "user:" + userId + ":balance";
         Long currentBalance = getCachedAvailableBalance(userId);
-        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), 30, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
+    }
+
+    /**
+     * 배치 계산용 예수금 업데이트 (D+2일 반영용)
+     * - 실제 balance 업데이트를 위한 중간 저장소 역할
+     * - 사용자가 직접 조회하는 출금 가능 예수금과는 별도로 관리됨
+     */
+    private void updateBatchBalance(Long userId, Long amount) {
+        String batchBalanceKey = "user:" + userId + ":batch_balance";
+        Long currentBalance = getCachedAvailableBalance(userId);
+        redisTemplate.opsForValue().set(batchBalanceKey, String.valueOf(currentBalance + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
     }
 
     /**
@@ -137,7 +149,7 @@ public class SettlementService {
     private void updateHoldings(Long userId, String stockTicker, Long quantity) {
         String stockKey = "user:" + userId + ":holdings:" + stockTicker;
         Long currentStocks = getCachedAvailableStocks(userId, stockTicker);
-        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), 30, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(stockKey, String.valueOf(currentStocks + quantity), EXPIRATION_DAYS, TimeUnit.DAYS);
     }
 
 

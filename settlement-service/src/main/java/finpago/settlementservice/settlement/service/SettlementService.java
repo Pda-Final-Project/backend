@@ -33,13 +33,15 @@ public class SettlementService {
         Float exchangeRate = getExchangeRate(event.getStockTicker());
 
         //매수자
-        updateBalance(event.getSellerUserId(), -event.getTradePrice() * event.getTradeQuantity());// 실제 예수금 감소
+        updateBatchBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
+        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());// 실제 예수금 감소
         updateHoldings(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity()); // 보유 주식 증가 (배치)
-        
+
+
         // 매도자
         updateBatchBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity());//배치용증가
 //        updateBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity()); //사용자에게 보여지는 출금가능 예수금은 그대로
-        updateHoldings(event.getBuyerUserId(), event.getStockTicker(), -event.getTradeQuantity()); // 보유 주식 감소 (배치)
+        updateHoldings(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity()); // 보유 주식 감소 (배치)
 
         // 환차손익 저장
         updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate);

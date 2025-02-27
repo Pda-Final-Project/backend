@@ -3,8 +3,10 @@ package finpago.orderservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.ComponentScan;
 
+@EnableDiscoveryClient
 @SpringBootApplication
 @ComponentScan(basePackages = {"finpago.common.global.exception", "finpago.orderservice"})
 public class OrderServiceApplication {

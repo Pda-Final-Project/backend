@@ -32,15 +32,14 @@ public class TradingSettlementBatchService {
         LocalDate executionDate = LocalDate.now().plusDays(2); // D+2 저장
         String pendingUpdateKey = "pending_update:" + executionDate;
 
-        Set<String> balanceKeys = redisTemplate.keys("user:*:balance");
+        Set<String> balanceKeys = redisTemplate.keys("user:*:batch_balance"); // 배치 계산용 예수금 사용
         if (balanceKeys == null || balanceKeys.isEmpty()) {
             log.warn("예약할 사용자 예수금 데이터 없음");
             return;
         }
 
         for (String balanceKey : balanceKeys) {
-
-            String userId = balanceKey.split(":")[1]; // user:{userId}:balance
+            String userId = balanceKey.split(":")[1]; // user:{userId}:batch_balance
             String balanceStr = redisTemplate.opsForValue().get(balanceKey);
 
             if (balanceStr != null) {

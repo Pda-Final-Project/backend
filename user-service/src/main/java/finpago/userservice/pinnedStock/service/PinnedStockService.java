@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,14 +34,13 @@ public class PinnedStockService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 유저입니다."));
 
-        // 등록된 관심 종목인지 확인
         Optional<PinnedStock> existingPinnedStock = pinnedStockRepository.findByUserAndStockTicker(user, stockTicker);
         if (existingPinnedStock.isPresent()) {
             return ApiResponse.fail(HttpStatus.CONFLICT, "이미 등록된 관심 종목입니다.");
         }
 
-        // 관심 종목 등록
         PinnedStock pinnedStock = PinnedStock.builder()
+                .pinnedStockId(UUID.randomUUID())
                 .user(user)
                 .stockTicker(stockTicker)
                 .build();
@@ -57,10 +57,8 @@ public class PinnedStockService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 유저입니다."));
 
-        // 관심 종목 리스트
         List<PinnedStock> pinnedStocks = pinnedStockRepository.findByUser(user);
 
-        // Redis에서 티커 가져오기
         List<PinnedStockResDto> pinnedStockList = pinnedStocks.stream()
                 .map(stock -> {
                     String ticker = stock.getStockTicker();
@@ -80,5 +78,23 @@ public class PinnedStockService {
                 .collect(Collectors.toList());
 
         return ApiResponse.success(HttpStatus.OK, "관심 종목 조회 완료", pinnedStockList);
+    }
+
+    /**
+     * 관심 종목 삭제
+     */
+    @Transactional
+    public boolean deletePinnedStock(Long userId, String stockTicker) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 유저입니다."));
+
+        Optional<PinnedStock> pinnedStock = pinnedStockRepository.findByUserAndStockTicker(user, stockTicker);
+
+        if (pinnedStock.isPresent()) {
+            pinnedStockRepository.delete(pinnedStock.get());
+            return true;
+        } else {
+            return false;
+        }
     }
 }

@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.springframework.transaction.annotation.Transactional;
@@ -143,5 +145,37 @@ public class OrderService {
         String key = "user:" + userId + ":holdings:" + stockTicker;
         Long current = getCachedAvailableStocks(userId, stockTicker);
         redisTemplate.opsForValue().set(key, String.valueOf(current + quantity), EXPIRATION_DAYS, TimeUnit.DAYS);
+    }
+
+    @Transactional
+    public void retryUnmatchedOrder(OrderCreateReqEvent event) {
+        UUID orderId = event.getOfferNumber();
+        Optional<Order> existingOrder = orderRepository.findById(orderId);
+
+        Order order;
+        if (existingOrder.isPresent()) {
+            // 기존 주문이 있으면 상태만 PENDING으로 변경
+            order = existingOrder.get();
+            order.setOfferStatus(OrderStatus.PENDING);
+            log.info("기존 주문 PENDING 상태로 업데이트: {}", order);
+        } else {
+            // 주문이 존재하지 않으면 새로 저장
+            order = Order.builder()
+                    .offerNumber(orderId)
+                    .userId(event.getUserId())
+                    .offerType(event.getOfferType())
+                    .offerQuantity(event.getOfferQuantity())
+                    .offerPrice(event.getOfferPrice())
+                    .stockTicker(event.getStockTicker())
+                    .offerStatus(OrderStatus.PENDING) // PENDING 상태로 설정
+                    .build();
+            log.info("새로운 미체결 주문 저장: {}", order);
+        }
+
+        orderRepository.save(order);
+
+        // 다시 매칭 모듈로 전송
+        orderProducer.sendOrder(event);
+        log.info("미체결 주문을 매칭 모듈로 재전송 완료: {}", event);
     }
 }

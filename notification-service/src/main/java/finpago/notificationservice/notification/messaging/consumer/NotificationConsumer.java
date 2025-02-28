@@ -14,8 +14,10 @@ import org.springframework.stereotype.Component;
 public class NotificationConsumer {
 
     private final NotificationService notificationService;
+    private static final String SETTLEMENT_TOPIC = "settlement-topic";
 
-    @KafkaListener(topics = "settlement-topic", groupId = "notification-service-group")
+    @KafkaListener(topics = SETTLEMENT_TOPIC, groupId = "notification-service-group",
+            containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleTradeSettlement(TradeMatchingEvent event) {
         log.info("정산 완료 이벤트 수신: {}", event);
 

@@ -1,6 +1,5 @@
-package finpago.notificationservice.notification.config.kafka;
+package finpago.userservice.user.config.kafka;
 
-import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.common.global.messaging.NoticeEvent;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
@@ -16,31 +15,28 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 public class KafkaRetryConfig {
 
-    private static final String TRADE_DLT_TOPIC = "trade-settlement-dlt-topic"; // TradeMatchingEvent DLT
-    private static final String NOTICE_DLT_TOPIC = "notice-dlt-topic"; // NoticeEvent DLT
+    private static final String DLT_TOPIC = "notice-dlt-topic"; // DLT 토픽
     private static final long RETRY_INTERVAL = 1000L; // 재시도 간격 (1초)
     private static final int RETRY_COUNT = 3; // 최대 재시도 횟수
 
     @Bean(name = "kafkaRetryListenerContainerFactory")
-    public ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> kafkaRetryListenerContainerFactory(
-            ConsumerFactory<String, TradeMatchingEvent> consumerFactory,
-            KafkaTemplate<String, TradeMatchingEvent> kafkaTemplate) {
+    public ConcurrentKafkaListenerContainerFactory<String, NoticeEvent> kafkaRetryListenerContainerFactory(
+            ConsumerFactory<String, NoticeEvent> consumerFactory,
+            KafkaTemplate<String, NoticeEvent> kafkaTemplate) {
 
-        ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        ConcurrentKafkaListenerContainerFactory<String, NoticeEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
 
         // 실패한 메시지를 DLT(Dead Letter Topic)으로 이동하는 Recoverer 설정
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 kafkaTemplate,
-                (ConsumerRecord<?, ?> record, Exception e) ->
-                        new TopicPartition(TRADE_DLT_TOPIC, record.partition())
+                (ConsumerRecord<?, ?> record, Exception e) -> new TopicPartition(DLT_TOPIC, record.partition())
         );
 
         // 3번 재시도 후 DLT로 이동하는 ErrorHandler
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(RETRY_INTERVAL, RETRY_COUNT));
 
         factory.setCommonErrorHandler(errorHandler);
-
         return factory;
     }
 }

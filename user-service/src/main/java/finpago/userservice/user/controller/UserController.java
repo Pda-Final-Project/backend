@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/v1/api/auth")
@@ -44,4 +46,13 @@ public class UserController {
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success(HttpStatus.OK, "로그인 성공", token));
     }
+
+    /**
+     * 사용자의 알림 리스트 조회
+     */
+    @GetMapping("/{userId}")
+    public List<String> getNotifications(@PathVariable String userId) {
+        return userService.getNotifications(userId);
+    }
+
 }

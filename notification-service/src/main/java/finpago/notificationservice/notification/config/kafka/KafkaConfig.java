@@ -31,7 +31,7 @@ public class KafkaConfig {
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, true);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
         return new DefaultKafkaProducerFactory<>(props);
     }
 
@@ -56,7 +56,6 @@ public class KafkaConfig {
         return new KafkaTemplate<>(noticeProducerFactory());
     }
 
-    // ConsumerFactory (TradeMatchingEvent)
     @Bean
     public ConsumerFactory<String, TradeMatchingEvent> tradeConsumerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -65,36 +64,23 @@ public class KafkaConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.TradeMatchingEvent");
 
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), new JsonDeserializer<>(TradeMatchingEvent.class));
+        System.out.println("바밥밥 "+props.get(JsonDeserializer.VALUE_DEFAULT_TYPE));
+        return new DefaultKafkaConsumerFactory<>(props);
+
+//        return new DefaultKafkaConsumerFactory<>(
+//                props,
+//                new StringDeserializer(),
+//                new JsonDeserializer<>(TradeMatchingEvent.class, false)
+//        );
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> tradeKafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(tradeConsumerFactory());
-        return factory;
-    }
-
-    // ConsumerFactory (NoticeEvent)
-    @Bean
-    public ConsumerFactory<String, NoticeEvent> noticeConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.NoticeEvent");
-
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), new JsonDeserializer<>(NoticeEvent.class));
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, NoticeEvent> noticeKafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, NoticeEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(noticeConsumerFactory());
         return factory;
     }
 }

@@ -30,7 +30,7 @@ ext {
 dependencies {
     //db
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.kafka:spring-kafka:3.0.9'
+    implementation 'org.springframework.kafka:spring-kafka'
 
     //common
     implementation project(':common')

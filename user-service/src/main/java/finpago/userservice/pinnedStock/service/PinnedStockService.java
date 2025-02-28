@@ -1,5 +1,6 @@
 package finpago.userservice.pinnedStock.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import finpago.common.global.common.ApiResponse;
 import finpago.userservice.pinnedStock.dto.PinnedStockResDto;
 import finpago.userservice.pinnedStock.dto.StockInfo;
@@ -13,6 +14,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,6 +27,7 @@ public class PinnedStockService {
     private final PinnedStockRepository pinnedStockRepository;
     private final UserRepository userRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     /**
      * 관심 종목 추가 기능
@@ -63,7 +66,14 @@ public class PinnedStockService {
                 .map(stock -> {
                     String ticker = stock.getStockTicker();
                     String redisKey = "stock:" + ticker;
-                    StockInfo stockInfo = (StockInfo) redisTemplate.opsForValue().get(redisKey);
+                    Object redisData = redisTemplate.opsForValue().get(redisKey);
+
+                    StockInfo stockInfo = null;
+                    if (redisData instanceof LinkedHashMap) {
+                        stockInfo = objectMapper.convertValue(redisData, StockInfo.class);
+                    } else if (redisData instanceof StockInfo) {
+                        stockInfo = (StockInfo) redisData;
+                    }
 
                     if (stockInfo == null) {
                         return new PinnedStockResDto(ticker, "정보 없음", 0, 0);

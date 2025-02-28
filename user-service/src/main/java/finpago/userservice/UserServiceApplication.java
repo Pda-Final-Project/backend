@@ -7,7 +7,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableDiscoveryClient
 @EnableFeignClients
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"finpago.common.global", "finpago.userservice"})
 public class UserServiceApplication {
 
     public static void main(String[] args) {

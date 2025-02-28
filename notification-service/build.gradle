@@ -28,17 +28,24 @@ ext {
 }
 
 dependencies {
+    //db
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.kafka:spring-kafka:3.0.9'
+
     //common
     implementation project(':common')
 
+    //eureka
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
 }
 
 dependencyManagement {

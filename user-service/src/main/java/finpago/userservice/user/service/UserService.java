@@ -2,6 +2,7 @@ package finpago.userservice.user.service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import finpago.common.global.common.ApiResponse;
 import finpago.common.global.exception.error.DuplicateUserPhoneException;
 import finpago.common.global.messaging.NoticeEvent;
 import finpago.userservice.user.dto.JoinReqDto;
@@ -12,6 +13,7 @@ import finpago.userservice.user.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -80,11 +83,22 @@ public class UserService {
         }
     }
 
-    //사용자의 알림 리스트 조회
-    public List<String> getNotifications(String userId) {
+    /**
+     * 사용자 알림 리스트 조회
+     */
+    public List<ApiResponse<String>> getNotifications(String userId) {
         String userKey = String.format(NOTIFICATION_KEY_PREFIX, userId);
         List<String> notifications = redisTemplate.opsForList().range(userKey, 0, -1);
-        return notifications;
+
+        if (notifications == null || notifications.isEmpty()) {
+            return List.of(ApiResponse.fail(HttpStatus.NO_CONTENT, "알림이 없습니다."));
+
+        }
+
+        return notifications.stream()
+                .map(notification -> ApiResponse.success(HttpStatus.OK, "알림 조회 성공", notification))
+                .collect(Collectors.toList());
+
     }
 
 }

@@ -19,8 +19,8 @@ public class SettlementService {
     private final StringRedisTemplate redisTemplate;
     private final SettlementProducer settlementProducer;
 
-    private static final long DEFAULT_BALANCE = 1_000_000L; // 기본 예수금
-    private static final long DEFAULT_STOCKS = 1000000; // 기본 보유 주식 수량
+    private static final long DEFAULT_BALANCE = 10000000; // 기본 예수금
+    private static final long DEFAULT_STOCKS = 100; // 기본 보유 주식 수량
     private static final float DEFAULT_EXCHANGE_RATE = 1.0f; // 기본 환율 (1.0)
     private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
@@ -84,7 +84,7 @@ public class SettlementService {
      * 사용 가능 예수금 조회
      */
     private Long getCachedAvailableBalance(Long userId) {
-        String balanceKey = "user:" + userId + ":available_balance";
+        String balanceKey = "user:" + userId + ":balance";
         String balanceStr = redisTemplate.opsForValue().get(balanceKey);
         return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE;
     }
@@ -93,7 +93,7 @@ public class SettlementService {
      * 사용 가능 주식 조회
      */
     private Long getCachedAvailableStocks(Long userId, String stockTicker) {
-        String stockKey = "user:" + userId + ":available_stocks:" + stockTicker;
+        String stockKey = "user:" + userId + ":holdings:" + stockTicker;
         String stockStr = redisTemplate.opsForValue().get(stockKey);
         return stockStr != null ? Long.parseLong(stockStr) : DEFAULT_STOCKS;
     }

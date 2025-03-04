@@ -2,6 +2,7 @@ package finpago.userservice.holdings.controller;
 
 import finpago.common.global.common.ApiResponse;
 import finpago.userservice.holdings.service.HoldingService;
+import finpago.userservice.holdings.service.HoldingsFxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class HoldingController {
 
     private final HoldingService holdingService;
+    private final HoldingsFxService holdingsFxService;
 
     /**
      * 사용 가능 주식 조회 (해당 종목)
@@ -42,6 +44,20 @@ public class HoldingController {
     }
 
     /**
+     * 환차손익 조회 API
+     * @param stockTicker 주식 티커 (ex. TSLA)
+     * @return 환차손익 (KRW)
+     */
+    @GetMapping("/{stockTicker}/fx-profit")
+    public ResponseEntity<ApiResponse<Double>> getFxProfit(@PathVariable String stockTicker) {
+        Long userId = getUserIdFromAuth(); // 인증된 사용자 ID 가져오기
+        double fxProfit = holdingsFxService.calculateFxProfit(userId, stockTicker);
+
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "환차손익 조회 성공", fxProfit));
+    }
+
+
+    /**
      * 인증된 사용자 ID 가져오기
      */
     private Long getUserIdFromAuth() {
@@ -53,4 +69,6 @@ public class HoldingController {
 
         return Long.parseLong(authentication.getName());
     }
+
+
 }

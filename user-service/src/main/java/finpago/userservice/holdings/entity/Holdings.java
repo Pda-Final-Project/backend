@@ -27,6 +27,10 @@ public class Holdings extends BaseEntity {
     @Column(name = "holding_quantity")
     private Long holdingQuantity;
 
+    //보유 종목 가격 (매수 시점의 가격)
+    @Column(name = "holding_price")
+    private Long holdingPrice;
+
     //현재 시세 기준 보유종목 총 가격(이 종목의 현재시세 * 수량)
     @Column(name = "holding_total_price")
     private Long holdingTotalPrice;

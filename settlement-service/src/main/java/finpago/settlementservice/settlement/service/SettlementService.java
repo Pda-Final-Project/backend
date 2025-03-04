@@ -43,9 +43,9 @@ public class SettlementService {
 //        updateBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity()); //사용자에게 보여지는 출금가능 예수금은 그대로
         updateHoldings(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity()); // 보유 주식 감소 (배치)
 
-        // 환차손익 저장
-        updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate);
-        updateStockForFxTracking(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity(), exchangeRate);
+        // 환차손익 저장 (tradePrice 추가)
+        updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate, event.getTradePrice());
+        updateStockForFxTracking(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity(), exchangeRate, event.getTradePrice());
 
         settlementProducer.sendSettlementSuccess(event);
         log.info("정산 완료: {}", event);
@@ -154,13 +154,13 @@ public class SettlementService {
 
 
     /**
-     * 환차손익 계산을 위해 체결 당시 환율 및 수량을 Redis에 저장
+     * 환차손익 계산을 위해 체결 당시 환율, 수량 및 거래 가격을 Redis에 저장
      */
-    private void updateStockForFxTracking(Long userId, String stockTicker, Long quantity, Float exchangeRate) {
+    private void updateStockForFxTracking(Long userId, String stockTicker, Long quantity, Float exchangeRate, Long tradePrice) {
         String holdingsFxKey = "user:" + userId + ":holdings-fx:" + stockTicker;
 
-        // 저장할 데이터 형식: "환율:거래수량"
-        String tradeInfo = exchangeRate + ":" + quantity;
+        // 저장할 데이터 형식: "환율:거래수량:거래가격"
+        String tradeInfo = exchangeRate + ":" + quantity + ":" + tradePrice;
 
         // Redis List에 저장 (FIFO 구조로 저장)
         redisTemplate.opsForList().rightPush(holdingsFxKey, tradeInfo);
@@ -168,7 +168,8 @@ public class SettlementService {
         // 데이터 유효기간 설정 (30일 후 자동 삭제)
         redisTemplate.expire(holdingsFxKey, 30, TimeUnit.DAYS);
 
-        log.info("[환차손익 데이터 저장] 사용자ID: {}, 주식: {}, 체결 환율: {}, 체결 수량: {}",
-                userId, stockTicker, exchangeRate, quantity);
+        log.info("[환차손익 데이터 저장] 사용자ID: {}, 주식: {}, 체결 환율: {}, 체결 수량: {}, 체결 가격: {}",
+                userId, stockTicker, exchangeRate, quantity, tradePrice);
     }
+
 }

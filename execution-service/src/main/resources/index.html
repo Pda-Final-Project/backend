@@ -1,0 +1,49 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="ko">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>체결 내역 SSE 테스트</title>-->
+<!--</head>-->
+<!--<body>-->
+<!--<h1>실시간 체결 내역</h1>-->
+<!--<div id="trade-log"></div>-->
+
+<!--<script>-->
+<!--    const stockTicker = "TSL";  // 구독하려는 주식 티커-->
+<!--    let eventSource;-->
+
+<!--    function connectSSE() {-->
+<!--        console.log("📡 SSE 연결 시도...");-->
+<!--        eventSource = new EventSource(`http://localhost:19095/v1/api/trade/updates/${stockTicker}`);-->
+
+<!--        eventSource.addEventListener("trade-update", (event) => {-->
+<!--            const tradeData = JSON.parse(event.data);-->
+<!--            console.log(`📩 체결 내역 (${stockTicker}):`, tradeData);-->
+
+<!--            // UI 업데이트-->
+<!--            const logDiv = document.getElementById("trade-log");-->
+<!--            logDiv.innerHTML += `<p>📈 ${tradeData.tradeQuantity}주 - ${tradeData.tradePrice}원</p>`;-->
+<!--        });-->
+
+<!--        eventSource.addEventListener("ping", () => {-->
+<!--            console.log("💓 SSE ping 이벤트 수신 (연결 유지)");-->
+<!--        });-->
+
+<!--        eventSource.onerror = (error) => {-->
+<!--            console.error("❌ SSE 연결 오류", error);-->
+<!--            eventSource.close();  // 현재 연결 닫기-->
+
+<!--            // 10초 후 자동 재연결-->
+<!--            setTimeout(() => {-->
+<!--                console.log("🔄 SSE 재연결 시도...");-->
+<!--                connectSSE();-->
+<!--            }, 10000);-->
+<!--        };-->
+<!--    }-->
+
+<!--    // 최초 실행-->
+<!--    connectSSE();-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->

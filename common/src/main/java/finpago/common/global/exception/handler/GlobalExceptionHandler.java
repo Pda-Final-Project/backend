@@ -8,10 +8,14 @@ if (userBalance.compareTo(orderAmount) < 0) {
 import finpago.common.global.exception.dto.CommonResponse;
 import finpago.common.global.exception.dto.ErrorResponse;
 import finpago.common.global.exception.error.*;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
 
 @RestControllerAdvice
 @Slf4j
@@ -227,11 +231,45 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
-    // 예상치 못한 예외 처리
+//    // 예상치 못한 예외 처리
+//    @ExceptionHandler(Exception.class)
+//    protected ResponseEntity<CommonResponse> handleGeneralException(Exception exception) {
+//        log.error("[서버 오류] {}", exception.getMessage());
+//
+//        ErrorResponse error = ErrorResponse.builder()
+//                .status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus().value())
+//                .message(ErrorCode.INTERNAL_SERVER_ERROR.getMessage())
+//                .code(ErrorCode.INTERNAL_SERVER_ERROR.getCode())
+//                .build();
+//
+//        CommonResponse response = CommonResponse.builder()
+//                .success(false)
+//                .error(error)
+//                .build();
+//
+//        return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus()).body(response);
+//    }
+
     @ExceptionHandler(Exception.class)
-    protected ResponseEntity<CommonResponse> handleGeneralException(Exception exception) {
+    protected ResponseEntity<?> handleGeneralException(Exception exception, HttpServletRequest request) {
         log.error("[서버 오류] {}", exception.getMessage());
 
+        // SSE 요청인지 확인
+        if ("text/event-stream".equals(request.getHeader("Accept"))) {
+            log.error("SSE 요청 중 예외 발생: {}", exception.getMessage());
+
+            SseEmitter emitter = new SseEmitter();
+            try {
+                emitter.send("event: error\ndata: SSE 요청 중 오류 발생 - " + exception.getMessage() + "\n\n");
+                emitter.complete();
+            } catch (IOException e) {
+                emitter.completeWithError(e);
+            }
+
+            return ResponseEntity.internalServerError().build();
+        }
+
+        // 일반 HTTP 요청에 대한 응답 처리
         ErrorResponse error = ErrorResponse.builder()
                 .status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus().value())
                 .message(ErrorCode.INTERNAL_SERVER_ERROR.getMessage())

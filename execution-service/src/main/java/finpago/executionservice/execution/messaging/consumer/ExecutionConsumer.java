@@ -2,6 +2,7 @@ package finpago.executionservice.execution.messaging.consumer;
 
 import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.executionservice.execution.service.ExecutionService;
+//import finpago.executionservice.executionChart.service.SseEmitterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 public class ExecutionConsumer {
 
     private final ExecutionService executionService;
+//    private final SseEmitterService sseEmitterService;
 
     @KafkaListener(topics = "trade-matching-topic", groupId = "execution-service-group",
             containerFactory = "kafkaRetryListenerContainerFactory")
@@ -27,5 +29,16 @@ public class ExecutionConsumer {
         log.warn("정산 실패 처리: {}", event);
         executionService.handleSettlementFailure(event);
     }
+
+//    @KafkaListener(topics = "settlement-topic", groupId = "execution-service-group",
+//            containerFactory = "kafkaRetryListenerContainerFactory")
+//    public void consumeSettlementEvent(TradeMatchingEvent event) {
+//        log.info("[체결창] : 체결 이벤트 수신 - 주식 {}: {}", event.getStockTicker(), event);
+//
+//        log.info("[체결창] : 체결 금액은용11 {}", event.getTradePrice());
+//        // 주식 티커별 SSE 전송 (tradeQuantity, tradePrice만 포함)
+//        sseEmitterService.sendTradeUpdate(event.getStockTicker(), event.getTradeQuantity(), event.getTradePrice());
+//        log.info("[체결창] : 체결 금액은용22 {}", event.getTradePrice());
+//    }
 
 }

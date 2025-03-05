@@ -1,23 +1,29 @@
 pipeline {
     agent any
     environment {
-        DOCKER_HUB_USER = "hamgeonwook"
+        GIT_CREDENTIALS_ID = "github-credentials"
+        GIT_SSH = "git-ssh"
     }
     stages {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                    branches: [[name: 'develop']],
+                    branches: [[name: 'P3-96-Feat/Jenkins&ArgoCD']],
                     userRemoteConfigs: [[
                         url: 'https://github.com/Pda-Final-Project/backend.git',
-                        credentialsId: 'github-credentials'
+                        credentialsId: GIT_CREDENTIALS_ID
                     ]]
                 ])
             }
         }
-        stage('Build JARs') {
+        stage('Cleanup Docker Cache') {
             steps {
-                sh './gradlew clean build -x test'
+                script {
+                    def diskUsage = sh(script: "df -h | awk '/ \\/\$/ {print \$5}' | sed 's/%//'", returnStdout: true).trim().toInteger()
+                    if (diskUsage > 80) {
+                        sh 'docker system prune -a -f --volumes'
+                    }
+                }
             }
         }
         stage('Build & Push Docker Images') {
@@ -25,6 +31,11 @@ pipeline {
                 stage('Execution Service') {
                     steps {
                         buildAndPushDockerImage('execution-service')
+                    }
+                }
+                stage('Data Service') {
+                    steps {
+                        buildAndPushDockerImage('data-service')
                     }
                 }
                 stage('Filling Service') {
@@ -70,10 +81,12 @@ pipeline {
                     branches: [[name: 'main']],
                     userRemoteConfigs: [[
                         url: 'https://github.com/Pda-Final-Project/argocd.git',
-                        credentialsId: 'geonwook'
+                        credentialsId: GIT_CREDENTIALS_ID
                     ]]
                 ])
                 dir('apps') {
+                    sh 'ls -l'
+
                     updateArgoCDManifest('execution-service')
                     updateArgoCDManifest('filling-service')
                     updateArgoCDManifest('gateway')
@@ -82,11 +95,21 @@ pipeline {
                     updateArgoCDManifest('settlement-service')
                     updateArgoCDManifest('user-service')
                     updateArgoCDManifest('order-service')
-                    
-                    sshagent(credentials: ['github-credentials']) {
-                        sh "git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'"
-                        sh "git remote set-url origin git@github.com:Pda-Final-Project/argocd.git"
-                        sh "git push -u origin main"
+
+                    withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                        sh """
+                            git config --global user.email "tomy8964@naver.com"
+                            git config --global user.name "tomy8964"
+                            
+                            git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+                            
+                            # 🚀 🔥 브랜치가 존재하는지 확인 후 checkout
+                            git fetch origin main
+                            git checkout main || git checkout -b main
+                            
+                            git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning' || echo "No changes to commit"
+                            git push origin main || echo "Nothing to push"
+                        """
                     }
                 }
             }
@@ -96,18 +119,21 @@ pipeline {
 
 def buildAndPushDockerImage(serviceName) {
     dir(serviceName) {
-        sh "chmod +x gradlew"
-        sh "./gradlew clean bootJar"
-        script {
-            def image = docker.build("$DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER}")
-            docker.withRegistry('https://registry.hub.docker.com/repository/docker/', 'docker-hub-credentials') {
-                image.push("${env.BUILD_NUMBER}")
-            }
+        sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
+        
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+            sh """
+                echo $DOCKER_PASSWORD | docker login -u $DOCKER_HUB_USER --password-stdin
+                docker build -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} .
+                docker push $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER}
+            """
         }
     }
 }
 
 def updateArgoCDManifest(serviceName) {
-    sh "sed -i 's/${serviceName}:.*/${serviceName}:${env.BUILD_NUMBER}/' ${serviceName}.yaml"
-    sh "git add ${serviceName}.yaml"
+    sh """
+        sed -i 's|\\(image: .*/${serviceName}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' ${serviceName}.yaml
+        git add ${serviceName}.yaml
+    """
 }

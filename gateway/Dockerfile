@@ -1,5 +1,5 @@
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY build/libs/execution-service-0.0.1-SNAPSHOT.jar app.jar
+COPY build/libs/gateway-0.0.1-SNAPSHOT.jar app.jar
 CMD ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
 EXPOSE 8080

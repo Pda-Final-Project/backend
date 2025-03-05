@@ -105,7 +105,7 @@ pipeline {
                             
                             # 🚀 🔥 브랜치가 존재하는지 확인 후 checkout
                             git fetch origin main
-                            git checkout main || git checkout -b main
+                            git checkout main
                             
                             git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning' || echo "No changes to commit"
                             git push origin main || echo "Nothing to push"

@@ -96,10 +96,8 @@ pipeline {
                             
                             # 🚀 1️⃣ 로컬 변경 사항 완전 초기화
                             git fetch origin main
-                            git reset --hard origin/main
                             
-                            # 🚀 🔥 원격 변경 사항을 먼저 pull
-                            git fetch origin main
+                            git reset --hard origin/main
                             git pull --rebase origin main || (echo "❌ Merge conflict detected! Please resolve manually." && exit 1)
                         """
                     }
@@ -121,6 +119,7 @@ pipeline {
                             
                             if ! git diff --cached --quiet; then
                                 git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
+                                git pull --rebase origin main
                                 git push origin main
                             else
                                 echo "✅ No changes to commit and push"
@@ -136,7 +135,7 @@ pipeline {
 def buildAndPushDockerImage(serviceName) {
     dir(serviceName) {
         sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
-        
+
         sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8" > gradle.properties'
 
         sh './gradlew bootJar --build-cache --parallel --configure-on-demand --continue'

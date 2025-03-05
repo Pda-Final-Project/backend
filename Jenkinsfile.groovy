@@ -137,6 +137,10 @@ def buildAndPushDockerImage(serviceName) {
     dir(serviceName) {
         sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
         
+        sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8" > gradle.properties'
+
+        sh './gradlew bootJar --build-cache --parallel --configure-on-demand --continue'
+        
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """
                 echo $DOCKER_PASSWORD | docker login -u $DOCKER_HUB_USER --password-stdin

@@ -27,14 +27,6 @@ pipeline {
             }
         }
 
-        stage('Build Common Libraries') {
-            steps {
-                sh 'echo "org.gradle.daemon=true" >> gradle.properties'
-                sh 'echo "org.gradle.parallel=true" >> gradle.properties'
-                sh 'echo "org.gradle.workers.max=2" >> gradle.properties'
-                sh './gradlew build --build-cache --parallel --configure-on-demand --continue'
-            }
-        }
         stage('Build & Push Docker Images') {
             parallel {
                 stage('Execution Service') {
@@ -47,13 +39,73 @@ pipeline {
                         buildAndPushDockerImage('data-service')
                     }
                 }
+                stage('Filling Service') {
+                    steps {
+                        buildAndPushDockerImage('filling-service')
+                    }
+                }
                 stage('Gateway Service') {  
                     steps {
                         buildAndPushDockerImage('gateway')
                     }
                 }
+                stage('Matching Service') {  
+                    steps {
+                        buildAndPushDockerImage('matching-service')
+                    }
+                }
+                stage('Notification Service') {
+                    steps {
+                        buildAndPushDockerImage('notification-service')
+                    }
+                }
+                stage('Settlement Service') {
+                    steps {
+                        buildAndPushDockerImage('settlement-service')
+                    }
+                }
+                stage('User Service') {
+                    steps {
+                        buildAndPushDockerImage('user-service')
+                    }
+                }
+                stage('Order Service') {
+                    steps {
+                        buildAndPushDockerImage('order-service')
+                    }
+                }
             }
         }
+        stage('ArgoCD Manifest Update') {
+            steps {
+                checkout([$class: 'GitSCM',
+                    branches: [[name: 'main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/Pda-Final-Project/argocd.git',
+                        credentialsId: GIT_CREDENTIALS_ID
+                    ]]
+                ])
+                dir('apps') {
+                    updateArgoCDManifest('execution-service')
+                    updateArgoCDManifest('filling-service')
+                    updateArgoCDManifest('gateway')
+                    updateArgoCDManifest('matching-service')
+                    updateArgoCDManifest('notification-service')
+                    updateArgoCDManifest('settlement-service')
+                    updateArgoCDManifest('user-service')
+                    updateArgoCDManifest('order-service')
+
+                    withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                        sh """
+                            git config --global user.email "tomy8964@naver.com"
+                            git config --global user.name "tomy8964"
+                            git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
+                            git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+                            git push origin main
+                        """
+                    }
+                }
+            }
     }
     post {
         always {
@@ -78,4 +130,11 @@ def buildAndPushDockerImage(serviceName) {
             """
         }
     }
+}
+
+def updateArgoCDManifest(serviceName) {
+    sh """
+        sed -i 's|\\(image: .*/${serviceName}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' apps/${serviceName}.yaml
+        git add apps/${serviceName}.yaml
+    """
 }

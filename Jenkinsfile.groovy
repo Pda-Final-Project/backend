@@ -120,6 +120,8 @@ pipeline {
                         git add -A
                         git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
                         git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
+
+                        git pull --rebase origin main
                         git push -u origin main
                     """
                 }

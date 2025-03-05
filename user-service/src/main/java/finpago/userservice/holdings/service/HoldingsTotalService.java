@@ -5,7 +5,6 @@ import finpago.userservice.holdings.entity.Holdings;
 import finpago.userservice.holdings.repository.HoldingsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
@@ -14,7 +13,6 @@ public class HoldingsTotalService {
 
     private final HoldingsRepository holdingsRepository;
     private final HoldingsFxService holdingsFxService;
-    private final HoldingsRepository HoldingsRepository;
 
 
     /**

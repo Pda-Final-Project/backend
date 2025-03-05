@@ -106,10 +106,11 @@ pipeline {
                     }
                 }
             }
-    }
-    post {
-        always {
-            sh './gradlew --stop'
+        }
+        post {
+            always {
+                sh './gradlew --stop'
+            }
         }
     }
 }

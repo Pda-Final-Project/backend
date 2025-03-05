@@ -44,6 +44,7 @@ pipeline {
                     fi
                 """
                 sh 'chmod +x gradlew'
+            }
         }
         stage('Check Workspace and Gradle Execution') {
             steps {

@@ -19,13 +19,14 @@ pipeline {
         stage('Cleanup Docker Cache') {
             steps {
                 script {
-                    def diskUsage = sh(script: """df -h | grep '/$' | awk '{print $5}' | sed 's/%//'""", returnStdout: true).trim().toInteger()
+                    def diskUsage = sh(script: """df -h | grep '/\\$' | awk '{print \$5}' | sed 's/%//'""", returnStdout: true).trim().toInteger()
                     if (diskUsage > 80) {
                         sh 'docker system prune -a -f --volumes'
                     }
                 }
             }
         }
+
         stage('Build Common Libraries') {
             steps {
                 sh 'echo "org.gradle.daemon=true" >> gradle.properties'

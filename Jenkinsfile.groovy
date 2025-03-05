@@ -26,7 +26,6 @@ pipeline {
                 }
             }
         }
-
         stage('Build & Push Docker Images') {
             parallel {
                 stage('Execution Service') {
@@ -107,10 +106,10 @@ pipeline {
                 }
             }
         }
-        post {
-            always {
-                sh './gradlew --stop'
-            }
+    }
+    post {  // ✅ post 블록을 stages 블록 밖으로 이동
+        always {
+            sh './gradlew --stop'
         }
     }
 }
@@ -122,11 +121,7 @@ def buildAndPushDockerImage(serviceName) {
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """
                 echo $DOCKER_PASSWORD | docker login -u $DOCKER_HUB_USER --password-stdin
-                if docker pull $DOCKER_HUB_USER/${serviceName}:latest; then
-                    docker build --cache-from=$DOCKER_HUB_USER/${serviceName}:latest -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} .
-                else
-                    docker build -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} .
-                fi
+                docker build -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} .
                 docker push $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER}
             """
         }

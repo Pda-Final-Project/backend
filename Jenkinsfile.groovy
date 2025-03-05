@@ -75,6 +75,11 @@ pipeline {
                 }
             }
         }
+        stage('Cleanup Gradle Daemon') {
+            steps {
+                sh './gradlew --stop'
+            }
+        }
         stage('ArgoCD Manifest Update') {
             steps {
                 checkout([$class: 'GitSCM',
@@ -87,21 +92,6 @@ pipeline {
                 dir('apps') {
                     sh 'ls -l'
 
-                    withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        sh """
-                            git config --global user.email "tomy8964@naver.com"
-                            git config --global user.name "tomy8964"
-                            
-                            git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
-                            
-                            # 🚀 1️⃣ 로컬 변경 사항 완전 초기화
-                            git fetch origin main
-                            
-                            git reset --hard origin/main
-                            git pull --rebase origin main || (echo "❌ Merge conflict detected! Please resolve manually." && exit 1)
-                        """
-                    }
-
                     updateArgoCDManifest('execution-service')
                     updateArgoCDManifest('filling-service')
                     updateArgoCDManifest('gateway')
@@ -111,21 +101,28 @@ pipeline {
                     updateArgoCDManifest('user-service')
                     updateArgoCDManifest('order-service')
                     updateArgoCDManifest('data-service')
+                }
+            }
+        }
+        stage('ArgoCD Manifest Update') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: 'main']],
+                      userRemoteConfigs: [[
+                          url: 'https://github.com/Pda-Final-Project/argocd.git',
+                          credentialsId: GIT_CREDENTIALS_ID
+                      ]]
+                ])
 
-                    withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        sh """
-                            # 🚀 🔥 변경 사항이 있으면 커밋하고 푸시
-                            git add -A
-                            
-                            if ! git diff --cached --quiet; then
-                                git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
-                                git pull --rebase origin main
-                                git push origin main
-                            else
-                                echo "✅ No changes to commit and push"
-                            fi
-                        """
-                    }
+                withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    sh """
+                        git config --global user.email "tomy8964@naver.com"
+                        git config --global user.name "tomy8964"
+                        
+                        git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+                        git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
+                        git push -u origin main
+                    """
+                }
                 }
             }
         }

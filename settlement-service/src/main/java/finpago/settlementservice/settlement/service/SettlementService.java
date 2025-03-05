@@ -31,6 +31,7 @@ public class SettlementService {
 
         // Redis에서 환율 조회 (없을 경우 기본값 적용)
         Float exchangeRate = getExchangeRate(event.getStockTicker());
+        event.setExchangeRate(exchangeRate);
 
         //매수자
         updateBatchBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());

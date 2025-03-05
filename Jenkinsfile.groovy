@@ -95,6 +95,7 @@ pipeline {
                     updateArgoCDManifest('settlement-service')
                     updateArgoCDManifest('user-service')
                     updateArgoCDManifest('order-service')
+                    updateArgoCDManifest('data-service')
 
                     withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh """

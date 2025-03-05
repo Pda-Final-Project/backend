@@ -5,23 +5,6 @@ pipeline {
         GIT_SSH = "git-ssh"
     }
     stages {
-        stage('Ensure Latest Remote Changes') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                    sh """
-                        git config --global user.email "tomy8964@naver.com"
-                        git config --global user.name "tomy8964"
-
-                        git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
-
-                        # 🚀 1️⃣ 원격 최신 변경 사항 강제 반영
-                        git fetch origin main
-                        git reset --hard origin/main
-                        git pull --rebase origin main
-                    """
-                }
-            }
-        }
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
@@ -111,6 +94,20 @@ pipeline {
                         credentialsId: GIT_CREDENTIALS_ID
                     ]]
                 ])
+
+                withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    sh """
+                git config --global user.email "tomy8964@naver.com"
+                git config --global user.name "tomy8964"
+                
+                git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+                
+                # 🚀 최신 상태 반영
+                git fetch origin main
+                git reset --hard origin/main
+                git pull --rebase origin main  # 최신 변경 사항 가져오기
+            """
+                }
                 dir('apps') {
                     sh 'ls -l'
 
@@ -155,9 +152,10 @@ def buildAndPushDockerImage(serviceName) {
     dir(serviceName) {
         sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
 
-        sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8" > gradle.properties'
+        sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" > gradle.properties'
+        sh 'echo "org.gradle.daemon.idleTimeout=60000" >> gradle.properties'
 
-        sh './gradlew bootJar --build-cache --parallel --configure-on-demand --continue'
+        sh './gradlew bootJar --no-daemon --build-cache --parallel --continue\''
         
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """

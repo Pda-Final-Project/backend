@@ -125,7 +125,7 @@ def buildAndPushDockerImage(serviceName) {
 
 def updateArgoCDManifest(serviceName) {
     sh """
-        sed -i 's|\\(image: .*/${serviceName}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' apps/${serviceName}.yaml
-        git add apps/${serviceName}.yaml
+        sed -i 's|\\(image: .*/${serviceName}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' ${serviceName}.yaml
+        git add ${serviceName}.yaml
     """
 }

@@ -5,17 +5,6 @@ pipeline {
         GIT_SSH = "git-ssh"
     }
     stages {
-        stage('Checkout') {
-            steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: 'P3-101-Feat/클라우드-설정']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/Pda-Final-Project/backend.git',
-                        credentialsId: GIT_CREDENTIALS_ID
-                    ]]
-                ])
-            }
-        }
         stage('Ensure Latest Remote Changes') {
             steps {
                 withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
@@ -31,6 +20,17 @@ pipeline {
                         git pull --rebase origin main
                     """
                 }
+            }
+        }
+        stage('Checkout') {
+            steps {
+                checkout([$class: 'GitSCM',
+                          branches: [[name: 'P3-101-Feat/클라우드-설정']],
+                          userRemoteConfigs: [[
+                                                      url: 'https://github.com/Pda-Final-Project/backend.git',
+                                                      credentialsId: GIT_CREDENTIALS_ID
+                                              ]]
+                ])
             }
         }
         stage('Cleanup Docker Cache') {

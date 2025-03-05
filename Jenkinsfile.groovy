@@ -104,7 +104,7 @@ pipeline {
                 }
             }
         }
-        stage('ArgoCD Manifest Update') {
+        stage('GTI PUSH') {
             steps {
                 checkout([$class: 'GitSCM', branches: [[name: 'main']],
                       userRemoteConfigs: [[

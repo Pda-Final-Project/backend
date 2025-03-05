@@ -8,7 +8,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                    branches: [[name: 'P3-96-Feat/Jenkins&ArgoCD']],
+                    branches: [[name: 'P3-101-Feat/클라우드-설정']],
                     userRemoteConfigs: [[
                         url: 'https://github.com/Pda-Final-Project/backend.git',
                         credentialsId: GIT_CREDENTIALS_ID

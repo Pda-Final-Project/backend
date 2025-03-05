@@ -1,0 +1,43 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+    web-application-type: reactive
+
+  application:
+    name: gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/v1/api/users/**, /v1/api/auth/**, /v1/api/stocks/**, /v1/api/likes/**
+
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/v1/api/order/**
+
+        - id: execution-service
+          uri: lb://execution-service
+          predicates:
+            - Path=/v1/api/execution/**
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/v1/api/notification/**
+
+        - id: filling-service
+          uri: lb://filling-service
+          predicates:
+            - Path=/v1/api/filling/**, /v1/api/news/**
+
+      discovery:
+        locator:
+          enabled: true
+
+jwt:
+  secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
+  expiration: 86400000

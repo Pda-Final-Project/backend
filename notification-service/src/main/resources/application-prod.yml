@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: notification-service
+  data:
+    redis:
+      host: redis-cluster.redis.svc.cluster.local
+      port: 6379

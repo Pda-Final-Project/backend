@@ -16,6 +16,14 @@ pipeline {
                 ])
             }
         }
+        stage('Cleanup Docker Cache') {
+            steps {
+                sh '''
+                    echo "Cleaning up old Docker images..."
+                    docker system prune -a -f --volumes
+                '''
+            }
+        }
         stage('Build Common Libraries') {
             steps {
                 sh './gradlew :common:build --parallel --build-cache'
@@ -112,14 +120,22 @@ def buildAndPushDockerImage(serviceName) {
         sh './gradlew bootJar --build-cache --parallel --configure-on-demand --continue'
 
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+            def latestTag = getLatestDockerTag(serviceName)
+
             sh """
                 echo $DOCKER_PASSWORD | docker login -u $DOCKER_HUB_USER --password-stdin
-                docker build -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} --cache-from=$DOCKER_HUB_USER/${serviceName}:latest .
+                if docker pull $DOCKER_HUB_USER/${serviceName}:${latestTag}; then
+                    docker build --cache-from=$DOCKER_HUB_USER/${serviceName}:${latestTag} -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} .
+                else
+                    docker build -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} .
+                fi
                 docker push $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER}
             """
         }
     }
 }
+
+
 
 def updateArgoCDManifest(serviceName) {
     sh """
@@ -128,3 +144,10 @@ def updateArgoCDManifest(serviceName) {
     """
 }
 
+def getLatestDockerTag(serviceName) {
+    def latestTag = sh(
+        script: "curl -s https://hub.docker.com/v2/repositories/$DOCKER_HUB_USER/${serviceName}/tags/?page_size=10 | jq -r '.results | sort_by(.tag_last_pushed) | last(.[]).name'",
+        returnStdout: true
+    ).trim()
+    return latestTag ?: "0" // 최신 태그가 없으면 기본값 0 사용
+}

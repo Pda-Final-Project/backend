@@ -87,6 +87,23 @@ pipeline {
                 dir('apps') {
                     sh 'ls -l'
 
+                    withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                        sh """
+                            git config --global user.email "tomy8964@naver.com"
+                            git config --global user.name "tomy8964"
+                            
+                            git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+                            
+                            # 🚀 1️⃣ 로컬 변경 사항 완전 초기화
+                            git fetch origin main
+                            git reset --hard origin/main
+                            
+                            # 🚀 🔥 원격 변경 사항을 먼저 pull
+                            git fetch origin main
+                            git pull --rebase origin main || (echo "❌ Merge conflict detected! Please resolve manually." && exit 1)
+                        """
+                    }
+
                     updateArgoCDManifest('execution-service')
                     updateArgoCDManifest('filling-service')
                     updateArgoCDManifest('gateway')
@@ -99,11 +116,6 @@ pipeline {
 
                     withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh """
-                            git config --global user.email "tomy8964@naver.com"
-                            git config --global user.name "tomy8964"
-                            
-                            git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
-                            
                             # 🚀 🔥 변경 사항이 있으면 커밋하고 푸시
                             git add -A
                             

@@ -104,12 +104,15 @@ pipeline {
                             
                             git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
                             
-                            # 🚀 🔥 브랜치가 존재하는지 확인 후 checkout
-                            git fetch origin main
-                            git checkout main
+                            # 🚀 🔥 변경 사항이 있으면 커밋하고 푸시
+                            git add -A
                             
-                            git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning' || echo "No changes to commit"
-                            git push origin main || echo "Nothing to push"
+                            if ! git diff --cached --quiet; then
+                                git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
+                                git push origin main
+                            else
+                                echo "✅ No changes to commit and push"
+                            fi
                         """
                     }
                 }

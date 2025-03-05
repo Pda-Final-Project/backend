@@ -33,7 +33,7 @@ pipeline {
                 }
             }
         }
-        stage('Cleanup Gradle Daemon') {
+        stage('Cleanup Gradle Daemon First') {
             steps {
                 sh './gradlew --stop'
                 sh './gradlew --status'

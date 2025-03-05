@@ -4,14 +4,16 @@ import finpago.common.global.common.ApiResponse;
 import finpago.dataservice.earning.entity.Earnings;
 import finpago.dataservice.earning.service.EarningsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
-@RequestMapping("/api/earnings")
+@RequestMapping("v1/api/earnings")
 @RequiredArgsConstructor
 @CrossOrigin("*")
 public class EarningsController {

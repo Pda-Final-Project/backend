@@ -26,6 +26,8 @@ pipeline {
         }
         stage('Build Common Libraries') {
             steps {
+                sh './gradlew --stop'
+                sh './gradlew --no-daemon clean'
                 sh './gradlew :common:build --parallel --build-cache'
             }
         }
@@ -117,6 +119,8 @@ def buildAndPushDockerImage(serviceName) {
         sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
         sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8" > gradle.properties'
         
+        sh './gradlew --stop'
+        sh './gradlew --no-daemon clean'
         sh './gradlew bootJar --build-cache --parallel --configure-on-demand --continue'
 
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -132,9 +136,10 @@ def buildAndPushDockerImage(serviceName) {
                 docker push $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER}
             """
         }
+
+        sh './gradlew --stop'  // 빌드 종료 후 Gradle 데몬 정리
     }
 }
-
 
 
 def updateArgoCDManifest(serviceName) {

@@ -33,34 +33,6 @@ pipeline {
                 }
             }
         }
-        stage('Ensure Gradle Wrapper Exists') {
-            steps {
-                sh """
-                    if [ ! -f ./gradlew ]; then
-                        echo "🚨 Gradle Wrapper not found! Initializing..."
-                        ./gradlew wrapper --gradle-version 7.5
-                    else
-                        echo "✅ Gradle Wrapper exists."
-                    fi
-                """
-                sh 'chmod +x gradlew'
-            }
-        }
-        stage('Check Workspace and Gradle Execution') {
-            steps {
-                sh """
-                    echo "📂 Current directory:"
-                    pwd
-                    echo "📄 Listing files:"
-                    ls -l
-                """
-            }
-        }
-        stage('Cleanup Gradle Daemon First') {
-            steps {
-                sh './gradlew --stop || echo "✅ Gradle daemon already stopped."'
-            }
-        }
         stage('Cleanup Docker Cache') {
             steps {
                 script {

@@ -107,11 +107,6 @@ pipeline {
             }
         }
     }
-    post {  // ✅ post 블록을 stages 블록 밖으로 이동
-        always {
-            sh './gradlew --stop'
-        }
-    }
 }
 
 def buildAndPushDockerImage(serviceName) {

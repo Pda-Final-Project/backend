@@ -16,6 +16,29 @@ pipeline {
                 ])
             }
         }
+        stage('Ensure Latest Remote Changes') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    sh """
+                        git config --global user.email "tomy8964@naver.com"
+                        git config --global user.name "tomy8964"
+
+                        git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+
+                        # 🚀 1️⃣ 원격 최신 변경 사항 강제 반영
+                        git fetch origin main
+                        git reset --hard origin/main
+                        git pull --rebase origin main
+                    """
+                }
+            }
+        }
+        stage('Cleanup Gradle Daemon') {
+            steps {
+                sh './gradlew --stop'
+                sh './gradlew --status'
+            }
+        }
         stage('Cleanup Docker Cache') {
             steps {
                 script {
@@ -104,25 +127,17 @@ pipeline {
                 }
             }
         }
-        stage('GTI PUSH') {
+        stage('Commit & Push Updates') {
             steps {
-                checkout([$class: 'GitSCM', branches: [[name: 'main']],
-                      userRemoteConfigs: [[
-                          url: 'https://github.com/Pda-Final-Project/argocd.git',
-                          credentialsId: GIT_CREDENTIALS_ID
-                      ]]
-                ])
-
                 withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh """
-                        git config --global user.email "tomy8964@naver.com"
-                        git config --global user.name "tomy8964"
                         git add -A
-                        git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
-                        git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
-
-                        git pull --rebase origin main
-                        git push -u origin main
+                        if ! git diff --cached --quiet; then
+                            git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
+                            git push origin main
+                        else
+                            echo "✅ No changes to commit and push"
+                        fi
                     """
                 }
             }

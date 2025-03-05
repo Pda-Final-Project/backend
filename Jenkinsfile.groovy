@@ -97,16 +97,15 @@ pipeline {
 
                 withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh """
-                git config --global user.email "tomy8964@naver.com"
-                git config --global user.name "tomy8964"
-                
-                git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
-                
-                # 🚀 최신 상태 반영
-                git fetch origin main
-                git reset --hard origin/main
-                git pull --rebase origin main  # 최신 변경 사항 가져오기
-            """
+                        git config --global user.email "tomy8964@naver.com"
+                        git config --global user.name "tomy8964"
+                        
+                        git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+                        
+                        git fetch origin main
+                        git reset --hard origin/main
+                        git pull --rebase origin main
+                    """
                 }
                 dir('apps') {
                     sh 'ls -l'

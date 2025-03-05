@@ -33,6 +33,11 @@ pipeline {
                 ])
             }
         }
+        stage('Cleanup Gradle Daemon First') {
+            steps {
+                sh './gradlew --stop || echo "✅ Gradle daemon already stopped."'
+            }
+        }
         stage('Cleanup Docker Cache') {
             steps {
                 script {
@@ -125,7 +130,14 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh """
-                        git add -A
+                        git config --global user.email "tomy8964@naver.com"
+                        git config --global user.name "tomy8964"
+        
+                        git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+                        
+                        # 🔥 변경 사항 중 ArgoCD 관련 파일만 스테이징
+                        git add apps/*.yaml
+                        
                         if ! git diff --cached --quiet; then
                             git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
                             git push origin main

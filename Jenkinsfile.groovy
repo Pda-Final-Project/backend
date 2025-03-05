@@ -43,8 +43,7 @@ pipeline {
                         echo "✅ Gradle Wrapper exists."
                     fi
                 """
-                sh 'chmod +x gradlew' # 실행 권한 부여
-            }
+                sh 'chmod +x gradlew'
         }
         stage('Check Workspace and Gradle Execution') {
             steps {

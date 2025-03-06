@@ -29,10 +29,15 @@ ext {
 dependencies {
     //common
     implementation project(':common')
+
+    //db
+    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
     //eureka
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-    //redis
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
     // FeignClient
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 

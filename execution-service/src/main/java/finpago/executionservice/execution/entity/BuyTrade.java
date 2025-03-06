@@ -36,6 +36,9 @@ public class BuyTrade extends BaseEntity {
     @Column(name = "trade_quantity", nullable = false)
     private Long tradeQuantity; // 체결 수량
 
+    @Column(name = "trade_quantity", nullable = false)
+    private Long unfilledQuantity; // 미체결 수량
+
     @Column(name = "trade_price", nullable = false)
     private Long tradePrice; // 체결 가격
 
@@ -45,4 +48,13 @@ public class BuyTrade extends BaseEntity {
     @Column(name = "trade_status", nullable = false)
     @Enumerated(EnumType.STRING)
     private TradeStatus tradeStatus; // 체결 상태 (SUCCESS / FAILED)
+
+    @Column(name = "buy_offer_price", nullable = false)
+    private Long buyerOfferPrice; // 매수 주문 가격
+
+    @Column(name = "buy_offer_quentity", nullable = false)
+    private Long buyerOrderQuantity; // 매수 주문 수량
+
+
+
 }

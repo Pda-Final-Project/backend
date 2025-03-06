@@ -47,6 +47,7 @@ public class MatchingService {
 
     // Redis에서 최신 20개 체결가 가져오기
     private List<Map<String, Object>> getRecentTradesFromRedis(String stockTicker) {
+        System.out.println("너가 문제냐?");
         String redisKey = "stock:" + stockTicker + ":purchase";
         List<String> tradeList = redisTemplate.opsForList().range(redisKey, 0, 19);
 
@@ -77,6 +78,7 @@ public class MatchingService {
         long startTime = System.currentTimeMillis();
 
         while (!orders.isEmpty()) {
+            System.out.println("들어옵니다");
             if (System.currentTimeMillis() - startTime > MAX_WAIT_TIME) {
                 log.warn("5분 초과 - 미체결 주문을 Order 모듈로 전송");
                 moveUnmatchedOrdersToQueue();
@@ -85,9 +87,12 @@ public class MatchingService {
             }
 
             OrderCreateReqEvent order = orders.poll();
+            System.out.println("레디스 조회전 들어옵니다");
             List<Map<String, Object>> recentTrades = getRecentTradesFromRedis(order.getStockTicker());
+            System.out.println("조회된거: " + recentTrades);
 
             if (!recentTrades.isEmpty()) {
+                System.out.println("드렁오나??");
                 long maxTradePrice = recentTrades.stream()
                         .mapToLong(trade -> (long) trade.get("price"))
                         .max().orElse(Long.MIN_VALUE);
@@ -97,13 +102,16 @@ public class MatchingService {
 
                 if (order.getOfferType() == OrderType.BUY) {
                     if (order.getOfferPrice() > maxTradePrice) {
+                        System.out.println("들어옵니다22");
                         handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), true);
                     } else {
                         for (Map<String, Object> trade : recentTrades) {
+                            System.out.println("들어옵니다 333");
                             long tradePrice = (long) trade.get("price");
                             long tradeVolume = (long) trade.get("volume");
 
                             if (order.getOfferPrice() == tradePrice) {
+                                System.out.println("여기는???");
                                 long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
                                 long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
                                 handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, true);
@@ -114,6 +122,9 @@ public class MatchingService {
                                 break;
                             }
                         }
+                        System.out.println("아무것도 체결안됨");
+                        handleTradeExecution(order, 0L, order.getOfferQuantity(), order.getOfferPrice(), true);
+
                     }
                 }else {
                     if (order.getOfferPrice() < minTradePrice) {
@@ -154,6 +165,7 @@ public class MatchingService {
      */
     @Transactional
     protected void handleTradeExecution(OrderCreateReqEvent order, long matchedQuantity, long unfilledQuantity, long matchedPrice, boolean isBuy) {
+        System.out.println("체결 처리시작");
         if (isBuy) {
             BuyTradeMatchEvent event = new BuyTradeMatchEvent(
                     UUID.randomUUID(),
@@ -191,6 +203,7 @@ public class MatchingService {
      * Kafka 통해 Execution 모듈로 체결된 주문을 전송
      */
     private void sendBuyTradeToExecution(BuyTradeMatchEvent event) {
+        System.out.println("카프카 메시지 전송 직전");
         matchingProducer.sendBuyTradeToExecution(event);
     }
 

@@ -94,7 +94,7 @@ public class HoldingService {
                 }).collect(Collectors.toList());
     }
 
-    //평단가 업데이트 (없다면 holding객체 생성)
+    //평단가,환율,수량 업데이트 (없다면 holding객체 생성)
     @Transactional
     public void updateHoldings(TradeMatchingEvent event) {
         Optional<Holdings> existingHolding = holdingsRepository.findByUserIdAndStockTicker(
@@ -116,4 +116,5 @@ public class HoldingService {
             holdingsRepository.save(newHoldings);
         }
     }
+
 }

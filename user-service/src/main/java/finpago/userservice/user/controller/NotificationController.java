@@ -69,6 +69,6 @@ public class NotificationController {
         boolean enabled = request.getOrDefault("enabled", true);
         userService.updateNotificationSetting(userId, enabled);
 
-        return ResponseEntity.ok(ApiResponse.success());
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "알림 상태 변경 성공", ""));
     }
 }

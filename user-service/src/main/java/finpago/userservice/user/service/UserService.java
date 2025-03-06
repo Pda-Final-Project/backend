@@ -19,6 +19,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -99,6 +100,18 @@ public class UserService {
                 .map(notification -> ApiResponse.success(HttpStatus.OK, "알림 조회 성공", notification))
                 .collect(Collectors.toList());
 
+    }
+
+    /**
+     * 사용자 알림 설정 변경
+     */
+    @Transactional
+    public void updateNotificationSetting(Long userId, boolean enabled) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자 ID"));
+
+        user.setUserNotificationSwitch(enabled);
+        userRepository.save(user);
     }
 
 }

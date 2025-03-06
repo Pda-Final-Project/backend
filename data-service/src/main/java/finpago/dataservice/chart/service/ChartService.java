@@ -23,10 +23,10 @@ public class ChartService {
         if (startDate != null && endDate != null) {
             LocalDateTime startDateTime = startDate.atStartOfDay();
             LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
-            charts = chartRepository.findByStockTickerAndChartTypeAndReportDateBetweenOrderByReportDateDesc(
+            charts = chartRepository.findByStockTickerAndChartTypeAndReportDateBetweenOrderByReportDate(
                     stockTicker, chartType, startDateTime, endDateTime);
         } else {
-            charts = chartRepository.findByStockTickerAndChartTypeOrderByReportDateDesc(stockTicker, chartType);
+            charts = chartRepository.findByStockTickerAndChartTypeOrderByReportDate(stockTicker, chartType);
         }
         return charts.stream()
                 .map(ChartResponseDto::new)

@@ -49,7 +49,7 @@ public class NotificationController {
      * 사용자의 알림 ON/OFF 설정
      */
     @PatchMapping("/switch")
-    public ResponseEntity<String> switchNotification(@RequestParam("enabled") Boolean enabled) {
+    public ResponseEntity<Object> switchNotification(@RequestParam("enabled") Boolean enabled) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || "anonymousUser".equals(authentication.getPrincipal())) {
@@ -64,7 +64,7 @@ public class NotificationController {
         }
 
         userService.updateNotificationSetting(userId, enabled);
-        return ResponseEntity.ok("알림 설정 변경 완료");
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK,"알림 설정 변경 완료", enabled));
     }
 
     /**

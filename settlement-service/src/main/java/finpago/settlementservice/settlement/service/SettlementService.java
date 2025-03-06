@@ -2,6 +2,8 @@ package finpago.settlementservice.settlement.service;
 
 import finpago.common.global.exception.error.InsufficientBalanceException;
 import finpago.common.global.exception.error.InsufficientStockException;
+import finpago.common.global.messaging.BuyTradeMatchEvent;
+import finpago.common.global.messaging.SellTradeMatchEvent;
 import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.settlementservice.settlement.messaging.producer.SettlementProducer;
 import lombok.RequiredArgsConstructor;
@@ -24,45 +26,50 @@ public class SettlementService {
     private static final float DEFAULT_EXCHANGE_RATE = 1.0f; // 기본 환율 (1.0)
     private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
-    @Transactional
-    public void processSettlement(TradeMatchingEvent event) {
-        validateBuyerBalance(event);
-        validateSellerStocks(event);
 
-        // Redis에서 환율 조회 (없을 경우 기본값 적용)
+    @Transactional
+    public void processBuySettlement(BuyTradeMatchEvent event) {
+        validateBuyerBalance(event);
+
         Float exchangeRate = getExchangeRate(event.getStockTicker());
         event.setExchangeRate(exchangeRate);
 
-        //매수자
         updateBatchBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
-        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());// 실제 예수금 감소
-        updateHoldings(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity()); // 보유 주식 증가 (배치)
-
-
-        // 매도자
-        updateBatchBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity());//배치용증가
-//        updateBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity()); //사용자에게 보여지는 출금가능 예수금은 그대로
-        updateHoldings(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity()); // 보유 주식 감소 (배치)
-
-        // 환차손익 저장 (tradePrice 추가)
+        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
+        updateHoldings(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity());
         updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate, event.getTradePrice());
+
+        settlementProducer.sendBuySettlementSuccess(event);
+        log.info("매수 정산 완료: {}", event);
+    }
+
+
+    @Transactional
+    public void processSellSettlement(SellTradeMatchEvent event) {
+        validateSellerStocks(event);
+
+        Float exchangeRate = getExchangeRate(event.getStockTicker());
+        event.setExchangeRate(exchangeRate);
+
+        updateBatchBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity());
+        updateHoldings(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity());
         updateStockForFxTracking(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity(), exchangeRate, event.getTradePrice());
 
-        settlementProducer.sendSettlementSuccess(event);
-        log.info("정산 완료: {}", event);
+        settlementProducer.sendSellSettlementSuccess(event);
+        log.info("매도 정산 완료: {}", event);
     }
 
     /**
      * 매수자의 예수금 검증
      */
-    private void validateBuyerBalance(TradeMatchingEvent event) {
+    private void validateBuyerBalance(BuyTradeMatchEvent event) {
         Long buyerAvailableBalance = getCachedAvailableBalance(event.getBuyerUserId());
         Long requiredAmount = event.getTradePrice() * event.getTradeQuantity();
 
         if (buyerAvailableBalance < requiredAmount) {
             log.error("예수금 부족 - 매수자 ID: {}, 필요 금액: {}, 보유 금액: {}",
                     event.getBuyerUserId(), requiredAmount, buyerAvailableBalance);
-            settlementProducer.sendSettlementFailure(event);
+            settlementProducer.sendBuySettlementFailure(event);
             throw new InsufficientBalanceException("예수금 부족으로 정산 실패");
         }
     }
@@ -70,13 +77,13 @@ public class SettlementService {
     /**
      * 매도자의 보유 주식 검증
      */
-    private void validateSellerStocks(TradeMatchingEvent event) {
+    private void validateSellerStocks(SellTradeMatchEvent event) {
         Long sellerAvailableStocks = getCachedAvailableStocks(event.getSellerUserId(), event.getStockTicker());
 
         if (sellerAvailableStocks < event.getTradeQuantity()) {
             log.error("보유 주식 부족 - 매도자 ID: {}, 필요 주식: {}, 보유 주식: {}",
                     event.getSellerUserId(), event.getTradeQuantity(), sellerAvailableStocks);
-            settlementProducer.sendSettlementFailure(event);
+            settlementProducer.sendSellSettlementFailure(event);
             throw new InsufficientStockException("보유 주식 부족으로 정산 실패");
         }
     }

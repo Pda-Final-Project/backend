@@ -1,7 +1,14 @@
 spring:
   application:
     name: matching-service
-  data:
-    redis:
-      host: redis-cluster.redis.svc.cluster.local
-      port: 6379
+
+  kafka:
+    bootstrap-servers: kafka.kafka.svc.cluster.local:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: user-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer

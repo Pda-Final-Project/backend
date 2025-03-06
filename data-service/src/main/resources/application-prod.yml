@@ -1,6 +1,6 @@
 spring:
   application:
-    name: execution-service
+    name: data-service
 
   data:
     redis:

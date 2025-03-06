@@ -11,7 +11,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -25,7 +24,7 @@ public class NotificationController {
      * 사용자의 알림 리스트 조회
      */
     @GetMapping
-    public ResponseEntity<List<ApiResponse<String>>> getNotifications() {
+    public ResponseEntity<List<ApiResponse<Object>>> getNotifications() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || "anonymousUser".equals(authentication.getPrincipal())) {
@@ -41,7 +40,7 @@ public class NotificationController {
                     .body(List.of(ApiResponse.fail(HttpStatus.BAD_REQUEST, "잘못된 사용자 정보")));
         }
 
-        List<ApiResponse<String>> notifications = userService.getNotifications(userId.toString());
+        List<ApiResponse<Object>> notifications = userService.getNotifications(userId.toString());
 
         return ResponseEntity.ok(notifications);
     }
@@ -50,25 +49,44 @@ public class NotificationController {
      * 사용자의 알림 ON/OFF 설정
      */
     @PatchMapping("/switch")
-    public ResponseEntity<ApiResponse<String>> toggleNotification(@RequestBody Map<String, Boolean> request) {
+    public ResponseEntity<String> switchNotification(@RequestParam("enabled") Boolean enabled) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || "anonymousUser".equals(authentication.getPrincipal())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.fail(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자");
         }
 
         Long userId;
         try {
             userId = Long.parseLong(authentication.getName());
         } catch (NumberFormatException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.fail(HttpStatus.BAD_REQUEST, "잘못된 사용자 정보"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("잘못된 사용자 정보");
         }
 
-        boolean enabled = request.getOrDefault("enabled", true);
         userService.updateNotificationSetting(userId, enabled);
-
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "알림 상태 변경 성공", ""));
+        return ResponseEntity.ok("알림 설정 변경 완료");
     }
+
+    /**
+     * 사용자의 알림 설정 상태 조회
+     */
+    @GetMapping("/status")
+    public ResponseEntity<Boolean> isNotificationEnabled() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(false);
+        }
+
+        Long userId;
+        try {
+            userId = Long.parseLong(authentication.getName());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+
+        boolean isEnabled = userService.isNotificationEnabled(userId);
+        return ResponseEntity.ok(isEnabled);
+    }
+
 }

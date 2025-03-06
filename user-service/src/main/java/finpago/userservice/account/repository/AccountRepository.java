@@ -16,4 +16,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Transactional
     @Query("UPDATE Account a SET a.accountWithholding = :newBalance WHERE a.userId = :userId")
     void updateAccountWithholding(Long userId, Long newBalance);
+
+    @Query("SELECT a.accountWithholding FROM Account a WHERE a.userId = :userId")
+    Long getBalanceByUserId(Long userId);
 }

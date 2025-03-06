@@ -10,6 +10,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
+@Setter
 @Builder
 @Entity
 @Table(name = "users")
@@ -30,5 +31,5 @@ public class User extends BaseEntity implements Serializable {
     private String userPassword;
 
     @Column(name = "user_notification_switch")
-    private Boolean userNotificationSwitch;
+    private Boolean userNotificationSwitch = true; //기본값 : 알림 on
 }

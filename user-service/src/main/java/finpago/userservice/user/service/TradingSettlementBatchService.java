@@ -45,7 +45,7 @@ public class TradingSettlementBatchService {
 
             if (balanceStr != null) {
                 String userBalanceKey = pendingUpdateKey + ":balance:" + userId;
-                redisTemplate.opsForValue().set(userBalanceKey, balanceStr, 7, TimeUnit.DAYS);
+                redisTemplate.opsForValue().set(userBalanceKey, balanceStr, EXPIRATION_DAYS, TimeUnit.DAYS);
                 log.info("사용자 {} 예수금 예약 저장 (D+2): {}", userId, balanceStr);
             }
 

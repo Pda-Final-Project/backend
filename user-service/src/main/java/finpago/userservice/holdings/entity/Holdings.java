@@ -41,7 +41,20 @@ public class Holdings extends BaseEntity {
 
     public void updateHoldings(Long additionalQuantity, Long tradePrice, Float tradeExchangeRate) {
         long newTotalQuantity = this.holdingQuantity + additionalQuantity;
-        long newTotalCost = (this.holdingPrice * this.holdingQuantity) + (tradePrice * additionalQuantity);
+
+        if (newTotalQuantity < 0) {
+            throw new IllegalArgumentException("보유 수량이 음수가 될 수 없습니다.");
+        }
+
+        if (newTotalQuantity == 0) {
+            this.holdingQuantity = 0L;
+            this.holdingPrice = 0L;
+            this.holdingTotalPrice = 0L;
+            this.exchangeRate = 0.0f;
+            return;
+        }
+
+        long newTotalCost = (this.holdingTotalPrice) + (tradePrice * additionalQuantity);
         long newAveragePrice = newTotalCost / newTotalQuantity;
 
         float newTotalExchangeRate = (this.exchangeRate * this.holdingQuantity) + (tradeExchangeRate * additionalQuantity);

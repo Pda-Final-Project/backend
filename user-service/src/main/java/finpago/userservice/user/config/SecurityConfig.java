@@ -33,7 +33,7 @@ public class SecurityConfig {
         System.out.println(" Security Filter Chain 설정 시작...");
 
         http
-                .cors(cors -> cors.disable()) // CORS 설정
+                .cors(cors -> cors.disable()) // CORS 비활성화
                 .csrf(csrf -> csrf.disable())  // CSRF 완전 비활성화
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import finpago.common.global.common.ApiResponse;
 import finpago.common.global.exception.error.DuplicateUserPhoneException;
 import finpago.common.global.messaging.NoticeEvent;
+import finpago.userservice.account.entity.Account;
+import finpago.userservice.account.repository.AccountRepository;
 import finpago.userservice.user.dto.JoinReqDto;
 import finpago.userservice.user.dto.LoginReqDto;
 import finpago.userservice.user.entity.User;
@@ -20,7 +22,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -33,18 +37,23 @@ public class UserService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
     private static final String NOTIFICATION_KEY_PREFIX = "user:%s:notifications"; // Redis 키 패턴
     private static final long EXPIRATION_DAYS = 7; // 알림 보관 기간 (7일)
+    private static final String BANK_NAME = "신한";
+    private static final long DEFAULT_WITHHOLDING = 10_000_000L;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public void join(JoinReqDto joinReqDto) {
-
-        if (userRepository.findByUserPhone(joinReqDto.getUserPhone()).isPresent()) {
+        Optional<User> existingUser = userRepository.findByUserPhone(joinReqDto.getUserPhone());
+        if (existingUser.isPresent()) {
             throw new DuplicateUserPhoneException("이미 등록된 전화번호입니다.");
         }
+
         String encodedPassword = passwordEncoder.encode(joinReqDto.getUserPassword());
 
         User user = User.builder()
@@ -55,6 +64,25 @@ public class UserService {
                 .build();
 
         userRepository.save(user);
+
+        // 계좌 생성
+        Account account = Account.builder()
+                .userId(user.getUserId())
+                .accountName(BANK_NAME)
+                .accountNumber(generateRandomAccountNumber())
+                .accountPassword(joinReqDto.getAccountPassword())
+                .accountWithholding(DEFAULT_WITHHOLDING)
+                .build();
+
+        accountRepository.save(account);
+    }
+
+    private String generateRandomAccountNumber() {
+        StringBuilder accountNumber = new StringBuilder();
+        for (int i = 0; i < 12; i++) { // 12자리 계좌번호 생성
+            accountNumber.append(RANDOM.nextInt(10));
+        }
+        return accountNumber.toString();
     }
 
     public String login(LoginReqDto loginReqDto) {

@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"finpago.common.global.exception", "finpago.fillingservice"})
+@ComponentScan(basePackages = {"finpago.common.global", "finpago.fillingservice"})
 public class FillingServiceApplication {
 
     public static void main(String[] args) {

@@ -1,5 +1,7 @@
 package finpago.notificationservice.notification.service;
 
+import finpago.common.global.messaging.BuyTradeMatchEvent;
+import finpago.common.global.messaging.SellTradeMatchEvent;
 import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.common.global.messaging.NoticeEvent;
 import finpago.notificationservice.notification.client.UserClient;
@@ -19,7 +21,7 @@ public class NotificationService {
     /**
      * 매수자 알림 생성 및 발송
      */
-    public void sendBuyOrderNotification(TradeMatchingEvent event) {
+    public void sendBuyOrderNotification(BuyTradeMatchEvent event) {
         boolean isNotificationEnabled = userClient.getNotificationSetting(event.getBuyerUserId());
 
         if (!isNotificationEnabled) {
@@ -31,7 +33,7 @@ public class NotificationService {
                 event.getBuyerUserId(),
                 "[해외주식 매수 주문 체결]",
                 event.getStockTicker(),
-                event.getBuyerOrderQuentity(),
+                event.getBuyerOrderQuantity(),
                 event.getTradeQuantity(),
                 event.getTradePrice()
         );
@@ -43,7 +45,7 @@ public class NotificationService {
     /**
      * 매도자 알림 생성 및 발송
      */
-    public void sendSellOrderNotification(TradeMatchingEvent event) {
+    public void sendSellOrderNotification(SellTradeMatchEvent event) {
         boolean isNotificationEnabled = userClient.getNotificationSetting(event.getSellerUserId());
 
         if (!isNotificationEnabled) {
@@ -55,7 +57,7 @@ public class NotificationService {
                 event.getSellerUserId(),
                 "[해외주식 매도 주문 체결]",
                 event.getStockTicker(),
-                event.getSellerOrderQuentity(),
+                event.getSellerOrderQuantity(),
                 event.getTradeQuantity(),
                 event.getTradePrice()
         );

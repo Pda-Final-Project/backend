@@ -1,5 +1,7 @@
 package finpago.notificationservice.notification.config.kafka;
 
+import finpago.common.global.messaging.BuyTradeMatchEvent;
+import finpago.common.global.messaging.SellTradeMatchEvent;
 import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.common.global.messaging.NoticeEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -24,9 +26,9 @@ public class KafkaConfig {
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
     private static final String GROUP_ID = "notification-service-group";
 
-    // ProducerFactory (TradeMatchingEvent)
+    // BuyTradeMatchEvent ProducerFactory
     @Bean
-    public ProducerFactory<String, TradeMatchingEvent> tradeProducerFactory() {
+    public ProducerFactory<String, BuyTradeMatchEvent> buyTradeProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -36,8 +38,24 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, TradeMatchingEvent> tradeKafkaTemplate() {
-        return new KafkaTemplate<>(tradeProducerFactory());
+    public KafkaTemplate<String, BuyTradeMatchEvent> buyTradeKafkaTemplate() {
+        return new KafkaTemplate<>(buyTradeProducerFactory());
+    }
+
+    // SellTradeMatchEvent ProducerFactory
+    @Bean
+    public ProducerFactory<String, SellTradeMatchEvent> sellTradeProducerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        return new DefaultKafkaProducerFactory<>(props);
+    }
+
+    @Bean
+    public KafkaTemplate<String, SellTradeMatchEvent> sellTradeKafkaTemplate() {
+        return new KafkaTemplate<>(sellTradeProducerFactory());
     }
 
     // ProducerFactory (NoticeEvent)
@@ -56,8 +74,9 @@ public class KafkaConfig {
         return new KafkaTemplate<>(noticeProducerFactory());
     }
 
+    // ConsumerFactory: BuyTradeMatchEvent 지원
     @Bean
-    public ConsumerFactory<String, TradeMatchingEvent> tradeConsumerFactory() {
+    public ConsumerFactory<String, BuyTradeMatchEvent> buyTradeConsumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
@@ -65,22 +84,37 @@ public class KafkaConfig {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.TradeMatchingEvent");
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.BuyTradeMatchEvent");
 
-        System.out.println("바밥밥 "+props.get(JsonDeserializer.VALUE_DEFAULT_TYPE));
         return new DefaultKafkaConsumerFactory<>(props);
-
-//        return new DefaultKafkaConsumerFactory<>(
-//                props,
-//                new StringDeserializer(),
-//                new JsonDeserializer<>(TradeMatchingEvent.class, false)
-//        );
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> tradeKafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, TradeMatchingEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(tradeConsumerFactory());
+    public ConcurrentKafkaListenerContainerFactory<String, BuyTradeMatchEvent> buyTradeKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, BuyTradeMatchEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(buyTradeConsumerFactory());
+        return factory;
+    }
+
+    // ConsumerFactory: SellTradeMatchEvent 지원
+    @Bean
+    public ConsumerFactory<String, SellTradeMatchEvent> sellTradeConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.SellTradeMatchEvent");
+
+        return new DefaultKafkaConsumerFactory<>(props);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, SellTradeMatchEvent> sellTradeKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, SellTradeMatchEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(sellTradeConsumerFactory());
         return factory;
     }
 }

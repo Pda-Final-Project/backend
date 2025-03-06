@@ -13,8 +13,9 @@ import org.springframework.stereotype.Component;
 public class HoldingsConsumer {
 
     private final HoldingService holdingService;
+    private static final String SETTLEMENT_TOPIC = "settlement-topic";
 
-    @KafkaListener(topics = "trade-execution-topic", groupId = "holding-service-group",
+    @KafkaListener(topics = SETTLEMENT_TOPIC, groupId = "holding-service-group",
             containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleTradeExecution(TradeMatchingEvent event) {
         log.info("체결된 주문 유저 모듈에서 수신: {}", event);

@@ -1,8 +1,8 @@
 package finpago.userservice.holdings.controller;
 
 import finpago.common.global.common.ApiResponse;
+import finpago.userservice.holdings.dto.UserHoldingsDto;
 import finpago.userservice.holdings.service.HoldingService;
-import finpago.userservice.holdings.service.HoldingsFxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
+//보유종목 조회 데이터 반환
 @Slf4j
 @RestController
 @RequestMapping("/v1/api/stocks")
@@ -21,8 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class HoldingController {
 
     private final HoldingService holdingService;
-    private final HoldingsFxService holdingsFxService;
-
 
     /**
      * 사용 가능 주식 조회 (해당 종목)
@@ -31,7 +31,7 @@ public class HoldingController {
     public ResponseEntity<ApiResponse<Long>> getAvailableStocks(@PathVariable String stockTicker) {
         Long userId = getUserIdFromAuth();
         Long availableStocks = holdingService.getAvailableStocks(userId, stockTicker);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "사용 가능 주식 조회 성공", availableStocks));
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "사용 가능 주식 수 조회 성공", availableStocks));
     }
 
     /**
@@ -41,85 +41,18 @@ public class HoldingController {
     public ResponseEntity<ApiResponse<Long>> getHoldings(@PathVariable String stockTicker) {
         Long userId = getUserIdFromAuth();
         Long holdings = holdingService.getHoldings(userId, stockTicker);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "보유 주식 조회 성공", holdings));
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "보유 주식 수 조회 성공", holdings));
     }
 
     /**
-     * 환차손익 조회 API
-     * @param stockTicker 주식 티커 (ex. TSLA)
-     * @return 환차손익 (KRW)
+     * 사용자의 보유 주식 정보 조회
+     * @return List<UserHoldingsDto> (보유 주식 정보 리스트)
      */
-    @GetMapping("/{stockTicker}/fx-profit")
-    public ResponseEntity<ApiResponse<Double>> getFxProfit(@PathVariable String stockTicker) {
-        Long userId = getUserIdFromAuth(); // 인증된 사용자 ID 가져오기
-        double fxProfit = holdingsFxService.calculateFxProfit(userId, stockTicker);
-
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "환차손익 조회 성공", fxProfit));
-    }
-
-    /**
-     * 매매손익 조회 API
-     * @param stockTicker 주식 티커 (ex. TSLA)
-     * @return 매매손익 (KRW)
-     */
-    @GetMapping("/{stockTicker}/trade-profit")
-    public ResponseEntity<ApiResponse<Double>> getTradeProfit(@PathVariable String stockTicker) {
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<UserHoldingsDto>>> getUserHoldings() {
         Long userId = getUserIdFromAuth();
-        double tradeProfit = holdingsFxService.calculateTradeProfit(userId, stockTicker);
-
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "매매손익 조회 성공", tradeProfit));
-    }
-
-    /**
-     * 매수금액 조회 API
-     * @param stockTicker 주식 티커 (ex. TSLA)
-     * @return 매수금액 (KRW)
-     */
-    @GetMapping("/{stockTicker}/purchase-amount")
-    public ResponseEntity<ApiResponse<Double>> getPurchaseAmount(@PathVariable String stockTicker) {
-        Long userId = getUserIdFromAuth();
-        double purchaseAmount = holdingsFxService.calculatePurchaseAmount(userId, stockTicker);
-
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "매수금액 조회 성공", purchaseAmount));
-    }
-
-    /**
-     * 손익등락 조회 API
-     * @param stockTicker 주식 티커 (ex. TSLA)
-     * @return 손익등락 (KRW)
-     */
-    @GetMapping("/{stockTicker}/total-profit")
-    public ResponseEntity<ApiResponse<Double>> getTotalProfit(@PathVariable String stockTicker) {
-        Long userId = getUserIdFromAuth();
-        double totalProfit = holdingsFxService.calculateTotalProfit(userId, stockTicker);
-
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "손익등락 조회 성공", totalProfit));
-    }
-
-    /**
-     * 평가금액 조회 API
-     * @param stockTicker 주식 티커 (ex. TSLA)
-     * @return 평가금액 (KRW)
-     */
-    @GetMapping("/{stockTicker}/evaluation-amount")
-    public ResponseEntity<ApiResponse<Double>> getEvaluationAmount(@PathVariable String stockTicker) {
-        Long userId = getUserIdFromAuth();
-        double evaluationAmount = holdingsFxService.calculateEvaluationAmount(userId, stockTicker);
-
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "평가금액 조회 성공", evaluationAmount));
-    }
-
-    /**
-     * 수익률 조회 API
-     * @param stockTicker 주식 티커 (ex. TSLA)
-     * @return 수익률 (%)
-     */
-    @GetMapping("/{stockTicker}/return-rate")
-    public ResponseEntity<ApiResponse<Double>> getReturnRate(@PathVariable String stockTicker) {
-        Long userId = getUserIdFromAuth();
-        double returnRate = holdingsFxService.calculateReturnRate(userId, stockTicker);
-
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "수익률 조회 성공", returnRate));
+        List<UserHoldingsDto> userHoldings = holdingService.getUserHoldings(userId);
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "보유 주식 정보 조회 성공", userHoldings));
     }
 
     /**

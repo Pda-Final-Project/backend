@@ -21,5 +21,6 @@ public class TradeMatchingEvent {
     private LocalDateTime tradeTimestamp; // 체결 시각
     private Long buyerOrderQuentity; //매도자가 주문넣엇던 수향
     private Long sellerOrderQuentity; //매수자가 주문넣엇던 수량
+    private Float exchangeRate=0.0f;//환율
 }
 

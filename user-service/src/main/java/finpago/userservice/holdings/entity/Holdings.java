@@ -27,8 +27,29 @@ public class Holdings extends BaseEntity {
     @Column(name = "holding_quantity")
     private Long holdingQuantity;
 
-    //현재 시세 기준 보유종목 총 가격(이 종목의 현재시세 * 수량)
+    //평단가(개인 투자자가 주식을 매수한 평균 가격)
+    @Column(name = "holding_price")
+    private Long holdingPrice;
+
+    //보유종목 총 가격(이 종목의 평단가 * 수량)
     @Column(name = "holding_total_price")
     private Long holdingTotalPrice;
 
+    //매수 평균환율
+    @Column(name = "exchange_rate")
+    private Float exchangeRate;
+
+    public void updateHoldings(Long additionalQuantity, Long tradePrice, Float tradeExchangeRate) {
+        long newTotalQuantity = this.holdingQuantity + additionalQuantity;
+        long newTotalCost = (this.holdingPrice * this.holdingQuantity) + (tradePrice * additionalQuantity);
+        long newAveragePrice = newTotalCost / newTotalQuantity;
+
+        float newTotalExchangeRate = (this.exchangeRate * this.holdingQuantity) + (tradeExchangeRate * additionalQuantity);
+        float newAverageExchangeRate = newTotalExchangeRate / newTotalQuantity;
+
+        this.holdingQuantity = newTotalQuantity;
+        this.holdingPrice = newAveragePrice;
+        this.holdingTotalPrice = newTotalCost;
+        this.exchangeRate = newAverageExchangeRate;
+    }
 }

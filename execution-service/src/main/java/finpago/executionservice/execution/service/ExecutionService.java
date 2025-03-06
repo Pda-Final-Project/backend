@@ -1,5 +1,7 @@
 package finpago.executionservice.execution.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import finpago.common.global.enums.OrderStatus;
 import finpago.common.global.enums.OrderType;
 import finpago.common.global.enums.TradeStatus;
@@ -26,6 +28,7 @@ public class ExecutionService {
     private final TradeRepository tradeRepository;
     private final ExecutionProducer executionProducer;
     private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     private static final long DEFAULT_BALANCE = 1_000_000L; // 기본 예수금 (1,000,000)
     private static final long DEFAULT_STOCKS = 100L; // 기본 보유 주식 수량 (100주)
@@ -52,8 +55,22 @@ public class ExecutionService {
         System.out.println(trade.getTradeNumber());
 
         tradeRepository.save(trade);
+
+        saveTradeToRedis(event.getBuyerUserId(), trade);
+        saveTradeToRedis(event.getSellerUserId(), trade);
+
         // 체결 성공 시 Settlement 모듈로 Kafka 메시지 전송
         executionProducer.sendTradeToSettlement(event);
+    }
+
+    private void saveTradeToRedis(Long userId, Trade trade) {
+        String key = "user:" + userId + ":trades";
+        try {
+            String tradeJson = objectMapper.writeValueAsString(trade);
+            redisTemplate.opsForList().rightPush(key, tradeJson);
+        } catch (JsonProcessingException e) {
+            log.error("Redis 저장 중 오류 발생: ", e);
+        }
     }
 
   /**

@@ -19,11 +19,14 @@ public class ChartService {
 
     public List<ChartResponseDto> getCharts(String stockTicker, String chartType, LocalDate startDate, LocalDate endDate) {
         List<Chart> charts;
-        if (startDate == null || endDate == null) {
-            charts = chartRepository.findByStockTickerAndChartTypeOrderByReportDateDesc(stockTicker, chartType);
-        } else {
+        // 두 날짜가 모두 존재할 때만 변환하여 조회
+        if (startDate != null && endDate != null) {
+            LocalDateTime startDateTime = startDate.atStartOfDay();
+            LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
             charts = chartRepository.findByStockTickerAndChartTypeAndReportDateBetweenOrderByReportDateDesc(
-                    stockTicker, chartType, startDate, endDate);
+                    stockTicker, chartType, startDateTime, endDateTime);
+        } else {
+            charts = chartRepository.findByStockTickerAndChartTypeOrderByReportDateDesc(stockTicker, chartType);
         }
         return charts.stream()
                 .map(ChartResponseDto::new)

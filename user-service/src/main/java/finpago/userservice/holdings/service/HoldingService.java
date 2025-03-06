@@ -1,5 +1,6 @@
 package finpago.userservice.holdings.service;
 
+import finpago.common.global.messaging.BuyTradeMatchEvent;
 import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.userservice.holdings.dto.UserHoldingsDto;
 import finpago.userservice.holdings.entity.Holdings;
@@ -96,7 +97,7 @@ public class HoldingService {
 
     //평단가,환율,수량 업데이트 (없다면 holding객체 생성)
     @Transactional
-    public void updateHoldings(TradeMatchingEvent event) {
+    public void updateHoldings(BuyTradeMatchEvent event) {
         Optional<Holdings> existingHolding = holdingsRepository.findByUserIdAndStockTicker(
                 event.getBuyerUserId(), event.getStockTicker());
 

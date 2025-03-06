@@ -41,6 +41,7 @@ public class KafkaConfig {
     public KafkaTemplate<String, OrderCreateReqEvent> orderKafkaTemplate() {
         return new KafkaTemplate<>(orderProducerFactory());
     }
+
     // SellTradeMatchEvent ProducerFactory
     @Bean
     public ProducerFactory<String, SellTradeMatchEvent> sellTradeProducerFactory() {

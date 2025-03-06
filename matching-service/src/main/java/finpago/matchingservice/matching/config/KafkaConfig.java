@@ -1,6 +1,8 @@
 package finpago.matchingservice.matching.config;
 
+import finpago.common.global.messaging.BuyTradeMatchEvent;
 import finpago.common.global.messaging.OrderCreateReqEvent;
+import finpago.common.global.messaging.SellTradeMatchEvent;
 import finpago.common.global.messaging.TradeMatchingEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -40,9 +42,9 @@ public class KafkaConfig {
         return new KafkaTemplate<>(orderProducerFactory());
     }
 
-    // TradeMatchingEvent ProducerFactory
+    // SellTradeMatchEvent ProducerFactory
     @Bean
-    public ProducerFactory<String, TradeMatchingEvent> tradeProducerFactory() {
+    public ProducerFactory<String, SellTradeMatchEvent> sellTradeProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -52,8 +54,24 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, TradeMatchingEvent> tradeKafkaTemplate() {
-        return new KafkaTemplate<>(tradeProducerFactory());
+    public KafkaTemplate<String, SellTradeMatchEvent> sellTradeKafkaTemplate() {
+        return new KafkaTemplate<>(sellTradeProducerFactory());
+    }
+
+    // BuyTradeMatchEvent ProducerFactory
+    @Bean
+    public ProducerFactory<String, BuyTradeMatchEvent> buyTradeProducerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        return new DefaultKafkaProducerFactory<>(props);
+    }
+
+    @Bean
+    public KafkaTemplate<String, BuyTradeMatchEvent> buyTradeKafkaTemplate() {
+        return new KafkaTemplate<>(buyTradeProducerFactory());
     }
 
     // ConsumerFactory (OrderCreateReqEvent 수신)

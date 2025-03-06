@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -74,5 +73,6 @@ public class TradeFetchService {
         public int getTradeQuantity() { return tradeQuantity; }
         public double getTradePrice() { return tradePrice; }
         public double getTradeExchangeRate() { return tradeExchangeRate; }
+        public String getTradeDate() { return tradeDate; }
     }
 }

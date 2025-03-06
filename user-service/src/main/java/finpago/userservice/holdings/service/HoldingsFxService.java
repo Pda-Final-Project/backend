@@ -1,210 +1,201 @@
 package finpago.userservice.holdings.service;
 
+import finpago.userservice.holdings.dto.TradeSummaryDto;
+import finpago.userservice.holdings.entity.Holdings;
+import finpago.userservice.holdings.repository.HoldingsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
+//해외주식 잔고 (원화기준)
 @Service
 @RequiredArgsConstructor
 public class HoldingsFxService {
 
+    private final HoldingsRepository holdingsRepository;
     private final StringRedisTemplate redisTemplate;
+    private final TradeFetchService tradeFetchService;
 
     /**
-     * 환차손익 계산 메서드
+     * 사용자의 전체 매도 내역을 합산하여 하나의 DTO로 반환
      * @param userId 사용자 ID
-     * @param stockTicker 주식 티커 (ex. TSLA)
-     * @return 환차손익 (KRW)
+     * @return TradeSummaryDto (전체 합산된 값)
      */
-    public double calculateFxProfit(Long userId, String stockTicker) {
-        // Redis Key 정의
-        String holdingsFxKey = "user:" + userId + ":holdings-fx:" + stockTicker;
-        String exchangeRateKey = "stock:" + stockTicker + ":exchange_rate";
-        String stockInfoKey = "stock:" + stockTicker;
+    public TradeSummaryDto getUserTradeSummary(Long userId) {
+        // 사용자의 전체 매도 체결 내역 가져오기
+        List<TradeFetchService.Trade> sellTrades = tradeFetchService.getUserSellTrades(userId);
 
-        // Redis 데이터 가져오기
-        List<String> holdingsFxList = redisTemplate.opsForList().range(holdingsFxKey, 0, -1);
-        ValueOperations<String, String> valueOps = redisTemplate.opsForValue();
-        HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
+        // 합산 값 초기화
+        double totalEvaluationAmount = 0.0; //평가금액
+        double totalProfitChange = 0.0; //손익등락
+        double totalBuyAmount = 0.0; //매수금액
+        double totalTradeProfit = 0.0; //매매손익
+        double totalFxProfit = 0.0; //환차손익
 
-        // 현재 환율 가져오기
-        String exchangeRateStr = valueOps.get(exchangeRateKey);
-        double currentExchangeRate = exchangeRateStr != null ? Double.parseDouble(exchangeRateStr) : 0.0;
-
-        // 현재가 가져오기
-        String currentPriceStr = hashOps.get(stockInfoKey, "current_price");
-        double currentPrice = currentPriceStr != null ? Double.parseDouble(currentPriceStr) : 0.0;
-
-        if (holdingsFxList == null || holdingsFxList.isEmpty() || currentExchangeRate == 0.0 || currentPrice == 0.0) {
-            return 0.0; // 데이터 부족 시 0 반환
+        // 모든 Trade를 순회하면서 합산
+        for (TradeFetchService.Trade trade : sellTrades) {
+            totalEvaluationAmount += calculateEvaluationAmount(userId, trade);
+            totalProfitChange += calculateProfitChange(userId, trade);
+            totalBuyAmount += calculateBuyAmount(userId, trade.getTradeTicker());
+            totalTradeProfit += calculateTradeProfit(userId, trade);
+            totalFxProfit += calculateFxProfit(userId, trade);
         }
 
-        double totalFxProfit = 0.0;
+        // 수익률 계산 (가중 평균 수익률)
+        double totalReturnRate = (totalBuyAmount == 0) ? 0.0 : (totalProfitChange / totalBuyAmount) * 100;
 
-        // 환차손익 계산
-        for (String entry : holdingsFxList) {
-            String[] parts = entry.split(":");
-            if (parts.length != 3) continue;
-
-            double buyExchangeRate = Double.parseDouble(parts[0]); // 매수 시 환율
-            int quantity = Integer.parseInt(parts[1]); // 매수 수량
-
-            double sellAmountUSD = currentPrice * quantity; // (현재가로) 매도 금액 (KRW)
-            double fxProfit = (currentExchangeRate - buyExchangeRate) * sellAmountUSD; // 환차손익 계산
-
-            totalFxProfit += fxProfit;
-        }
-
-        return totalFxProfit;
+        // DTO 생성 및 반환
+        return TradeSummaryDto.builder()
+                .evaluationAmount(totalEvaluationAmount)
+                .profitChange(totalProfitChange)
+                .returnRate(totalReturnRate)
+                .buyAmount(totalBuyAmount)
+                .tradeProfit(totalTradeProfit)
+                .fxProfit(totalFxProfit)
+                .build();
     }
 
     /**
-     * 매매손익 계산 메서드
+     * 환차손익(KRW) 계산 메서드 (단일 Trade 객체)
      * @param userId 사용자 ID
-     * @param stockTicker 주식 티커 (ex. TSLA)
-     * @return 매매손익 (KRW)
+     * @param trade 단일 Trade 객체
+     * @return 환차손익 (KRW)
      */
-    public double calculateTradeProfit(Long userId, String stockTicker) {
-        // Redis Key 정의
-        String holdingsFxKey = "user:" + userId + ":holdings-fx:" + stockTicker;
-        String exchangeRateKey = "stock:" + stockTicker + ":exchange_rate";
-        String stockInfoKey = "stock:" + stockTicker;
-        String holdingsKey = "user:" + userId + ":holdings:" + stockTicker;
+    public double calculateFxProfit(Long userId, TradeFetchService.Trade trade) {
+        if (!trade.getSellerUserId().equals(userId)) {
+            return 0.0; // 매도한 거래가 아니면 0 반환
+        }
 
-        // Redis 데이터 가져오기
-        List<String> holdingsFxList = redisTemplate.opsForList().range(holdingsFxKey, 0, -1);
-        ValueOperations<String, String> valueOps = redisTemplate.opsForValue();
+        // 매도 시 환율(KRW/USD) 가져오기
+        double sellExchangeRate = trade.getTradeExchangeRate();
+
+        // 매도한 종목의 holdings 데이터 가져오기
+        Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, trade.getTradeTicker());
+        if (holdingsOptional.isEmpty()) {
+            return 0.0; // holdings 데이터가 없으면 환차손익 0 반환
+        }
+
+        Holdings holdings = holdingsOptional.get();
+
+        // 매수 시 환율(KRW/USD) 가져오기
+        double buyExchangeRate = holdings.getExchangeRate();
+
+        // Redis에서 현재가 가져오기
         HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
-
-        // 현재 환율 가져오기
-        String exchangeRateStr = valueOps.get(exchangeRateKey);
-        double currentExchangeRate = exchangeRateStr != null ? Double.parseDouble(exchangeRateStr) : 0.0;
-
-        // 현재가 가져오기
+        String stockInfoKey = "stock:" + trade.getTradeTicker();
         String currentPriceStr = hashOps.get(stockInfoKey, "current_price");
         double currentPrice = currentPriceStr != null ? Double.parseDouble(currentPriceStr) : 0.0;
 
-        // 보유 주식 수량 가져오기
-        String holdingsStr = valueOps.get(holdingsKey);
-        long holdingsQuantity = holdingsStr != null ? Long.parseLong(holdingsStr) : 0;
+        // 현재가로 매도 금액(KRW) 계산
+        double sellAmountCurrentPrice = currentPrice * trade.getTradeQuantity();
 
-        if (holdingsFxList == null || holdingsFxList.isEmpty() || currentExchangeRate == 0.0 || currentPrice == 0.0 || holdingsQuantity == 0) {
-            return 0.0; // 데이터 부족 시 0 반환
+        // 환차손익(KRW) 계산
+        return (sellExchangeRate - buyExchangeRate) * sellAmountCurrentPrice;
+    }
+
+    /**
+     * 매매손익(KRW) 계산 메서드 (단일 Trade 객체)
+     * @param userId 사용자 ID
+     * @param trade 단일 Trade 객체
+     * @return 매매손익 (KRW)
+     */
+    public double calculateTradeProfit(Long userId, TradeFetchService.Trade trade) {
+        if (!trade.getSellerUserId().equals(userId)) {
+            return 0.0; // 매도한 거래가 아니면 0 반환
         }
 
-        double totalBuyAmount = 0.0;
-        double totalSellAmount = currentPrice * holdingsQuantity * currentExchangeRate; // 매도금액 (KRW)
+        // 매도 금액(KRW) 계산
+        double sellAmount = trade.getTradePrice() * trade.getTradeQuantity();
 
-        // 매수금액 (KRW) 계산
-        for (String entry : holdingsFxList) {
-            String[] parts = entry.split(":");
-            if (parts.length != 3) continue;
-            int quantity = Integer.parseInt(parts[1]); // 매수 수량
-            double buyPrice = Double.parseDouble(parts[2]); // 매수 당시 가격 (KRW)
-
-            double buyAmountKRW = buyPrice * quantity ; // 매수 금액 (KRW)
-            totalBuyAmount += buyAmountKRW;
+        // 매도한 종목의 holdings 데이터 가져오기
+        Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, trade.getTradeTicker());
+        if (holdingsOptional.isEmpty()) {
+            return 0.0; // holdings 데이터가 없으면 매수 금액을 구할 수 없으므로 0 반환
         }
 
-        // 매매손익 계산
-        double tradeProfit = totalSellAmount - totalBuyAmount;
-        return tradeProfit;
+        Holdings holdings = holdingsOptional.get();
+
+        // 매수 금액(KRW) 계산
+        double buyAmount = holdings.getHoldingPrice() * holdings.getHoldingQuantity();
+
+        // 매매손익(KRW) 계산
+        return sellAmount - buyAmount;
     }
 
     /**
      * 매수금액(KRW) 계산 메서드
      * @param userId 사용자 ID
-     * @param stockTicker 주식 티커 (ex. TSLA)
+     * @param stockTicker 종목 코드
      * @return 매수금액 (KRW)
      */
-    public double calculatePurchaseAmount(Long userId, String stockTicker) {
-        // Redis Key 정의
-        String holdingsFxKey = "user:" + userId + ":holdings-fx:" + stockTicker;
-
-        // Redis 데이터 가져오기
-        List<String> holdingsFxList = redisTemplate.opsForList().range(holdingsFxKey, 0, -1);
-        if (holdingsFxList == null || holdingsFxList.isEmpty()) {
-            return 0.0; // 데이터가 없으면 0 반환
+    public double calculateBuyAmount(Long userId, String stockTicker) {
+        // 매도한 종목의 holdings 데이터 가져오기
+        Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, stockTicker);
+        if (holdingsOptional.isEmpty()) {
+            return 0.0; // holdings 데이터가 없으면 0 반환
         }
 
-        double totalPurchaseAmount = 0.0;
+        Holdings holdings = holdingsOptional.get();
 
-        // 매수금액 (KRW) 계산
-        for (String entry : holdingsFxList) {
-            String[] parts = entry.split(":");
-            if (parts.length != 3) continue;
-
-            double buyExchangeRate = Double.parseDouble(parts[0]); // 매수 당시 환율
-            int quantity = Integer.parseInt(parts[1]); // 매수 수량
-            double buyPrice = Double.parseDouble(parts[2]); // 매수 당시 가격 (USD)
-
-            double purchaseAmountKRW = buyPrice * quantity * buyExchangeRate; // 매수 금액 (KRW)
-            totalPurchaseAmount += purchaseAmountKRW;
-        }
-
-        return totalPurchaseAmount;
+        // 매수금액(KRW) 계산
+        return holdings.getHoldingPrice() * holdings.getHoldingQuantity();
     }
 
     /**
-     * 손익등락(KRW) 계산 메서드
+     * 손익 등락(KRW) 계산 메서드
      * @param userId 사용자 ID
-     * @param stockTicker 주식 티커 (ex. TSLA)
-     * @return 손익등락 (KRW)
+     * @param trade 단일 Trade 객체
+     * @return 손익 등락 (KRW)
      */
-    public double calculateTotalProfit(Long userId, String stockTicker) {
-        // 매매손익 가져오기
-        double tradeProfit = calculateTradeProfit(userId, stockTicker);
+    public double calculateProfitChange(Long userId, TradeFetchService.Trade trade) {
+        // 매매손익(KRW) 계산
+        double tradeProfit = calculateTradeProfit(userId, trade);
 
-        // 환차손익 가져오기
-        double fxProfit = calculateFxProfit(userId, stockTicker);
+        // 환차손익(KRW) 계산
+        double fxProfit = calculateFxProfit(userId, trade);
 
-        // 손익등락 = 매매손익 + 환차손익
+        // 손익 등락(KRW) 계산
         return tradeProfit + fxProfit;
     }
 
     /**
      * 평가금액(KRW) 계산 메서드
      * @param userId 사용자 ID
-     * @param stockTicker 주식 티커 (ex. TSLA)
+     * @param trade 단일 Trade 객체
      * @return 평가금액 (KRW)
      */
-    public double calculateEvaluationAmount(Long userId, String stockTicker) {
-        // 매수금액(KRW) 가져오기
-        double purchaseAmount = calculatePurchaseAmount(userId, stockTicker);
+    public double calculateEvaluationAmount(Long userId, TradeFetchService.Trade trade) {
+        // 매수금액(KRW) 계산
+        double buyAmount = calculateBuyAmount(userId, trade.getTradeTicker());
 
-        // 매매손익(KRW) 가져오기
-        double tradeProfit = calculateTradeProfit(userId, stockTicker);
+        // 매매손익(KRW) 계산
+        double tradeProfit = calculateTradeProfit(userId, trade);
 
-        // 환차손익(KRW) 가져오기
-        double fxProfit = calculateFxProfit(userId, stockTicker);
+        // 환차손익(KRW) 계산
+        double fxProfit = calculateFxProfit(userId, trade);
 
-        // 평가금액 계산
-        return purchaseAmount + tradeProfit + fxProfit;
+        // 평가금액(KRW) 계산
+        return buyAmount + tradeProfit + fxProfit;
     }
 
     /**
      * 수익률(%) 계산 메서드
      * @param userId 사용자 ID
-     * @param stockTicker 주식 티커 (ex. TSLA)
+     * @param trade 단일 Trade 객체
      * @return 수익률 (%)
      */
-    public double calculateReturnRate(Long userId, String stockTicker) {
-        // 매수금액(KRW) 가져오기
-        double purchaseAmount = calculatePurchaseAmount(userId, stockTicker);
+    public double calculateReturnRate(Long userId, TradeFetchService.Trade trade) {
+        // 손익 등락(KRW) 계산
+        double profitChange = calculateProfitChange(userId, trade);
 
-        // 매수금액이 0이면 수익률을 계산할 수 없음 (0으로 나누기 방지)
-        if (purchaseAmount == 0.0) {
-            return 0.0;
-        }
+        // 매수 금액(KRW) 계산
+        double buyAmount = calculateBuyAmount(userId, trade.getTradeTicker());
 
-        // 손익등락(KRW) 가져오기
-        double totalProfit = calculateTotalProfit(userId, stockTicker);
-
-        // 수익률(%) 계산
-        return (totalProfit / purchaseAmount) * 100;
+        // 수익률(%) 계산 (0으로 나누기 방지)
+        return (buyAmount == 0) ? 0.0 : (profitChange / buyAmount) * 100;
     }
 }

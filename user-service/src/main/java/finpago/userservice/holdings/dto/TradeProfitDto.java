@@ -5,11 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+//손익내역 list
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TradeProfitDto {
+    private String sellDateTime; //매도일자
     private String stockTicker; // 종목 코드
     private double realizedProfit; // 실현 손익(KRW)
     private double returnRate; // 손익률(%)

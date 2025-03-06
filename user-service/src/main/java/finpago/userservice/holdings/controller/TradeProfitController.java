@@ -2,6 +2,7 @@ package finpago.userservice.holdings.controller;
 
 import finpago.common.global.common.ApiResponse;
 import finpago.userservice.holdings.dto.TradeProfitDto;
+import finpago.userservice.holdings.dto.TradeProfitSumDto;
 import finpago.userservice.holdings.service.TradeFetchService;
 import finpago.userservice.holdings.service.TradeProfitService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/api/tradeProfit")
@@ -26,11 +27,22 @@ public class TradeProfitController {
      * 사용자의 매도 손익 내역 리스트 조회
      * @return 매도 손익 내역 리스트 (List<TradeProfitDto>)
      */
-    @GetMapping("/sell-history")
+    @GetMapping("/list")
     public ResponseEntity<ApiResponse<List<TradeProfitDto>>> getUserSellHistory() {
         Long userId = getUserIdFromAuth();
         List<TradeProfitDto> tradeProfitList = tradeProfitService.getUserSellTradeProfits(userId);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "매도 손익 내역 조회 성공", tradeProfitList));
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "매도 손익 내역 리스트 조회 성공", tradeProfitList));
+    }
+
+    /**
+     * 사용자의 매도 손익 내역 합 조회
+     * @return TradeProfitSumDto (합산된 손익 내역)
+     */
+    @GetMapping("/sum")
+    public ResponseEntity<ApiResponse<TradeProfitSumDto>> getUserSellHistorySum() {
+        Long userId = getUserIdFromAuth();
+        TradeProfitSumDto tradeProfitSum = tradeProfitService.getUserSellTradeProfitsSum(userId);
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "매도 손익 내역 합 조회 성공", tradeProfitSum));
     }
 
     /**

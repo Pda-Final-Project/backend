@@ -1,7 +1,8 @@
 package finpago.userservice.holdings.controller;
 
 import finpago.common.global.common.ApiResponse;
-import finpago.userservice.holdings.service.HoldingsTotalService;
+import finpago.userservice.holdings.dto.TradeSummaryDto;
+import finpago.userservice.holdings.service.HoldingsFxService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,71 +10,23 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+//해외주식 잔고조회(원화기준)
 @RestController
 @RequestMapping("/api/holdings/total")
 @RequiredArgsConstructor
 public class HoldingsTotalController {
 
-    private final HoldingsTotalService holdingsTotalService;
+    private final HoldingsFxService holdingsFxService;
 
     /**
-     * 전체 평가금액 조회 API
+     * 사용자의 전체 매도 내역 합산 정보 반환
+     * @return TradeSummaryDto (합산된 손익 정보)
      */
-    @GetMapping("/evaluation-amount")
-    public ResponseEntity<ApiResponse<Double>> getTotalEvaluationAmount() {
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<TradeSummaryDto>> getUserTradeSummary() {
         Long userId = getUserIdFromAuth();
-        double totalEvaluationAmount = holdingsTotalService.calculateTotalEvaluationAmount(userId);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "전체 평가금액 조회 성공", totalEvaluationAmount));
-    }
-
-    /**
-     * 전체 손익등락 조회 API
-     */
-    @GetMapping("/total-profit")
-    public ResponseEntity<ApiResponse<Double>> getTotalProfit() {
-        Long userId = getUserIdFromAuth();
-        double totalProfit = holdingsTotalService.calculateTotalProfit(userId);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "전체 손익등락 조회 성공", totalProfit));
-    }
-
-    /**
-     * 전체 수익률 조회 API (가중 평균)
-     */
-    @GetMapping("/return-rate")
-    public ResponseEntity<ApiResponse<Double>> getWeightedReturnRate() {
-        Long userId = getUserIdFromAuth();
-        double returnRate = holdingsTotalService.calculateWeightedAverageReturnRate(userId);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "전체 가중 평균 수익률 조회 성공", returnRate));
-    }
-
-    /**
-     * 전체 매수금액 조회 API
-     */
-    @GetMapping("/purchase-amount")
-    public ResponseEntity<ApiResponse<Double>> getTotalPurchaseAmount() {
-        Long userId = getUserIdFromAuth();
-        double purchaseAmount = holdingsTotalService.calculateTotalPurchaseAmount(userId);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "전체 매수금액 조회 성공", purchaseAmount));
-    }
-
-    /**
-     * 전체 매매손익 조회 API
-     */
-    @GetMapping("/trade-profit")
-    public ResponseEntity<ApiResponse<Double>> getTotalTradeProfit() {
-        Long userId = getUserIdFromAuth();
-        double tradeProfit = holdingsTotalService.calculateTotalTradeProfit(userId);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "전체 매매손익 조회 성공", tradeProfit));
-    }
-
-    /**
-     * 전체 환차손익 조회 API
-     */
-    @GetMapping("/fx-profit")
-    public ResponseEntity<ApiResponse<Double>> getTotalFxProfit() {
-        Long userId = getUserIdFromAuth();
-        double fxProfit = holdingsTotalService.calculateTotalFxProfit(userId);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "전체 환차손익 조회 성공", fxProfit));
+        TradeSummaryDto tradeSummary = holdingsFxService.getUserTradeSummary(userId);
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "전체 매도 내역 합산 조회 성공", tradeSummary));
     }
 
     /**

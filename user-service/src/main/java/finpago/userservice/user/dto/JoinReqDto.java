@@ -14,4 +14,5 @@ public class JoinReqDto {
     private String userName;
     private String userPhone;
     private String userPassword;
+    private String accountPassword;
 }

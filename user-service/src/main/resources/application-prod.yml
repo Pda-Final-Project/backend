@@ -3,7 +3,7 @@ spring:
     name: user-service
 
   datasource:
-    url: jdbc:mysql://userdb-cluster.db.svc.cluster.local:3306/finpagodb?useSSL=false&characterEncoding=UTF-8
+    url: jdbc:mysql://userdb-cluster.db.svc.cluster.local:3306/finpagodb??allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul
     username: root
     password: admin
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -13,18 +13,31 @@ spring:
       idle-timeout: 30000
       max-lifetime: 1800000
 
+  kafka:
+    bootstrap-servers: kafka.kafka.svc.cluster.local:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: user-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
   jpa:
-    generate-ddl: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
     hibernate:
       ddl-auto: create
+    database: mysql
     open-in-view: false
 
   data:
     redis:
       host: redis-cluster.redis.svc.cluster.local
       port: 6379
-
-
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
   expiration: 86400000

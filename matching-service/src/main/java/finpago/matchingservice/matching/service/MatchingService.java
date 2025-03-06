@@ -2,7 +2,10 @@ package finpago.matchingservice.matching.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import finpago.common.global.messaging.BuyTradeMatchEvent;
+import finpago.common.global.messaging.SellTradeMatchEvent;
 import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import finpago.common.global.enums.OrderType;
 import finpago.common.global.messaging.OrderCreateReqEvent;
@@ -22,13 +25,8 @@ public class MatchingService {
     private final MatchingProducer matchingProducer;
     private final StringRedisTemplate redisTemplate;
 
-    // 매수 주문 (시간순 정렬)
-    private final PriorityQueue<OrderCreateReqEvent> buyOrders = new PriorityQueue<>(
-            Comparator.comparing(OrderCreateReqEvent::getCreatedAt)
-    );
-
-    // 매도 주문 (시간순 정렬)
-    private final PriorityQueue<OrderCreateReqEvent> sellOrders = new PriorityQueue<>(
+    //주문 시간순 정렬
+    private final PriorityQueue<OrderCreateReqEvent> orders = new PriorityQueue<>(
             Comparator.comparing(OrderCreateReqEvent::getCreatedAt)
     );
 
@@ -42,17 +40,10 @@ public class MatchingService {
     public void processOrder(OrderCreateReqEvent order) {
         log.info("주문 접수: {}", order);
 
-        if (order.getOfferType() == OrderType.BUY) {
-            buyOrders.offer(order);
-            log.info("매수 주문 추가: {}", order);
-        } else {
-            sellOrders.offer(order);
-            log.info("매도 주문 추가: {}", order);
-        }
-
+        orders.offer(order);
         processMatching();
-    }
 
+    }
 
     // Redis에서 최신 20개 체결가 가져오기
     private List<Map<String, Object>> getRecentTradesFromRedis(String stockTicker) {
@@ -80,11 +71,12 @@ public class MatchingService {
         return tradeDataList;
     }
 
-    private void processMatching() {
+    @Transactional
+    protected void processMatching() {
         log.info("매칭 시작");
         long startTime = System.currentTimeMillis();
 
-        while (!buyOrders.isEmpty() && !sellOrders.isEmpty()) {
+        while (!orders.isEmpty()) {
             if (System.currentTimeMillis() - startTime > MAX_WAIT_TIME) {
                 log.warn("5분 초과 - 미체결 주문을 Order 모듈로 전송");
                 moveUnmatchedOrdersToQueue();
@@ -92,115 +84,128 @@ public class MatchingService {
                 return;
             }
 
-            OrderCreateReqEvent buyOrder = buyOrders.poll();
-            OrderCreateReqEvent sellOrder = sellOrders.poll();
+            OrderCreateReqEvent order = orders.poll();
+            List<Map<String, Object>> recentTrades = getRecentTradesFromRedis(order.getStockTicker());
 
-            // Redis에서 최신 체결 데이터 조회
-            List<Map<String, Object>> recentTrades = getRecentTradesFromRedis(buyOrder.getStockTicker());
+            if (!recentTrades.isEmpty()) {
+                long maxTradePrice = recentTrades.stream()
+                        .mapToLong(trade -> (long) trade.get("price"))
+                        .max().orElse(Long.MIN_VALUE);
+                long minTradePrice = recentTrades.stream()
+                        .mapToLong(trade -> (long) trade.get("price"))
+                        .min().orElse(Long.MAX_VALUE);
 
-            boolean matchedExternally = false;
-            for (Map<String, Object> trade : recentTrades) {
-                long tradePrice = (long) trade.get("price");
-                long tradeVolume = (long) trade.get("volume");
+                if (order.getOfferType() == OrderType.BUY) {
+                    if (order.getOfferPrice() > maxTradePrice) {
+                        handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), true);
+                    } else {
+                        for (Map<String, Object> trade : recentTrades) {
+                            long tradePrice = (long) trade.get("price");
+                            long tradeVolume = (long) trade.get("volume");
 
-                // 우리 서비스의 주문과 실제 시장 체결 가격이 동일하면 즉시 체결
-                if (buyOrder.getOfferPrice() == tradePrice) {
-                    matchedExternally = true;
-                    long matchedQuantity = Math.min(buyOrder.getOfferQuantity(), tradeVolume);
+                            if (order.getOfferPrice() == tradePrice) {
+                                long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
+                                long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
+                                handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, true);
+                                order.setOfferQuantity(unfilledQuantity);
 
-                    // 체결 실행
-                    handleTradeExecution(buyOrder, sellOrder, matchedQuantity, tradePrice);
-
-                    // 남은 주문 다시 큐에 삽입 (부분 체결 처리)
-                    if (buyOrder.getOfferQuantity() > matchedQuantity) {
-                        buyOrder.setOfferQuantity(buyOrder.getOfferQuantity() - matchedQuantity);
-                        buyOrders.offer(buyOrder);
+                                if (unfilledQuantity > 0)
+                                    orders.offer(order);
+                                break;
+                            }
+                        }
                     }
-                    if (sellOrder.getOfferQuantity() > matchedQuantity) {
-                        sellOrder.setOfferQuantity(sellOrder.getOfferQuantity() - matchedQuantity);
-                        sellOrders.offer(sellOrder);
+                }else {
+                    if (order.getOfferPrice() < minTradePrice) {
+                        handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), false);
+                    } else {
+                        for (Map<String, Object> trade : recentTrades) {
+                            long tradePrice = (long) trade.get("price");
+                            long tradeVolume = (long) trade.get("volume");
+
+                            if (order.getOfferPrice() == tradePrice) {
+                                long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
+                                long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
+                                handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, false);
+                                order.setOfferQuantity(unfilledQuantity);
+
+                                if (unfilledQuantity > 0)
+                                    orders.offer(order);
+                                break;
+                            }
+                        }
                     }
-                    break; // 외부 체결 완료 시 내부 매칭 패스
                 }
             }
 
-            // 외부 체결이 없으면 기존 내부 매칭 수행
-            if (!matchedExternally) {
-                if (buyOrder.getOfferPrice() >= sellOrder.getOfferPrice()) {
-                    long matchedQuantity = Math.min(buyOrder.getOfferQuantity(), sellOrder.getOfferQuantity());
-
-                    // 체결 실행
-                    handleTradeExecution(buyOrder, sellOrder, matchedQuantity, buyOrder.getOfferPrice());
-
-                    // 부분 체결된 주문 다시 큐에 삽입
-                    if (buyOrder.getOfferQuantity() > matchedQuantity) {
-                        buyOrder.setOfferQuantity(buyOrder.getOfferQuantity() - matchedQuantity);
-                        buyOrders.offer(buyOrder);
-                    }
-                    if (sellOrder.getOfferQuantity() > matchedQuantity) {
-                        sellOrder.setOfferQuantity(sellOrder.getOfferQuantity() - matchedQuantity);
-                        sellOrders.offer(sellOrder);
-                    }
-                } else {
-                    // 매칭되지 않으면 다시 큐에 삽입
-                    buyOrders.offer(buyOrder);
-                    sellOrders.offer(sellOrder);
-                }
+            // 5분 초과 시 미체결 주문을 Order 모듈로 전송
+            if (System.currentTimeMillis() - startTime > MAX_WAIT_TIME) {
+                log.warn("5분 초과 - 미체결 주문을 Order 모듈로 전송");
+                moveUnmatchedOrdersToQueue();
+                sendUnmatchedOrdersToOrderService();
             }
-        }
-
-        // 5분 초과 시 미체결 주문을 Order 모듈로 전송
-        if (System.currentTimeMillis() - startTime > MAX_WAIT_TIME) {
-            log.warn("5분 초과 - 미체결 주문을 Order 모듈로 전송");
-            moveUnmatchedOrdersToQueue();
-            sendUnmatchedOrdersToOrderService();
         }
     }
+
 
 
     /**
      * 체결완료 주문 처리
      */
-    private void handleTradeExecution(OrderCreateReqEvent buyOrder, OrderCreateReqEvent sellOrder, long matchedQuantity, long matchedPrice) {
-        log.info("주문 체결 실행: 매수 주문 ID={}, 매도 주문 ID={}, 체결량={}, 체결가={}",
-                buyOrder.getOfferNumber(), sellOrder.getOfferNumber(), matchedQuantity, matchedPrice);
-
-        sendTradeToExecution(buyOrder, sellOrder, matchedQuantity, matchedPrice);
+    @Transactional
+    protected void handleTradeExecution(OrderCreateReqEvent order, long matchedQuantity, long unfilledQuantity, long matchedPrice, boolean isBuy) {
+        if (isBuy) {
+            BuyTradeMatchEvent event = new BuyTradeMatchEvent(
+                    UUID.randomUUID(),
+                    order.getOfferNumber(),
+                    order.getUserId(),
+                    order.getStockTicker(),
+                    matchedQuantity,
+                    unfilledQuantity,
+                    matchedPrice,
+                    LocalDateTime.now(),
+                    order.getOfferQuantity(),
+                    getExchangeRateFromRedis(order.getStockTicker()),
+                    order.getOfferPrice()
+            );
+            sendBuyTradeToExecution(event);
+        } else {
+            SellTradeMatchEvent event = new SellTradeMatchEvent(
+                    UUID.randomUUID(),
+                    order.getOfferNumber(),
+                    order.getUserId(),
+                    order.getStockTicker(),
+                    matchedQuantity,
+                    unfilledQuantity,
+                    matchedPrice,
+                    LocalDateTime.now(),
+                    order.getOfferQuantity(),
+                    getExchangeRateFromRedis(order.getStockTicker()),
+                    order.getOfferPrice()
+            );
+            sendSellTradeToExecution(event);
+        }
     }
 
     /**
      * Kafka 통해 Execution 모듈로 체결된 주문을 전송
      */
-    private void sendTradeToExecution(OrderCreateReqEvent buyOrder, OrderCreateReqEvent sellOrder, long matchedQuantity, long matchedPrice) {
-        TradeMatchingEvent tradeEvent = new TradeMatchingEvent(
-                UUID.randomUUID(),
-                buyOrder.getOfferNumber(),
-                sellOrder.getOfferNumber(),
-                buyOrder.getUserId(),
-                sellOrder.getUserId(),
-                buyOrder.getStockTicker(),
-                matchedQuantity,
-                matchedPrice,
-                LocalDateTime.now(),
-                buyOrder.getOfferQuantity(), // 원래 매수주문수량
-                sellOrder.getOfferQuantity(), // 원래 매도주문수량
-                getExchangeRateFromRedis(buyOrder.getStockTicker()) // 환율정보
-        );
+    private void sendBuyTradeToExecution(BuyTradeMatchEvent event) {
+        matchingProducer.sendBuyTradeToExecution(event);
+    }
 
-        matchingProducer.sendTradeToExecution(tradeEvent);
-        log.info("체결된 주문 Execution 모듈로 전송: {}", tradeEvent);
+    private void sendSellTradeToExecution(SellTradeMatchEvent event) {
+        matchingProducer.sendSellTradeToExecution(event);
     }
 
     /**
      * 매칭되지 않은 주문을 unmatchedOrders 큐로 이동
      */
     private void moveUnmatchedOrdersToQueue() {
-        while (!buyOrders.isEmpty()) {
-            unmatchedOrders.offer(buyOrders.poll());
+        while (!orders.isEmpty()) {
+            unmatchedOrders.offer(orders.poll());
         }
-        while (!sellOrders.isEmpty()) {
-            unmatchedOrders.offer(sellOrders.poll());
-        }
+
     }
 
     /**

@@ -72,7 +72,7 @@ public class MatchingService {
     }
 
     @Transactional
-    public void processMatching() {
+    protected void processMatching() {
         log.info("매칭 시작");
         long startTime = System.currentTimeMillis();
 
@@ -97,7 +97,7 @@ public class MatchingService {
 
                 if (order.getOfferType() == OrderType.BUY) {
                     if (order.getOfferPrice() > maxTradePrice) {
-                        handleTradeExecution(order, order.getOfferQuantity(), order.getOfferPrice(), true);
+                        handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), true);
                     } else {
                         for (Map<String, Object> trade : recentTrades) {
                             long tradePrice = (long) trade.get("price");
@@ -105,19 +105,19 @@ public class MatchingService {
 
                             if (order.getOfferPrice() == tradePrice) {
                                 long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
-                                handleTradeExecution(order, matchedQuantity, tradePrice, true);
+                                long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
+                                handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, true);
+                                order.setOfferQuantity(unfilledQuantity);
 
-                                if (order.getOfferQuantity() > matchedQuantity) {
-                                    order.setOfferQuantity(order.getOfferQuantity() - matchedQuantity);
+                                if (unfilledQuantity > 0)
                                     orders.offer(order);
-                                }
                                 break;
                             }
                         }
                     }
                 }else {
                     if (order.getOfferPrice() < minTradePrice) {
-                        handleTradeExecution(order, order.getOfferQuantity(), order.getOfferPrice(), false);
+                        handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), false);
                     } else {
                         for (Map<String, Object> trade : recentTrades) {
                             long tradePrice = (long) trade.get("price");
@@ -125,12 +125,12 @@ public class MatchingService {
 
                             if (order.getOfferPrice() == tradePrice) {
                                 long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
-                                handleTradeExecution(order, matchedQuantity, tradePrice, false);
+                                long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
+                                handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, false);
+                                order.setOfferQuantity(unfilledQuantity);
 
-                                if (order.getOfferQuantity() > matchedQuantity) {
-                                    order.setOfferQuantity(order.getOfferQuantity() - matchedQuantity);
+                                if (unfilledQuantity > 0)
                                     orders.offer(order);
-                                }
                                 break;
                             }
                         }
@@ -152,7 +152,8 @@ public class MatchingService {
     /**
      * 체결완료 주문 처리
      */
-    private void handleTradeExecution(OrderCreateReqEvent order, long matchedQuantity, long matchedPrice, boolean isBuy) {
+    @Transactional
+    protected void handleTradeExecution(OrderCreateReqEvent order, long matchedQuantity, long unfilledQuantity, long matchedPrice, boolean isBuy) {
         if (isBuy) {
             BuyTradeMatchEvent event = new BuyTradeMatchEvent(
                     UUID.randomUUID(),
@@ -160,6 +161,7 @@ public class MatchingService {
                     order.getUserId(),
                     order.getStockTicker(),
                     matchedQuantity,
+                    unfilledQuantity,
                     matchedPrice,
                     LocalDateTime.now(),
                     order.getOfferQuantity(),
@@ -174,6 +176,7 @@ public class MatchingService {
                     order.getUserId(),
                     order.getStockTicker(),
                     matchedQuantity,
+                    unfilledQuantity,
                     matchedPrice,
                     LocalDateTime.now(),
                     order.getOfferQuantity(),

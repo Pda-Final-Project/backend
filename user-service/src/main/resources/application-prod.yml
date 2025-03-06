@@ -33,11 +33,25 @@ spring:
     database: mysql
     open-in-view: false
 
-  data:
-    redis:
-      host: redis-cluster.redis.svc.cluster.local
-      port: 6379
+common:
+  redis:
+    enabled: true
+    password: CTg0n49k0M
+    client-type: lettuce
+    read-from: replica
+    cluster:
+      nodes:
+        - 192.168.3.156:6379  # Master 1
+        - 192.168.51.134:6379 # Master 2
+        - 192.168.52.187:6379 # Master 3
+      max-redirects: 3
+
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
   expiration: 86400000
 
+feign:
+  client:
+    config:
+      order-service:
+        url: http://order-service.default.svc.cluster.local

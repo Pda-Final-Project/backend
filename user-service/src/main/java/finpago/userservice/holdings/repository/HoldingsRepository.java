@@ -17,7 +17,7 @@ public interface HoldingsRepository extends JpaRepository<Holdings, Long> {
     Optional<Holdings> findByUserIdAndStockTicker(Long userId, String stockTicker);
 
     // 특정 사용자의 모든 보유 주식 조회
-    List<Holdings> findAllByUserId(Long userId);
+    List<Holdings> findByUserId(Long userId);
 
     // 보유 주식 수량 및 총 가격 업데이트
     @Modifying

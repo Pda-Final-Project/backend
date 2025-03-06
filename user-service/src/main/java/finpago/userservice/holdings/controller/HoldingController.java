@@ -1,6 +1,7 @@
 package finpago.userservice.holdings.controller;
 
 import finpago.common.global.common.ApiResponse;
+import finpago.userservice.holdings.dto.UserHoldingsDto;
 import finpago.userservice.holdings.service.HoldingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +13,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
+//보유종목 조회 데이터 반환
 @Slf4j
 @RestController
 @RequestMapping("/v1/api/stocks")
@@ -28,7 +31,7 @@ public class HoldingController {
     public ResponseEntity<ApiResponse<Long>> getAvailableStocks(@PathVariable String stockTicker) {
         Long userId = getUserIdFromAuth();
         Long availableStocks = holdingService.getAvailableStocks(userId, stockTicker);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "사용 가능 주식 조회 성공", availableStocks));
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "사용 가능 주식 수 조회 성공", availableStocks));
     }
 
     /**
@@ -38,7 +41,18 @@ public class HoldingController {
     public ResponseEntity<ApiResponse<Long>> getHoldings(@PathVariable String stockTicker) {
         Long userId = getUserIdFromAuth();
         Long holdings = holdingService.getHoldings(userId, stockTicker);
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "보유 주식 조회 성공", holdings));
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "보유 주식 수 조회 성공", holdings));
+    }
+
+    /**
+     * 사용자의 보유 주식 정보 조회
+     * @return List<UserHoldingsDto> (보유 주식 정보 리스트)
+     */
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<UserHoldingsDto>>> getUserHoldings() {
+        Long userId = getUserIdFromAuth();
+        List<UserHoldingsDto> userHoldings = holdingService.getUserHoldings(userId);
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "보유 주식 정보 조회 성공", userHoldings));
     }
 
     /**
@@ -53,4 +67,6 @@ public class HoldingController {
 
         return Long.parseLong(authentication.getName());
     }
+
+
 }

@@ -1,6 +1,8 @@
 package finpago.notificationservice.notification.messaging.consumer;
 
 
+import finpago.common.global.messaging.BuyTradeMatchEvent;
+import finpago.common.global.messaging.SellTradeMatchEvent;
 import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.notificationservice.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -14,17 +16,20 @@ import org.springframework.stereotype.Component;
 public class NotificationConsumer {
 
     private final NotificationService notificationService;
-    private static final String SETTLEMENT_TOPIC = "settlement-topic";
+    private static final String BUY_SETTLEMENT_TOPIC = "buy-settlement-topic";
+    private static final String SELL_SETTLEMENT_TOPIC = "sell-settlement-topic";
 
-    @KafkaListener(topics = SETTLEMENT_TOPIC, groupId = "notification-service-group",
-            containerFactory = "kafkaRetryListenerContainerFactory")
-    public void handleTradeSettlement(TradeMatchingEvent event) {
-        log.info("정산 완료 이벤트 수신: {}", event);
-
-        // 매수자 알림 생성
+    @KafkaListener(topics = BUY_SETTLEMENT_TOPIC, groupId = "notification-service-group",
+            containerFactory = "buyTradeRetryListenerContainerFactory")
+    public void handleBuyTradeSettlement(BuyTradeMatchEvent event) {
+        log.info("매수 정산 완료 이벤트 수신: {}", event);
         notificationService.sendBuyOrderNotification(event);
+    }
 
-        // 매도자 알림 생성
+    @KafkaListener(topics = SELL_SETTLEMENT_TOPIC, groupId = "notification-service-group",
+            containerFactory = "sellTradeRetryListenerContainerFactory")
+    public void handleSellTradeSettlement(SellTradeMatchEvent event) {
+        log.info("매도 정산 완료 이벤트 수신: {}", event);
         notificationService.sendSellOrderNotification(event);
     }
 }

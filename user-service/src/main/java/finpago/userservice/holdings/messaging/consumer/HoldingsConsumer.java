@@ -16,7 +16,7 @@ public class HoldingsConsumer {
     private static final String SETTLEMENT_TOPIC = "settlement-topic";
 
     @KafkaListener(topics = SETTLEMENT_TOPIC, groupId = "holding-service-group",
-            containerFactory = "kafkaRetryListenerContainerFactory")
+            containerFactory = "tradeMatchingKafkaRetryListenerContainerFactory")
     public void handleTradeExecution(TradeMatchingEvent event) {
         log.info("체결된 주문 유저 모듈에서 수신: {}", event);
         holdingService.updateHoldings(event);

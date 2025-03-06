@@ -102,6 +102,7 @@ pipeline {
                         
                         git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
                         
+                        git checkout main
                         git fetch origin main
                         git reset --hard origin/main
                         git pull --rebase origin main
@@ -154,7 +155,7 @@ def buildAndPushDockerImage(serviceName) {
         sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" > gradle.properties'
         sh 'echo "org.gradle.daemon.idleTimeout=60000" >> gradle.properties'
 
-        sh './gradlew bootJar --no-daemon --build-cache --parallel --continue'
+        sh './gradlew bootJar --build-cache --parallel --configure-on-demand --continue'
         
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """

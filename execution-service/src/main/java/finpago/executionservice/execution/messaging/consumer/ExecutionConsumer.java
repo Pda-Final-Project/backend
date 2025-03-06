@@ -18,6 +18,10 @@ public class ExecutionConsumer {
     private final ExecutionService executionService;
     private static final String SELL_TRADE_MATCHING_TOPIC = "sell-trade-matching";
     private static final String BUY_TRADE_MATCHING_TOPIC = "buy-trade-matching";
+
+    private static final String BUY_SETTLEMENT_FAILURE_TOPIC = "buy-settlement-failure-topic";
+    private static final String SELL_SETTLEMENT_FAILURE_TOPIC = "sell-settlement-failure-topic";
+
 //    private final SseEmitterService sseEmitterService;
 
 //    @KafkaListener(topics = "trade-matching-topic", groupId = "execution-service-group",
@@ -41,14 +45,14 @@ public class ExecutionConsumer {
         executionService.processSellTrade(event);
     }
 
-    @KafkaListener(topics = "settlement-failure-topic", groupId = "execution-service-group",
+    @KafkaListener(topics = BUY_SETTLEMENT_FAILURE_TOPIC, groupId = "execution-service-group",
             containerFactory = "buyTradeRetryListenerContainerFactory")
     public void sendFailedBuyTradeToMatching(BuyTradeMatchEvent event) {
         log.warn("매수 체결 실패 - Matching 모듈로 재전송: {}", event);
         executionService.handleBuySettlementFailure(event);
     }
 
-    @KafkaListener(topics = "settlement-failure-topic", groupId = "execution-service-group",
+    @KafkaListener(topics = SELL_SETTLEMENT_FAILURE_TOPIC, groupId = "execution-service-group",
             containerFactory = "sellTradeRetryListenerContainerFactory")
     public void sendFailedSellTradeToMatching(SellTradeMatchEvent event) {
         log.warn("매도 체결 실패 - Matching 모듈로 재전송: {}", event);

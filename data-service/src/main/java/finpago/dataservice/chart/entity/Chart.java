@@ -34,6 +34,9 @@ public class Chart extends BaseEntity {
     @Column(name = "chart_low")
     private BigInteger chartLow;
 
+    @Column(name = "chart_close")
+    private BigInteger chartClose;
+
     @Column(name = "chart_volume")
     private BigInteger chartVolume;
 }

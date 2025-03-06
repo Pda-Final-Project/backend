@@ -14,21 +14,19 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ChartResponseDto {
-    private LocalDateTime reportDate;
-    private String stockTicker;
-    private String chartType;
-    private BigInteger chartOpen;
-    private BigInteger chartHigh;
-    private BigInteger chartLow;
-    private BigInteger chartVolume;
+    private LocalDateTime date;
+    private BigInteger open;
+    private BigInteger high;
+    private BigInteger low;
+    private BigInteger close;
+    private BigInteger volume;
 
     public ChartResponseDto(Chart chart) {
-        this.chartVolume = chart.getChartVolume();
-        this.chartLow = chart.getChartLow();
-        this.chartHigh = chart.getChartHigh();
-        this.chartOpen = chart.getChartOpen();
-        this.chartType = chart.getChartType();
-        this.stockTicker = chart.getStockTicker();
-        this.reportDate = chart.getReportDate();
+        this.volume = chart.getChartVolume();
+        this.low = chart.getChartLow();
+        this.high = chart.getChartHigh();
+        this.open = chart.getChartOpen();
+        this.close = chart.getChartClose();
+        this.date = chart.getReportDate();
     }
 }

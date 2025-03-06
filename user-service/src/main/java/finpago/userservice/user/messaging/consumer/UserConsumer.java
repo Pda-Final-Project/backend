@@ -14,7 +14,8 @@ public class UserConsumer {
 
     private final UserService userService;
 
-    @KafkaListener(topics = "notice-topic", groupId = "user-service-group",containerFactory = "kafkaRetryListenerContainerFactory")
+    @KafkaListener(topics = "notice-topic", groupId = "user-service-group"
+            ,containerFactory = "noticeKafkaRetryListenerContainerFactory")
     public void consumeNotification(NoticeEvent event) {
         log.info("알림 수신 - 사용자 {}: {}", event.getUserId(), event);
         userService.saveNotification(event);

@@ -155,7 +155,7 @@ def buildAndPushDockerImage(serviceName) {
         sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" > gradle.properties'
         sh 'echo "org.gradle.daemon.idleTimeout=60000" >> gradle.properties'
 
-        sh './gradlew bootJar --no-daemon --build-cache --parallel --continue'
+        sh './gradlew bootJar --no-daemon --build-cache -Pprod --parallel --continue -Dspring.profiles.active=prod'
         
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """

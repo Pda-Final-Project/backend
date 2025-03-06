@@ -29,10 +29,23 @@ spring:
       ddl-auto: create
     open-in-view: false
 
-  data:
-    redis:
-      host: redis-cluster.redis.svc.cluster.local
-      port: 6379
+common:
+  redis:
+    enabled: true
+    cluster:
+      nodes:
+        - 192.168.3.156:6379
+        - 192.168.51.134:6379
+        - 192.168.52.187:6379
+    password: CTg0n49k0M
+    max-redirects: 3
+    lettuce:
+      cluster:
+        refresh:
+          adaptive: true
+          period: 60s
+    client-type: lettuce
+    read-from: replica
 
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"

@@ -13,11 +13,17 @@ import org.springframework.stereotype.Service;
 public class NotificationService {
 
     private final NotificationProducer notificationProducer;
+    private final NotificationSettingService notificationSettingService;
 
     /**
      * 매수자 알림 생성 및 발송
      */
     public void sendBuyOrderNotification(TradeMatchingEvent event) {
+        if (!notificationSettingService.isNotificationEnabled(event.getBuyerUserId())) {
+            log.info("매수자 {} 알림 비활성화, 발송 안함", event.getBuyerUserId());
+            return;
+        }
+
         NoticeEvent noticeEvent = new NoticeEvent(
                 event.getBuyerUserId(),
                 "[해외주식 매수 주문 체결]",
@@ -35,6 +41,11 @@ public class NotificationService {
      * 매도자 알림 생성 및 발송
      */
     public void sendSellOrderNotification(TradeMatchingEvent event) {
+        if (!notificationSettingService.isNotificationEnabled(event.getSellerUserId())) {
+            log.info("매도자 {} 알림 비활성화, 발송 안함", event.getSellerUserId());
+            return;
+        }
+
         NoticeEvent noticeEvent = new NoticeEvent(
                 event.getSellerUserId(),
                 "[해외주식 매도 주문 체결]",

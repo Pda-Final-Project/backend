@@ -3,7 +3,6 @@ package finpago.matchingservice.matching.messaging.producer;
 import finpago.common.global.messaging.BuyTradeMatchEvent;
 import finpago.common.global.messaging.OrderCreateReqEvent;
 import finpago.common.global.messaging.SellTradeMatchEvent;
-import finpago.common.global.messaging.TradeMatchingEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -21,11 +20,6 @@ public class MatchingProducer {
     private static final String SELL_TRADE_MATCHING_TOPIC = "sell-trade-matching";
     private static final String BUY_TRADE_MATCHING_TOPIC = "buy-trade-matching";
     private static final String UNMATCHED_ORDER_TOPIC = "unmatched-order-topic"; // 미체결 주문을 Order 모듈로 전송
-
-//    public void sendTradeToExecution(TradeMatchingEvent tradeEvent) {
-//        kafkaTemplate.send(TRADE_MATCHING_TOPIC, tradeEvent);
-//        log.info("매칭된 주문을 Execution 모듈로 전송: {}", tradeEvent);
-//    }
 
 
     public void sendBuyTradeToExecution(BuyTradeMatchEvent event) {

@@ -26,7 +26,7 @@ public class TradeProfitService {
      */
     public List<TradeProfitDto> getUserSellTradeProfits(Long userId) {
         // 사용자의 전체 매도 체결 내역 가져오기
-        List<TradeFetchService.Trade> sellTrades = tradeFetchService.getUserSellTrades(userId);
+        List<TradeFetchService.SellTrade> sellTrades = tradeFetchService.getUserSellTrades(userId);
 
         // 각 Trade 객체에 대해 손익 데이터를 계산하고 DTO로 변환
         return sellTrades.stream()
@@ -54,7 +54,7 @@ public class TradeProfitService {
      */
     public TradeProfitSumDto getUserSellTradeProfitsSum(Long userId) {
         // 사용자의 전체 매도 체결 내역 가져오기
-        List<TradeFetchService.Trade> sellTrades = tradeFetchService.getUserSellTrades(userId);
+        List<TradeFetchService.SellTrade> sellTrades = tradeFetchService.getUserSellTrades(userId);
 
         // 합산 값 초기화
         double totalRealizedProfit = 0.0;
@@ -64,7 +64,7 @@ public class TradeProfitService {
         double totalFxProfit = 0.0;
 
         // 모든 Trade를 순회하면서 합산
-        for (TradeFetchService.Trade trade : sellTrades) {
+        for (TradeFetchService.SellTrade trade : sellTrades) {
             double sellAmount = calculateTradeVolumes(userId, trade)[0]; // 매도 금액
             double buyAmount = calculateTradeVolumes(userId, trade)[1]; // 매수 금액
             double sellBuyProfit = sellAmount - buyAmount; // 매매손익
@@ -94,7 +94,7 @@ public class TradeProfitService {
      * @param trade 단일 Trade 객체
      * @return 실현 손익 (KRW)
      */
-    public double calculateRealizedProfit(Long userId, TradeFetchService.Trade trade) {
+    public double calculateRealizedProfit(Long userId, TradeFetchService.SellTrade trade) {
 
         if (!trade.getSellerUserId().equals(userId)) {
             return 0.0; // 매도한 거래가 아니면 0 반환
@@ -130,7 +130,7 @@ public class TradeProfitService {
      * @param trade 단일 Trade 객체
      * @return 손익률 (%)
      */
-    public double calculateTradeReturnRate(Long userId, TradeFetchService.Trade trade) {
+    public double calculateTradeReturnRate(Long userId,TradeFetchService.SellTrade trade) {
         if (!trade.getSellerUserId().equals(userId)) {
             return 0.0; // 매도한 거래가 아니면 0 반환
         }
@@ -159,7 +159,7 @@ public class TradeProfitService {
      * @param trade 단일 Trade 객체
      * @return [매도 평균가(KRW), 매수 평균가(KRW)] 배열
      */
-    public double[] calculateAverageTradePrices(Long userId, TradeFetchService.Trade trade) {
+    public double[] calculateAverageTradePrices(Long userId, TradeFetchService.SellTrade trade) {
         if (!trade.getSellerUserId().equals(userId)) {
             return new double[]{0.0, 0.0}; // 매도한 거래가 아니면 0 반환
         }
@@ -187,7 +187,7 @@ public class TradeProfitService {
      * @param trade 단일 Trade 객체
      * @return [매도 금액(USD), 매수 금액(USD), 매도 수량, 매수 수량] 배열
      */
-    public double[] calculateTradeVolumes(Long userId, TradeFetchService.Trade trade) {
+    public double[] calculateTradeVolumes(Long userId, TradeFetchService.SellTrade trade) {
         if (!trade.getSellerUserId().equals(userId)) {
             return new double[]{0.0, 0.0, 0.0, 0.0}; // 매도한 거래가 아니면 0 반환
         }
@@ -221,7 +221,7 @@ public class TradeProfitService {
      * @param trade 단일 Trade 객체
      * @return [매도 환율(KRW/USD), 매수 환율(KRW/USD)] 배열
      */
-    public double[] calculateTradeExchangeRates(Long userId, TradeFetchService.Trade trade) {
+    public double[] calculateTradeExchangeRates(Long userId, TradeFetchService.SellTrade trade) {
         if (!trade.getSellerUserId().equals(userId)) {
             return new double[]{0.0, 0.0}; // 매도한 거래가 아니면 0 반환
         }

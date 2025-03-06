@@ -3,7 +3,7 @@ spring:
     name: user-service
 
   datasource:
-    url: jdbc:mysql://userdb-cluster.db.svc.cluster.local:3306/finpagodb??allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul
+    url: jdbc:mysql://userdb-cluster.db.svc.cluster.local:3306/finpagodb?allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul
     username: root
     password: admin
     driver-class-name: com.mysql.cj.jdbc.Driver

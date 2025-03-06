@@ -14,16 +14,16 @@ import finpago.userservice.user.repository.UserRepository;
 import finpago.userservice.user.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +35,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserService {
 
-    private final StringRedisTemplate redisTemplate;
+    //private final StringRedisTemplate redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
@@ -48,6 +49,8 @@ public class UserService {
     private static final String BANK_NAME = "신한";
     private static final long DEFAULT_WITHHOLDING = 10_000_000L;
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String NOTIFICATION_SETTING_KEY = "user:%d:notification-settings";
+
 
     public void join(JoinReqDto joinReqDto) {
         Optional<User> existingUser = userRepository.findByUserPhone(joinReqDto.getUserPhone());
@@ -115,9 +118,9 @@ public class UserService {
     /**
      * 사용자 알림 리스트 조회
      */
-    public List<ApiResponse<String>> getNotifications(String userId) {
+    public List<ApiResponse<Object>> getNotifications(String userId) {
         String userKey = String.format(NOTIFICATION_KEY_PREFIX, userId);
-        List<String> notifications = redisTemplate.opsForList().range(userKey, 0, -1);
+        List<Object> notifications = redisTemplate.opsForList().range(userKey, 0, -1);
 
         if (notifications == null || notifications.isEmpty()) {
             return List.of(ApiResponse.fail(HttpStatus.NO_CONTENT, "알림이 없습니다."));
@@ -133,13 +136,18 @@ public class UserService {
     /**
      * 사용자 알림 설정 변경
      */
-    @Transactional
-    public void updateNotificationSetting(Long userId, boolean enabled) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자 ID"));
-
-        user.setUserNotificationSwitch(enabled);
-        userRepository.save(user);
+    public void updateNotificationSetting(Long userId, Boolean enabled) {
+        String key = String.format(NOTIFICATION_SETTING_KEY, userId);
+        redisTemplate.opsForValue().set(key, enabled, Duration.ofDays(30)); // 30일 유지
+        log.info("알림 설정 변경 저장: {} = {}", key, enabled);
     }
 
+    /**
+     * 사용자 알림 설정 조회
+     */
+    public boolean isNotificationEnabled(Long userId) {
+        String key = String.format(NOTIFICATION_SETTING_KEY, userId);
+        Boolean enabled = (Boolean) redisTemplate.opsForValue().get(key);
+        return enabled != null ? enabled : true; // 기본값 ON
+    }
 }

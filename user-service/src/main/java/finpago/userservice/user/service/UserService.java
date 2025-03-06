@@ -148,6 +148,6 @@ public class UserService {
     public boolean isNotificationEnabled(Long userId) {
         String key = String.format(NOTIFICATION_SETTING_KEY, userId);
         Boolean enabled = (Boolean) redisTemplate.opsForValue().get(key);
-        return enabled != null ? enabled : true; // 기본값 ON
+        return enabled != null ? enabled : true; // 기본값
     }
 }

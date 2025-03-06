@@ -36,7 +36,7 @@ public class BuyTrade extends BaseEntity {
     @Column(name = "trade_quantity", nullable = false)
     private Long tradeQuantity; // 체결 수량
 
-    @Column(name = "trade_quantity", nullable = false)
+    @Column(name = "unfilled_quantity", nullable = false)
     private Long unfilledQuantity; // 미체결 수량
 
     @Column(name = "trade_price", nullable = false)

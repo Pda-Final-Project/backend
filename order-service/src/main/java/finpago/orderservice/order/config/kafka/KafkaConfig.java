@@ -22,7 +22,7 @@ import java.util.Map;
 public class KafkaConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
-    private static String BOOTSTRAP_SERVERS;
+    private String BOOTSTRAP_SERVERS;
     private static final String GROUP_ID = "order-service-group";
 
     @Bean

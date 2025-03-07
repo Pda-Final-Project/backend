@@ -27,3 +27,5 @@ common:
     enabled: false
   kafka:
     enabled: false
+  discovery:
+    enabled: false

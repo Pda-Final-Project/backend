@@ -25,4 +25,6 @@ common:
     enabled: true
   kafka:
     enabled: false
+  discovery:
+    enabled: false
 

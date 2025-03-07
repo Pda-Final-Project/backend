@@ -28,6 +28,8 @@ common:
     enabled: false
   kafka:
     enabled: false
+  discovery:
+    enabled: true
 
 server:
   port: 19098

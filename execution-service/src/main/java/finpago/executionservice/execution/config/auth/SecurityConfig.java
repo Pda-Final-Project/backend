@@ -27,8 +27,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // ✅ 세션 사용 X
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v1/api/trade/updates/**").permitAll()
-                        .anyRequest().authenticated() // 모든 API에 대해 JWT 인증 필요
+                        .anyRequest().permitAll() // 모든 요청 허용
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // JWT 필터 추가
 

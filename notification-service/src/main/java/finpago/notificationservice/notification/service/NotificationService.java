@@ -22,12 +22,12 @@ public class NotificationService {
      * 매수자 알림 생성 및 발송
      */
     public void sendBuyOrderNotification(BuyTradeMatchEvent event) {
-        boolean isNotificationEnabled = userClient.getNotificationSetting(event.getBuyerUserId());
-
-        if (!isNotificationEnabled) {
-            log.info("매수자({})의 알림 설정이 OFF 상태이므로 알림을 발송하지 않음.", event.getBuyerUserId());
-            return;
-        }
+//        boolean isNotificationEnabled = userClient.getNotificationSetting();
+//
+//        if (!isNotificationEnabled) {
+//            log.info("매수자({})의 알림 설정이 OFF 상태이므로 알림을 발송하지 않음.", event.getBuyerUserId());
+//            return;
+//        }
 
         NoticeEvent noticeEvent = new NoticeEvent(
                 event.getBuyerUserId(),
@@ -46,7 +46,7 @@ public class NotificationService {
      * 매도자 알림 생성 및 발송
      */
     public void sendSellOrderNotification(SellTradeMatchEvent event) {
-        boolean isNotificationEnabled = userClient.getNotificationSetting(event.getSellerUserId());
+        boolean isNotificationEnabled = userClient.getNotificationSetting();
 
         if (!isNotificationEnabled) {
             log.info("매도자({})의 알림 설정이 OFF 상태이므로 알림을 발송하지 않음.", event.getSellerUserId());

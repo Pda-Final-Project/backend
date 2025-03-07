@@ -11,7 +11,8 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class MatchingDLTConsumer {
 
-    @KafkaListener(topics = "matching-dlt-topic", groupId = "matching-service-group")
+    @KafkaListener(topics = "matching-dlt-topic", groupId = "matching-service-group"
+            ,containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleFailedOrder(OrderCreateReqEvent failedOrder) {
         log.error("DLT에서 주문 복구 시도: {}", failedOrder);
     }

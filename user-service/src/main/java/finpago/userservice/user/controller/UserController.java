@@ -19,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/v1/api/auth")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;

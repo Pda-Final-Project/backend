@@ -16,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/v1/api/execution")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class TradeController {
 
     private final ExecutionService executionService;

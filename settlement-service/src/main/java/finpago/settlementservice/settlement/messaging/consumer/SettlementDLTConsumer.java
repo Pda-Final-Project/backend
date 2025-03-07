@@ -19,13 +19,15 @@ public class SettlementDLTConsumer {
     private static final String BUY_DLT_TOPIC = "buy-settlement-dlt-topic";
     private static final String SELL_DLT_TOPIC = "sell-settlement-dlt-topic";
 
-    @KafkaListener(topics = BUY_DLT_TOPIC, groupId = "settlement-service-group")
+    @KafkaListener(topics = BUY_DLT_TOPIC, groupId = "settlement-service-group",
+            containerFactory = "buyTradeRetryListenerContainerFactory")
     public void handleFailedBuySettlement(BuyTradeMatchEvent event) {
         log.warn("매수 정산 실패 (DLT) - 체결 모듈로 롤백 요청: {}", event);
         settlementProducer.sendBuySettlementFailure(event);
     }
 
-    @KafkaListener(topics = SELL_DLT_TOPIC, groupId = "settlement-service-group")
+    @KafkaListener(topics = SELL_DLT_TOPIC, groupId = "settlement-service-group",
+            containerFactory = "sellTradeRetryListenerContainerFactory")
     public void handleFailedSellSettlement(SellTradeMatchEvent event) {
         log.warn("매도 정산 실패 (DLT) - 체결 모듈로 롤백 요청: {}", event);
         settlementProducer.sendSellSettlementFailure(event);

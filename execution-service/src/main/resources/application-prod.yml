@@ -12,7 +12,11 @@ spring:
       minimum-idle: 5
       idle-timeout: 30000
       max-lifetime: 1800000
-
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: create
+    open-in-view: false
   kafka:
     bootstrap-servers: kafka.kafka.svc.cluster.local:9092
     producer:
@@ -22,17 +26,9 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
-  jpa:
-    generate-ddl: true
-    hibernate:
-      ddl-auto: create
-    open-in-view: false
-
-  data:
-    redis:
-      host: redis-cluster.redis.svc.cluster.local
-      port: 6379
+common:
+  redis:
+    enabled: true
 
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"

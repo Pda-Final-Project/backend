@@ -13,20 +13,17 @@ spring:
       idle-timeout: 30000
       max-lifetime: 1800000
   jpa:
+    database: mysql
     generate-ddl: true
     hibernate:
       ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
     open-in-view: false
+
 common:
   redis:
-    enabled: true
-    password: CTg0n49k0M
-    client-type: lettuce
-    read-from: replica
-    cluster:
-      nodes:
-        - 192.168.3.156:6379  # Master 1
-        - 192.168.51.134:6379 # Master 2
-        - 192.168.52.187:6379 # Master 3
-      max-redirects: 3
-
+    enabled: false
+  kafka:
+    enabled: false

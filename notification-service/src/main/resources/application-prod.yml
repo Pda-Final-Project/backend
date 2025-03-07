@@ -13,10 +13,5 @@ spring:
 common:
   redis:
     enabled: true
-    cluster:
-      nodes:
-        - 192.168.3.156:6379  # Master 1
-        - 192.168.51.134:6379 # Master 2
-        - 192.168.52.187:6379 # Master 3
-    password: CTg0n49k0M
-    max-redirects: 3
+  kafka:
+    enabled: true

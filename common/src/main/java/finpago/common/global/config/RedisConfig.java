@@ -2,14 +2,13 @@ package finpago.common.global.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.lettuce.core.ReadFrom;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -17,61 +16,70 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.List;
 
-@Profile("prod")
+/**
+ * 환경별 Redis 설정 (dev = 단일 인스턴스, prod = 클러스터)
+ */
 @Configuration
-@ConditionalOnClass(RedisClusterConfiguration.class)
 @ConditionalOnProperty(prefix = "common.redis", name = "enabled", havingValue = "true")
-@EnableConfigurationProperties(RedisProperties.class)
 public class RedisConfig {
 
-    @Bean
-    public RedisClusterConfiguration redisClusterConfiguration(RedisProperties redisProperties) {
-        if (redisProperties.getCluster() == null || redisProperties.getCluster().getNodes().isEmpty()) {
-            throw new IllegalArgumentException("Redis cluster nodes must not be null or empty.");
-        }
+    // Dev 환경 Redis 설정 (Standalone)
+    private static final String DEV_REDIS_HOST = "localhost";
+    private static final int DEV_REDIS_PORT = 6379;
 
-        RedisClusterConfiguration config = new RedisClusterConfiguration(redisProperties.getCluster().getNodes());
-        config.setPassword(RedisPassword.of(redisProperties.getPassword()));
-        config.setMaxRedirects(redisProperties.getCluster().getMaxRedirects());
+    // Prod 환경 Redis 클러스터 설정
+    private static final List<String> PROD_CLUSTER_NODES = List.of(
+            "192.168.3.156:6379",  // Master 1
+            "192.168.51.134:6379", // Master 2
+            "192.168.52.187:6379"  // Master 3
+    );
+    private static final String PROD_REDIS_PASSWORD = "CTg0n49k0M";
+    private static final int MAX_REDIRECTS = 3;
+    private static final Duration COMMAND_TIMEOUT = Duration.ofSeconds(10);
+
+    /**
+     * Redis 연결 팩토리 설정 (dev: 단일 인스턴스, prod: 클러스터)
+     */
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory() {
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder = LettuceClientConfiguration.builder()
+                .commandTimeout(COMMAND_TIMEOUT)
+                .readFrom(ReadFrom.REPLICA_PREFERRED); // ✅ replica 읽기 우선 설정 (공통 적용)
+
+        return isProdProfile()
+                ? new LettuceConnectionFactory(createClusterConfig(), builder.build())
+                : new LettuceConnectionFactory(createStandaloneConfig(), builder.build());
+    }
+
+    /**
+     * 단일 인스턴스 Redis 설정 (dev 환경)
+     */
+    private RedisStandaloneConfiguration createStandaloneConfig() {
+        return new RedisStandaloneConfiguration(DEV_REDIS_HOST, DEV_REDIS_PORT);
+    }
+
+    /**
+     * Redis 클러스터 설정 (prod 환경)
+     */
+    private RedisClusterConfiguration createClusterConfig() {
+        RedisClusterConfiguration config = new RedisClusterConfiguration(PROD_CLUSTER_NODES);
+        config.setPassword(RedisPassword.of(PROD_REDIS_PASSWORD));
+        config.setMaxRedirects(MAX_REDIRECTS);
         return config;
     }
 
+    /**
+     * RedisTemplate 설정 (모든 환경에서 공통 사용 가능)
+     */
     @Bean
-    public LettuceConnectionFactory redisConnectionFactory(RedisClusterConfiguration redisClusterConfiguration, RedisProperties redisProperties) {
-        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder = LettuceClientConfiguration.builder();
-
-        // 기본 타임아웃 설정
-        builder.commandTimeout(Duration.ofSeconds(10));
-
-        // Lettuce Cluster Refresh 설정
-        if (redisProperties.getLettuce() != null && redisProperties.getLettuce().getCluster() != null) {
-            if (redisProperties.getLettuce().getCluster().isAdaptive()) {
-                // Adaptive refresh는 사용 가능하지만, autoReconnect는 제거
-                builder.shutdownTimeout(Duration.ofSeconds(2));
-            }
-
-            // refresh.period 설정 (Spring Boot 3.x에서 Duration으로 변환)
-            if (redisProperties.getLettuce().getCluster().getPeriod() != null) {
-                builder.shutdownTimeout(Duration.parse("PT" + redisProperties.getLettuce().getCluster().getPeriod().replace("s", "") + "S"));
-            }
-        }
-
-        // ReadFrom 설정 적용 (replica 읽기 우선 적용)
-        if ("replica".equalsIgnoreCase(redisProperties.getReadFrom())) {
-            builder.readFrom(ReadFrom.REPLICA_PREFERRED);
-        }
-
-        return new LettuceConnectionFactory(redisClusterConfiguration, builder.build());
-    }
-
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(LettuceConnectionFactory redisConnectionFactory) {
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
 
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules(); // LocalDateTime 같은 타입을 위한 모듈 자동 등록
+        objectMapper.findAndRegisterModules();
 
         Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
 
@@ -81,5 +89,12 @@ public class RedisConfig {
         template.setHashValueSerializer(serializer);
         return template;
     }
-}
 
+    /**
+     * 현재 환경이 prod인지 확인하는 메서드
+     */
+    private boolean isProdProfile() {
+        String profile = System.getProperty("spring.profiles.active", System.getenv("SPRING_PROFILES_ACTIVE"));
+        return "prod".equalsIgnoreCase(profile);
+    }
+}

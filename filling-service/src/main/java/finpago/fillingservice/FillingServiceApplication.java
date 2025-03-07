@@ -2,10 +2,8 @@ package finpago.fillingservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
 
-@SpringBootApplication
-@ComponentScan(basePackages = {"finpago.common.global", "finpago.fillingservice"})
+@SpringBootApplication(scanBasePackages = {"finpago.common.global", "finpago.fillingservice"})
 public class FillingServiceApplication {
 
     public static void main(String[] args) {

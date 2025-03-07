@@ -16,13 +16,15 @@ public class ExecutionDLTConsumer {
 
     private final ExecutionService executionService;
 
-    @KafkaListener(topics = "buy-execution-dlt-topic", groupId = "execution-service-group")
+    @KafkaListener(topics = "buy-execution-dlt-topic", groupId = "execution-service-group",
+            containerFactory = "buyTradeRetryListenerContainerFactory")
     public void handleBuyExecutionDLT(BuyTradeMatchEvent event) {
         log.error("매수 체결 메시지 DLT 처리: {}", event);
         executionService.sendFailedBuyTradeToMatching(event);
     }
 
-    @KafkaListener(topics = "sell-execution-dlt-topic", groupId = "execution-service-group")
+    @KafkaListener(topics = "sell-execution-dlt-topic", groupId = "execution-service-group",
+            containerFactory = "sellTradeRetryListenerContainerFactory")
     public void handleSellExecutionDLT(SellTradeMatchEvent event) {
         log.error("매도 체결 메시지 DLT 처리: {}", event);
         executionService.sendFailedSellTradeToMatching(event);

@@ -41,3 +41,7 @@ spring:
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
   expiration: 86400000
+
+common:
+  discovery:
+    enabled: false

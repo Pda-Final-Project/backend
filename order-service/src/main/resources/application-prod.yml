@@ -31,6 +31,8 @@ common:
     enabled: true
   kafka:
     enabled: true
+  discovery:
+    enabled: false
 
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"

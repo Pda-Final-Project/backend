@@ -29,6 +29,8 @@ spring:
 common:
   redis:
     enabled: true
+  discovery:
+    enabled: false
 
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"

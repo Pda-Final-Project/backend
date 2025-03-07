@@ -12,6 +12,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -100,4 +101,18 @@ public class RedisConfig {
         String profile = System.getProperty("spring.profiles.active", System.getenv("SPRING_PROFILES_ACTIVE"));
         return "prod".equalsIgnoreCase(profile);
     }
+
+    /**
+     * Redis 메시지 리스너 컨테이너 설정
+     *
+     * @param redisConnectionFactory
+     * @return RedisMessageListenerContainer
+     */
+    @Bean
+    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory redisConnectionFactory) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(redisConnectionFactory);
+        return container; // 각 서비스에서 addMessageListener()를 추가할 수 있도록 빈을 제공
+    }
+
 }

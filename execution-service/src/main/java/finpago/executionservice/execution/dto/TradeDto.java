@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class TradeDto {
     private String stockTicker;
+    private String executionType; //매매구분(현금매도,현금매수)
     private Long offerPrice;
     private Long orderQuantity;
     private Long tradePrice;

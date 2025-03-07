@@ -44,15 +44,20 @@ public class HoldingController {
     }
 
     /**
-     * 사용자의 보유 주식 정보 조회
+     * 사용자의 보유 주식 정보 조회 (정렬 조건 추가)
+     * @param sortBy 정렬 조건 (profit: 수익률순, evaluation: 평가금액순, buyAmount: 매수금액순)
      * @return List<UserHoldingsDto> (보유 주식 정보 리스트)
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserHoldingsDto>>> getUserHoldings() {
+    public ResponseEntity<ApiResponse<List<UserHoldingsDto>>> getUserHoldings(
+            @RequestParam(required = false, defaultValue = "evaluation") String sortBy) {
+
         Long userId = getUserIdFromAuth();
-        List<UserHoldingsDto> userHoldings = holdingService.getUserHoldings(userId);
+        List<UserHoldingsDto> userHoldings = holdingService.getUserHoldings(userId, sortBy);
+
         return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "보유 주식 정보 조회 성공", userHoldings));
     }
+
 
     /**
      * 인증된 사용자 ID 가져오기

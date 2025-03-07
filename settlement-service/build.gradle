@@ -38,9 +38,6 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.redisson:redisson-spring-boot-starter:3.17.7'
 
-    //common
-    implementation project(':common')
-
     //eureka
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 

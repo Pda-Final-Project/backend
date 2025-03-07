@@ -16,13 +16,15 @@ public class MatchingConsumer {
     private static final String ORDER_TOPIC = "order-topic";
     private static final String FAILED_EXECUTION_TOPIC = "failed-execution-topic";
 
-    @KafkaListener(topics = ORDER_TOPIC, groupId = "matching-service-group")
+    @KafkaListener(topics = ORDER_TOPIC, groupId = "matching-service-group",
+            containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleNewOrder(OrderCreateReqEvent order) {
         log.info("새 주문 매칭 모듈에서 수신: {}", order);
         matchingService.processOrder(order);
     }
 
-    @KafkaListener(topics = FAILED_EXECUTION_TOPIC, groupId = "matching-service-group")
+    @KafkaListener(topics = FAILED_EXECUTION_TOPIC, groupId = "matching-service-group",
+            containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleFailedTrade(OrderCreateReqEvent failedOrder) {
         log.warn("체결 실패 주문 재매칭: {}", failedOrder);
         matchingService.processOrder(failedOrder); // 실패 주문을 다시 매칭 큐에 삽입

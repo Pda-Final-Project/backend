@@ -1,5 +1,6 @@
 package finpago.userservice.holdings.messaging.consumer;
 
+import finpago.common.global.messaging.BuyTradeMatchEvent;
 import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.userservice.holdings.service.HoldingService;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +14,12 @@ import org.springframework.stereotype.Component;
 public class HoldingsConsumer {
 
     private final HoldingService holdingService;
-    private static final String SETTLEMENT_TOPIC = "settlement-topic";
+    private static final String BUY_SETTLEMENT_TOPIC = "buy-settlement-topic";
 
-    @KafkaListener(topics = SETTLEMENT_TOPIC, groupId = "holding-service-group",
-            containerFactory = "kafkaRetryListenerContainerFactory")
-    public void handleTradeExecution(TradeMatchingEvent event) {
-        log.info("체결된 주문 유저 모듈에서 수신: {}", event);
+    @KafkaListener(topics = BUY_SETTLEMENT_TOPIC, groupId = "holding-service-group",
+            containerFactory = "buyTradeKafkaRetryListenerContainerFactory")
+    public void handleTradeExecution(BuyTradeMatchEvent event) {
+        log.info("매수 체결된 주문 유저 모듈에서 수신: {}", event);
         holdingService.updateHoldings(event);
     }
 }

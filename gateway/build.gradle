@@ -38,9 +38,10 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-//    //eureka
-//    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-
+    //eureka
+    if (!project.hasProperty("prod")) {
+        implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    }
     //gateway
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
     implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'

@@ -10,7 +10,8 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-  data:
-    redis:
-      host: redis-cluster.redis.svc.cluster.local
-      port: 6379
+common:
+  redis:
+    enabled: true
+  kafka:
+    enabled: true

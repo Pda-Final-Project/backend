@@ -12,17 +12,6 @@ spring:
       minimum-idle: 5
       idle-timeout: 30000
       max-lifetime: 1800000
-
-  kafka:
-    bootstrap-servers: kafka.kafka.svc.cluster.local:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-    consumer:
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
   jpa:
     properties:
       hibernate:
@@ -32,19 +21,20 @@ spring:
       ddl-auto: create
     database: mysql
     open-in-view: false
-
+  kafka:
+    bootstrap-servers: kafka.kafka.svc.cluster.local:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 common:
   redis:
     enabled: true
-    password: CTg0n49k0M
-    client-type: lettuce
-    read-from: replica
-    cluster:
-      nodes:
-        - 192.168.3.156:6379  # Master 1
-        - 192.168.51.134:6379 # Master 2
-        - 192.168.52.187:6379 # Master 3
-      max-redirects: 3
+  kafka:
+    enabled: true
 
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"

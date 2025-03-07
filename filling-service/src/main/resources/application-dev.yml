@@ -23,6 +23,12 @@ spring:
         format_sql: true
         show_sql: true
 
+common:
+  redis:
+    enabled: false
+  kafka:
+    enabled: false
+
 server:
   port: 19098
 

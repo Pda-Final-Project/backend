@@ -39,8 +39,9 @@ dependencies {
     implementation project(':common')
 
     //eureka
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-
+    if (!project.hasProperty("prod")) {
+        implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    }
     // FeignClient
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 

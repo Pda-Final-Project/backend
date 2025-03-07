@@ -88,57 +88,63 @@ public class MatchingService {
             List<Map<String, Object>> recentTrades = getRecentTradesFromRedis(order.getStockTicker());
 
             if (!recentTrades.isEmpty()) {
-                long maxTradePrice = recentTrades.stream()
-                        .mapToLong(trade -> (long) trade.get("price"))
-                        .max().orElse(Long.MIN_VALUE);
-                long minTradePrice = recentTrades.stream()
-                        .mapToLong(trade -> (long) trade.get("price"))
-                        .min().orElse(Long.MAX_VALUE);
+                // 가격기준 정렬
+                List<Map<String, Object>> sortedTrades = recentTrades.stream()
+                        .sorted(Comparator.comparing(trade -> (long) trade.get("price")))
+                        .toList();
+
+                long maxTradePrice = (long) sortedTrades.get(sortedTrades.size() - 1).get("price");
+                long minTradePrice = (long) sortedTrades.get(0).get("price");
 
                 if (order.getOfferType() == OrderType.BUY) {
                     if (order.getOfferPrice() > maxTradePrice) {
                         handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), true);
                     } else {
-                        for (Map<String, Object> trade : recentTrades) {
-                            long tradePrice = (long) trade.get("price");
-                            long tradeVolume = (long) trade.get("volume");
+                        int matchedIndex = binarySearch(sortedTrades, order.getOfferPrice());
+                        if (matchedIndex != -1) {
+                            Map<String, Object> matchedTrade = sortedTrades.get(matchedIndex);
+                            long tradePrice = (long) matchedTrade.get("price");
+                            long tradeVolume = (long) matchedTrade.get("volume");
 
-                            if (order.getOfferPrice() == tradePrice) {
-                                long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
-                                long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
-                                handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, true);
-                                order.setOfferQuantity(unfilledQuantity);
+                            long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
+                            long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
 
-                                if (unfilledQuantity > 0)
-                                    orders.offer(order);
-                                break;
+                            handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, true);
+                            order.setOfferQuantity(unfilledQuantity);
+
+                            if (unfilledQuantity > 0) {
+                                orders.offer(order);
                             }
+                        } else {
+                            orders.offer(order);
                         }
                     }
-                }else {
+                } else {
                     if (order.getOfferPrice() < minTradePrice) {
                         handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), false);
                     } else {
-                        for (Map<String, Object> trade : recentTrades) {
-                            long tradePrice = (long) trade.get("price");
-                            long tradeVolume = (long) trade.get("volume");
+                        int matchedIndex = binarySearch(sortedTrades, order.getOfferPrice());
+                        if (matchedIndex != -1) {
+                            Map<String, Object> matchedTrade = sortedTrades.get(matchedIndex);
+                            long tradePrice = (long) matchedTrade.get("price");
+                            long tradeVolume = (long) matchedTrade.get("volume");
 
-                            if (order.getOfferPrice() == tradePrice) {
-                                long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
-                                long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
-                                handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, false);
-                                order.setOfferQuantity(unfilledQuantity);
+                            long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
+                            long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
 
-                                if (unfilledQuantity > 0)
-                                    orders.offer(order);
-                                break;
+                            handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, false);
+                            order.setOfferQuantity(unfilledQuantity);
+
+                            if (unfilledQuantity > 0) {
+                                orders.offer(order);
                             }
+                        } else {
+                            orders.offer(order);
                         }
                     }
                 }
             }
 
-            // 5분 초과 시 미체결 주문을 Order 모듈로 전송
             if (System.currentTimeMillis() - startTime > MAX_WAIT_TIME) {
                 log.warn("5분 초과 - 미체결 주문을 Order 모듈로 전송");
                 moveUnmatchedOrdersToQueue();
@@ -147,13 +153,12 @@ public class MatchingService {
         }
     }
 
-
-
     /**
      * 체결완료 주문 처리
      */
     @Transactional
     protected void handleTradeExecution(OrderCreateReqEvent order, long matchedQuantity, long unfilledQuantity, long matchedPrice, boolean isBuy) {
+        System.out.println("체결 처리시작");
         if (isBuy) {
             BuyTradeMatchEvent event = new BuyTradeMatchEvent(
                     UUID.randomUUID(),
@@ -191,6 +196,7 @@ public class MatchingService {
      * Kafka 통해 Execution 모듈로 체결된 주문을 전송
      */
     private void sendBuyTradeToExecution(BuyTradeMatchEvent event) {
+        System.out.println("카프카 메시지 전송 직전");
         matchingProducer.sendBuyTradeToExecution(event);
     }
 
@@ -217,6 +223,26 @@ public class MatchingService {
             matchingProducer.sendUnmatchedOrderToOrderService(unmatchedOrder);
             log.info("미체결 주문 Order 모듈 전송: {}", unmatchedOrder);
         }
+    }
+
+    /**
+     * 이진 탐색 - 체결가격과 주문가격 비교
+     */
+    private int binarySearch(List<Map<String, Object>> trades, long targetPrice) {
+        int left = 0, right = trades.size() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            long midPrice = (long) trades.get(mid).get("price");
+
+            if (midPrice == targetPrice) {
+                return mid;  // 일치하는 체결가
+            } else if (midPrice < targetPrice) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return -1; // 일치하는 체결가 X
     }
 
     /**

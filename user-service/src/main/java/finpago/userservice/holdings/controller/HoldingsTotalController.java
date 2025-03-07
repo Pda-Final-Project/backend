@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/holdings/total")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class HoldingsTotalController {
 
     private final HoldingsFxService holdingsFxService;

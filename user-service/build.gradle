@@ -26,7 +26,7 @@ repositories {
 ext {
     set('springCloudVersion', "2024.0.0")
 }
-
+def isProd = project.hasProperty("prod")
 dependencies {
     //db
     implementation 'com.mysql:mysql-connector-j:8.2.0'
@@ -41,9 +41,8 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
     //eureka
-    if (!project.hasProperty("prod")) {
-        implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-    }
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
 
     //security
     implementation 'org.springframework.boot:spring-boot-starter-security'

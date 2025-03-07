@@ -12,7 +12,7 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 common:
   redis:
-    enabled: false
+    enabled: true
   kafka:
     enabled: true
   discovery:

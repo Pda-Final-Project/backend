@@ -1,6 +1,6 @@
 package finpago.common.global.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -8,6 +8,6 @@ import org.springframework.context.annotation.Profile;
 @Profile("dev")
 @Configuration
 @EnableDiscoveryClient
-@ConditionalOnProperty(name = "spring.profiles.active", havingValue = "dev", matchIfMissing = false)
+@ConditionalOnClass(name = "org.springframework.cloud.client.discovery.EnableDiscoveryClient")
 public class DiscoveryConfig {
 }

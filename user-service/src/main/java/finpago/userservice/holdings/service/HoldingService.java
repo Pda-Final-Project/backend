@@ -12,6 +12,7 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -46,18 +47,18 @@ public class HoldingService {
         return value != null ? Long.parseLong(value) : DEFAULT_STOCKS;
     }
 
-
     /**
      * 사용자의 보유 주식 정보 조회
      * @param userId 사용자 ID
+     * @param sortBy 정렬 기준 (profit: 수익률순, evaluation: 평가금액순, buyAmount: 매수금액순)
      * @return List<UserHoldingsDto> (보유 주식 정보 리스트)
      */
-    public List<UserHoldingsDto> getUserHoldings(Long userId) {
+    public List<UserHoldingsDto> getUserHoldings(Long userId, String sortBy) {
         // 사용자의 보유 종목 목록 가져오기
         List<Holdings> userHoldings = holdingsRepository.findByUserId(userId);
 
         // 각 보유 종목에 대해 DTO 변환
-        return userHoldings.stream()
+        List<UserHoldingsDto> holdingsDtoList = userHoldings.stream()
                 .map(holding -> {
                     String stockTicker = holding.getStockTicker();
 
@@ -73,14 +74,14 @@ public class HoldingService {
                     // 평가 금액(KRW) = 보유 수량 * 현재가
                     double evaluationAmount = holdingQuantity * currentPrice;
 
-                    //매수금액
-                    double buyAmount=holding.getHoldingPrice() * holdingQuantity;
+                    // 매수 금액
+                    double buyAmount = holding.getHoldingPrice() * holdingQuantity;
 
-                    // 손익등락(KRW) 계산(평가금액-매수금액)
-                    double profitChange = evaluationAmount-buyAmount;
+                    // 손익등락(KRW) 계산(평가금액 - 매수금액)
+                    double profitChange = evaluationAmount - buyAmount;
 
-                    // 수익률(%) 계산
-                    double returnRate = profitChange/buyAmount *100;
+                    // 수익률(%) 계산 (매수 금액이 0이 아닐 때만 계산)
+                    double returnRate = (buyAmount > 0) ? (profitChange / buyAmount) * 100 : 0.0;
 
                     return UserHoldingsDto.builder()
                             .stockTicker(stockTicker)
@@ -93,6 +94,34 @@ public class HoldingService {
                             .returnRate(returnRate)
                             .build();
                 }).collect(Collectors.toList());
+
+        // 정렬 로직 적용
+        return sortHoldings(holdingsDtoList, sortBy);
+    }
+
+    /**
+     * 보유 주식 리스트 정렬
+     * @param holdingsDtoList 보유 주식 리스트
+     * @param sortBy 정렬 기준 (profit: 수익률순, evaluation: 평가금액순, buyAmount: 매수금액순)
+     * @return 정렬된 보유 주식 리스트
+     */
+    private List<UserHoldingsDto> sortHoldings(List<UserHoldingsDto> holdingsDtoList, String sortBy) {
+        switch (sortBy) {
+            case "profit":
+                return holdingsDtoList.stream()
+                        .sorted(Comparator.comparingDouble(UserHoldingsDto::getReturnRate).reversed()) // 수익률 내림차순
+                        .collect(Collectors.toList());
+            case "evaluation":
+                return holdingsDtoList.stream()
+                        .sorted(Comparator.comparingDouble(UserHoldingsDto::getEvaluationAmount).reversed()) // 평가 금액 내림차순
+                        .collect(Collectors.toList());
+            case "buyAmount":
+                return holdingsDtoList.stream()
+                        .sorted(Comparator.comparingDouble(UserHoldingsDto::getBuyAmount).reversed()) // 매수 금액 내림차순
+                        .collect(Collectors.toList());
+            default:
+                return holdingsDtoList; // 기본적으로 정렬하지 않고 반환
+        }
     }
 
     //평단가,환율,수량 업데이트 (없다면 holding객체 생성)

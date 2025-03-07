@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Profile;
 
 @Profile("dev")
 @Configuration
-@ConditionalOnClass(EnableDiscoveryClient.class)
+@ConditionalOnClass(name = "org.springframework.cloud.client.discovery.EnableDiscoveryClient")
 @ConditionalOnProperty(name = "common.discovery.enabled", havingValue = "true", matchIfMissing = false)
 @EnableDiscoveryClient
 public class DiscoveryConfig {

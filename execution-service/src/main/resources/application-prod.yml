@@ -36,3 +36,12 @@ jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
   expiration: 86400000
 
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+  cloud:
+    discovery:
+      enabled: false

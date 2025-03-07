@@ -47,3 +47,13 @@ feign:
     config:
       order-service:
         url: http://order-service.default.svc.cluster.local
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+  cloud:
+    discovery:
+      enabled: false

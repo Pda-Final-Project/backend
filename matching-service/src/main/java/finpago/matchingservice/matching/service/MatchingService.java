@@ -68,6 +68,12 @@ public class MatchingService {
                 }
             }
         }
+        // 가격(price) 기준 내림차순 정렬
+        tradeDataList.sort((trade1, trade2) -> Long.compare(
+                (long) trade2.get("price"),
+                (long) trade1.get("price")
+        ));
+
         return tradeDataList;
     }
 
@@ -77,6 +83,7 @@ public class MatchingService {
         long startTime = System.currentTimeMillis();
 
         while (!orders.isEmpty()) {
+            System.out.println("들어와요11");
             if (System.currentTimeMillis() - startTime > MAX_WAIT_TIME) {
                 log.warn("5분 초과 - 미체결 주문을 Order 모듈로 전송");
                 moveUnmatchedOrdersToQueue();
@@ -88,6 +95,7 @@ public class MatchingService {
             List<Map<String, Object>> recentTrades = getRecentTradesFromRedis(order.getStockTicker());
 
             if (!recentTrades.isEmpty()) {
+                System.out.println("들어와요22");
                 // 가격기준 정렬
                 List<Map<String, Object>> sortedTrades = recentTrades.stream()
                         .sorted(Comparator.comparing(trade -> (long) trade.get("price")))
@@ -96,26 +104,51 @@ public class MatchingService {
                 long maxTradePrice = (long) sortedTrades.get(sortedTrades.size() - 1).get("price");
                 long minTradePrice = (long) sortedTrades.get(0).get("price");
 
+                System.out.println("maxTradePrice: " + maxTradePrice);
+                System.out.println("minTradePrice: " + minTradePrice);
+
                 if (order.getOfferType() == OrderType.BUY) {
+                    System.out.println("들어와요33");
                     if (order.getOfferPrice() > maxTradePrice) {
+                        System.out.println("들어와요44");
                         handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), true);
                     } else {
-                        int matchedIndex = binarySearch(sortedTrades, order.getOfferPrice());
-                        if (matchedIndex != -1) {
-                            Map<String, Object> matchedTrade = sortedTrades.get(matchedIndex);
-                            long tradePrice = (long) matchedTrade.get("price");
-                            long tradeVolume = (long) matchedTrade.get("volume");
+                        System.out.println("들어와요55");
+                        int matchedIndex = linearSearch(sortedTrades, order.getOfferPrice());
+                        System.out.println("matchedIndex: " + matchedIndex);
 
-                            long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
-                            long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
+                        if (matchedIndex != -1) {
+                            System.out.println("들어와요66");
+                            Map<String, Object> matchedTrade = sortedTrades.get(matchedIndex);
+                            System.out.println("matchedTrade은용: " + matchedTrade);
+
+                            Number priceValue = (Number) matchedTrade.get("price");
+                            long tradePrice = Math.round(priceValue.doubleValue());
+
+                            Number volumeValue = (Number) matchedTrade.get("volume");
+                            long tradeVolume = volumeValue.longValue();
+
+
+                            System.out.println("tradePrice: " + tradePrice);
+                            System.out.println("tradeVolume: " + tradeVolume);
+                            Number orderQuantityValue = ((Number) order.getOfferQuantity());
+                            long  orderQuantity = orderQuantityValue.longValue();
+
+                            long matchedQuantity = Math.min(orderQuantity, tradeVolume);
+                            long unfilledQuantity = orderQuantity - matchedQuantity;
+
+                            System.out.println("matchedQuantity: " + matchedQuantity);
+                            System.out.println("unfilledQuantity: " + unfilledQuantity);
 
                             handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, true);
                             order.setOfferQuantity(unfilledQuantity);
 
                             if (unfilledQuantity > 0) {
+                                System.out.println("들어와요77");
                                 orders.offer(order);
                             }
                         } else {
+                            System.out.println("들어와요88");
                             orders.offer(order);
                         }
                     }
@@ -123,7 +156,7 @@ public class MatchingService {
                     if (order.getOfferPrice() < minTradePrice) {
                         handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), false);
                     } else {
-                        int matchedIndex = binarySearch(sortedTrades, order.getOfferPrice());
+                        int matchedIndex = linearSearch(sortedTrades, order.getOfferPrice());
                         if (matchedIndex != -1) {
                             Map<String, Object> matchedTrade = sortedTrades.get(matchedIndex);
                             long tradePrice = (long) matchedTrade.get("price");
@@ -224,25 +257,22 @@ public class MatchingService {
             log.info("미체결 주문 Order 모듈 전송: {}", unmatchedOrder);
         }
     }
-
     /**
-     * 이진 탐색 - 체결가격과 주문가격 비교
+     * 순차 탐색 - 체결가격과 주문가격 비교
      */
-    private int binarySearch(List<Map<String, Object>> trades, long targetPrice) {
-        int left = 0, right = trades.size() - 1;
-        while (left <= right) {
-            int mid = left + (right - left) / 2;
-            long midPrice = (long) trades.get(mid).get("price");
+    private int linearSearch(List<Map<String, Object>> trades, long targetPrice) {
+        System.out.println("순차 탐색 들어와용");
+        System.out.println("targetPrice: " + targetPrice);
 
-            if (midPrice == targetPrice) {
-                return mid;  // 일치하는 체결가
-            } else if (midPrice < targetPrice) {
-                left = mid + 1;
-            } else {
-                right = mid - 1;
+        for (int i = 0; i < trades.size(); i++) {
+            long price = (long) trades.get(i).get("price");
+            System.out.println("현재 탐색 중인 가격: " + price);
+
+            if (price == targetPrice) {
+                return i; // 일치하는 체결가 발견
             }
         }
-        return -1; // 일치하는 체결가 X
+        return -1; // 일치하는 체결가 없음
     }
 
     /**

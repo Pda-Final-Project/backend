@@ -19,7 +19,11 @@ public class RedisListenerConfig {
     }
 
     @Bean
-    public void configureTradeUpdatesListener(RedisMessageListenerContainer redisContainer, MessageListenerAdapter tradeUpdatesListenerAdapter) {
+    public RedisMessageListenerContainer configureTradeUpdatesListener(
+            RedisMessageListenerContainer redisContainer,
+            MessageListenerAdapter tradeUpdatesListenerAdapter) {
+
         redisContainer.addMessageListener(tradeUpdatesListenerAdapter, new ChannelTopic("trade_updates"));
+        return redisContainer;
     }
 }

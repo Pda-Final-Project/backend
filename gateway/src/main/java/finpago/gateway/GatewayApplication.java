@@ -9,7 +9,6 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableDiscoveryClient
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @ComponentScan(basePackages = {"finpago.common.global.exception", "finpago.gateway"})
-
 public class GatewayApplication {
 
     public static void main(String[] args) {

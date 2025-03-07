@@ -17,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/v1/api/stocks")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class PinnedStockController {
 
     private final PinnedStockService pinnedStockService;

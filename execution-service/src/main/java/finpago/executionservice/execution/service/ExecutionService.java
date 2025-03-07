@@ -19,6 +19,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 //체결 비즈니스 로직
@@ -60,6 +63,7 @@ public class ExecutionService {
 
         buyTradeRepository.save(trade);
         saveBuyTradeToRedis(event.getBuyerUserId(), trade);
+        saveBuyTradeExecutionToRedis(trade);
         executionProducer.sendBuyTradeToSettlement(event);
     }
 
@@ -85,7 +89,51 @@ public class ExecutionService {
 
         sellTradeRepository.save(trade);
         saveSellTradeToRedis(event.getSellerUserId(), trade);
+        saveSellTradeExecutionToRedis(trade);
         executionProducer.sendSellTradeToSettlement(event);
+    }
+
+    public void saveBuyTradeExecutionToRedis(BuyTrade trade) {
+        String redisKey = "stock:" + trade.getTradeTicker() + ":purchase";
+
+        // Redis 저장 형식에 맞게 데이터 변환
+        Map<String, Object> tradeData = new HashMap<>();
+        tradeData.put("price", trade.getTradePrice()); // 체결가
+        tradeData.put("volume", trade.getTradeQuantity()); // 체결량
+        tradeData.put("trade_volume", 0); // 거래량 (0으로 채움)
+        tradeData.put("time", trade.getTradeDate().format(DateTimeFormatter.ofPattern("HHmmss"))); // 체결 시간
+
+        try {
+            // JSON 직렬화 후 Redis 리스트에 추가
+            String tradeJson = objectMapper.writeValueAsString(tradeData);
+            redisTemplate.opsForList().leftPush(redisKey, tradeJson);
+
+            // 체결 내역 업데이트 Pub/Sub 발행
+            redisTemplate.convertAndSend("trade_updates", tradeJson);
+
+        } catch (JsonProcessingException e) {
+            System.err.println("Redis 저장 오류: " + e.getMessage());
+        }
+    }
+
+    public void saveSellTradeExecutionToRedis(SellTrade trade) {
+        String redisKey = "stock:" + trade.getTradeTicker() + ":purchase";
+
+        // Redis 저장 형식에 맞게 데이터 변환
+        Map<String, Object> tradeData = new HashMap<>();
+        tradeData.put("price", trade.getTradePrice()); // 체결가
+        tradeData.put("volume", trade.getTradeQuantity()); // 체결량
+        tradeData.put("trade_volume", 0); // 거래량 (0으로 채움)
+        tradeData.put("time", trade.getTradeDate().format(DateTimeFormatter.ofPattern("HHmmss"))); // 체결 시간
+
+        try {
+            // JSON 직렬화 후 Redis 리스트에 추가
+            String tradeJson = objectMapper.writeValueAsString(tradeData);
+            redisTemplate.opsForList().leftPush(redisKey, tradeJson);
+
+        } catch (JsonProcessingException e) {
+            System.err.println("Redis 저장 오류: " + e.getMessage());
+        }
     }
 
     private void saveBuyTradeToRedis(Long userId, BuyTrade trade) {

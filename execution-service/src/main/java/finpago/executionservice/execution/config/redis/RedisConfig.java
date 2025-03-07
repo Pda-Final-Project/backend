@@ -1,10 +1,14 @@
 package finpago.executionservice.execution.config.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import finpago.executionservice.execution.service.TradeSseService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -27,5 +31,18 @@ public class RedisConfig {
         template.setHashValueSerializer(serializer);
 
         return template;
+    }
+
+    @Bean
+    public RedisMessageListenerContainer redisContainer(RedisConnectionFactory connectionFactory, TradeSseService tradeSseService) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+
+        // Redis Pub/Sub 메시지 리스너 설정
+        MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(tradeSseService, "onMessage");
+        listenerAdapter.setSerializer(new StringRedisSerializer());
+
+        container.addMessageListener(listenerAdapter, new ChannelTopic("trade_updates"));
+        return container;
     }
 }

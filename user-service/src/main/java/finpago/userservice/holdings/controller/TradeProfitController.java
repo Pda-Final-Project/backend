@@ -18,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tradeProfit")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class TradeProfitController {
 
     private final TradeFetchService tradeFetchService;

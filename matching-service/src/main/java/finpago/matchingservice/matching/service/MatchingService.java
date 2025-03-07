@@ -107,8 +107,12 @@ public class MatchingService {
                     } else {
                         for (Map<String, Object> trade : recentTrades) {
                             System.out.println("들어옵니다 333");
-                            long tradePrice = (long) trade.get("price");
-                            long tradeVolume = (long) trade.get("volume");
+                            long tradePrice = ((Number) trade.get("price")).longValue();
+                            long tradeVolume = ((Number) trade.get("volume")).longValue();
+
+
+                            System.out.println("tradePrice:"+ tradePrice);
+                            System.out.println("tradeVolume:"+ tradeVolume);
 
                             if (order.getOfferPrice() == tradePrice) {
                                 System.out.println("여기는???");

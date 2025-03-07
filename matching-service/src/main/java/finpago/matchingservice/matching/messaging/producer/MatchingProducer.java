@@ -23,6 +23,7 @@ public class MatchingProducer {
 
 
     public void sendBuyTradeToExecution(BuyTradeMatchEvent event) {
+        System.out.println("들어옵니다");
         try {
             buyTradeKafkaTemplate.send(BUY_TRADE_MATCHING_TOPIC, event).get();
             log.info("매수 체결 이벤트 Execution 모듈로 전송: {}", event);

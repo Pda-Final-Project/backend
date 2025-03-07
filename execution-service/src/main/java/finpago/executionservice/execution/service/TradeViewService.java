@@ -12,8 +12,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-//체결내역 조회 비즈니스 로직
+// 체결내역 조회 비즈니스 로직
 @Service
 @RequiredArgsConstructor
 public class TradeViewService {
@@ -33,8 +34,10 @@ public class TradeViewService {
                 .map(this::convertToTradeDto)
                 .collect(Collectors.toList());
 
-        buyTrades.addAll(sellTrades);
-        return buyTrades;
+        // 최신순 정렬
+        return Stream.concat(buyTrades.stream(), sellTrades.stream())
+                .sorted((t1, t2) -> t2.getTradeDate().compareTo(t1.getTradeDate()))
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -49,13 +52,35 @@ public class TradeViewService {
                 .map(this::convertToTradeDto)
                 .collect(Collectors.toList());
 
-        buyTrades.addAll(sellTrades);
-        return buyTrades;
+        // 최신순 정렬
+        return Stream.concat(buyTrades.stream(), sellTrades.stream())
+                .sorted((t1, t2) -> t2.getTradeDate().compareTo(t1.getTradeDate()))
+                .collect(Collectors.toList());
+    }
+
+    // 전체 체결 내역 조회 (SUCCESS, PENDING, FAILED)
+    @Transactional(readOnly = true)
+    public List<TradeDto> getAllTrades(Long userId) {
+        List<TradeDto> buyTrades = buyTradeRepository.findByBuyerUserId(userId)
+                .stream()
+                .map(this::convertToTradeDto)
+                .collect(Collectors.toList());
+
+        List<TradeDto> sellTrades = sellTradeRepository.findBySellerUserId(userId)
+                .stream()
+                .map(this::convertToTradeDto)
+                .collect(Collectors.toList());
+
+        // 최신순 정렬
+        return Stream.concat(buyTrades.stream(), sellTrades.stream())
+                .sorted((t1, t2) -> t2.getTradeDate().compareTo(t1.getTradeDate()))
+                .collect(Collectors.toList());
     }
 
     private TradeDto convertToTradeDto(BuyTrade trade) {
         return new TradeDto(
                 trade.getTradeTicker(),
+                "현금매수", // BUY 거래
                 trade.getBuyerOfferPrice(),
                 trade.getBuyerOrderQuantity(),
                 trade.getTradePrice(),
@@ -70,6 +95,7 @@ public class TradeViewService {
     private TradeDto convertToTradeDto(SellTrade trade) {
         return new TradeDto(
                 trade.getTradeTicker(),
+                "현금매도", // SELL 거래
                 trade.getSellerOfferPrice(),
                 trade.getSellerOrderQuantity(),
                 trade.getTradePrice(),

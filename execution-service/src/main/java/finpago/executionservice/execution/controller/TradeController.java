@@ -56,6 +56,24 @@ public class TradeController {
         Long userId = Long.parseLong(authentication.getName());
         List<TradeDto> trades = tradeViewService.getFailedTrades(userId);
 
-        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "실패한 체결 내역 조회 성공", trades));
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "미체결 내역 조회 성공", trades));
+    }
+
+    /**
+     * 유저의 전체 체결 내역 조회 API (SUCCESS, PENDING, FAILED 포함)
+     */
+    @GetMapping("/trades/all")
+    public ResponseEntity<ApiResponse<List<TradeDto>>> getAllTrades() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.fail(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자"));
+        }
+
+        Long userId = Long.parseLong(authentication.getName());
+        List<TradeDto> trades = tradeViewService.getAllTrades(userId);
+
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "전체 체결 내역 조회 성공", trades));
     }
 }

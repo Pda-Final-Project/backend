@@ -29,11 +29,14 @@ public class RedisConfig {
     private static final String DEV_REDIS_HOST = "localhost";
     private static final int DEV_REDIS_PORT = 6379;
 
-    // Prod 환경 Redis 클러스터 설정
+    // Prod 환경 Redis 클러스터 설정 (쿠버네티스 Headless Service)
     private static final List<String> PROD_CLUSTER_NODES = List.of(
-            "192.168.3.156:6379",  // Master 1
-            "192.168.51.134:6379", // Master 2
-            "192.168.52.187:6379"  // Master 3
+            "redis-cluster-0.redis-cluster-headless.redis.svc.cluster.local:6379",
+            "redis-cluster-1.redis-cluster-headless.redis.svc.cluster.local:6379",
+            "redis-cluster-2.redis-cluster-headless.redis.svc.cluster.local:6379",
+            "redis-cluster-3.redis-cluster-headless.redis.svc.cluster.local:6379",
+            "redis-cluster-4.redis-cluster-headless.redis.svc.cluster.local:6379",
+            "redis-cluster-5.redis-cluster-headless.redis.svc.cluster.local:6379"
     );
     private static final String PROD_REDIS_PASSWORD = "CTg0n49k0M";
     private static final int MAX_REDIRECTS = 3;

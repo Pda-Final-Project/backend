@@ -44,7 +44,7 @@ public class ExecutionService {
     @Transactional
     public void processBuyTrade(BuyTradeMatchEvent event) {
         validateBuyerBalance(event);
-
+        System.out.println("체결 정보는용: "+event);
         TradeStatus status = (event.getUnfilledQuantity() > 0) ? TradeStatus.PENDING : TradeStatus.SUCCESS;
 
         BuyTrade trade = BuyTrade.builder()

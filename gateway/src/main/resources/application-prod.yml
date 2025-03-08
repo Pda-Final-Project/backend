@@ -68,3 +68,8 @@ eureka:
   cloud:
     discovery:
       enabled: false
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.server: DEBUG

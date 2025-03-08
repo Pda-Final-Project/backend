@@ -2,10 +2,10 @@ package finpago.matchingservice.matching.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -15,7 +15,7 @@ import java.util.Random;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RedisDummyDataInitializer {
+public class RedisTradeScheduler {
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -23,29 +23,34 @@ public class RedisDummyDataInitializer {
 
     private static final String[] STOCK_TICKERS = {"TSLA", "GOOGLE", "AAPL", "AMZN", "MSFT"};
 
-    @PostConstruct
-    public void initDummyData() {
+    /**
+     * 1초마다 Redis 체결 데이터 갱신
+     */
+    @Scheduled(fixedRate = 2000)  // 1초마다 실행
+    public void updateDummyData() {
         for (String stock : STOCK_TICKERS) {
             String redisKey = "stock:" + stock + ":purchase";
 
-            // 최신 20개 체결가 데이터 삽입
-            for (int i = 0; i < 20; i++) {
-                Map<String, Object> tradeData = new HashMap<>();
-                tradeData.put("price", generateRandomPrice(stock));
-                tradeData.put("volume", random.nextInt(100) + 1); // 1 ~ 100 랜덤 수량
-                tradeData.put("timestamp", System.currentTimeMillis() - (i * 1000L)); // 과거 타임스탬프
+            // 최신 데이터 삽입
+            Map<String, Object> tradeData = new HashMap<>();
+            tradeData.put("price", generateRandomPrice(stock));
+            tradeData.put("volume", random.nextInt(100) + 1); // 1 ~ 100 랜덤 수량
+            tradeData.put("timestamp", System.currentTimeMillis());
 
-                try {
-                    String tradeJson = objectMapper.writeValueAsString(tradeData);
-                    redisTemplate.opsForList().leftPush(redisKey, tradeJson); // 최신 데이터가 앞에 오도록 저장
-                } catch (JsonProcessingException e) {
-                    log.error("Redis 더미 데이터 저장 오류: {}", e.getMessage());
-                }
+            try {
+                String tradeJson = objectMapper.writeValueAsString(tradeData);
+                redisTemplate.opsForList().leftPush(redisKey, tradeJson); // 최신 데이터가 앞에 오도록 저장
+                redisTemplate.opsForList().trim(redisKey, 0, 19); // 최신 20개만 유지
+            } catch (JsonProcessingException e) {
+                log.error("Redis 체결 데이터 갱신 오류: {}", e.getMessage());
             }
-            log.info("{} 체결 데이터 Redis 저장 완료 (키: {})", stock, redisKey);
         }
+        log.info("🔄 Redis 체결 데이터 갱신 완료");
     }
 
+    /**
+     * 랜덤 가격 생성
+     */
     private double generateRandomPrice(String stock) {
         return switch (stock) {
             case "TSLA" -> 600 + random.nextDouble() * 50;  // 600~650

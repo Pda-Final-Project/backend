@@ -47,6 +47,7 @@ public class RedisConfig {
      * Redis 연결 팩토리 설정 (dev: 단일 인스턴스, prod: 클러스터)
      */
     @Bean
+    @ConditionalOnProperty(prefix = "common.redis", name = "enabled", havingValue = "true")
     public RedisConnectionFactory redisConnectionFactory() {
         LettuceClientConfiguration.LettuceClientConfigurationBuilder builder = LettuceClientConfiguration.builder()
                 .commandTimeout(COMMAND_TIMEOUT)
@@ -78,6 +79,7 @@ public class RedisConfig {
      * RedisTemplate 설정 (모든 환경에서 공통 사용 가능)
      */
     @Bean
+    @ConditionalOnProperty(prefix = "common.redis", name = "enabled", havingValue = "true")
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
@@ -109,6 +111,7 @@ public class RedisConfig {
      * @return RedisMessageListenerContainer
      */
     @Bean
+    @ConditionalOnProperty(prefix = "common.redis", name = "enabled", havingValue = "true")
     public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory redisConnectionFactory) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(redisConnectionFactory);

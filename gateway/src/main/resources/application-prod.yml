@@ -14,27 +14,27 @@ spring:
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/v1/api/users/**, /v1/api/auth/**, /v1/api/stocks/**, /v1/api/likes/**
+            - Path=/api/users/**, /api/auth/**, /api/stocks/**, /api/likes/**
 
         - id: order-service
           uri: lb://order-service
           predicates:
-            - Path=/v1/api/order/**
+            - Path=/api/order/**
 
         - id: execution-service
           uri: lb://execution-service
           predicates:
-            - Path=/v1/api/execution/**
+            - Path=/api/execution/**
 
         - id: notification-service
           uri: lb://notification-service
           predicates:
-            - Path=/v1/api/notification/**
+            - Path=/api/notification/**
 
         - id: filling-service
           uri: lb://filling-service
           predicates:
-            - Path=/v1/api/filling/**, /v1/api/news/**
+            - Path=/api/filling/**, /api/news/**
 
       discovery:
         locator:

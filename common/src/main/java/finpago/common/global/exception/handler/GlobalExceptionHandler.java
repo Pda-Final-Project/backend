@@ -254,7 +254,7 @@ public class GlobalExceptionHandler {
 //    }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGeneralException(Exception ex, ServerWebExchange exchange) {
+    protected ResponseEntity<?> handleGeneralException(Exception ex, ServerWebExchange exchange) {
         ServerHttpRequest request = exchange.getRequest();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error processing request: " + request.getURI() + ", Message: " + ex.getMessage());

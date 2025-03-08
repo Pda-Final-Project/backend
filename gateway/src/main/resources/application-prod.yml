@@ -43,7 +43,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, prometheus, httptrace
+        include: health, info, prometheus, httpexchanges
   endpoint:
     health:
       show-details: ALWAYS

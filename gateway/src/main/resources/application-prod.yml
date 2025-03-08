@@ -41,7 +41,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info
+        include: health, info, prometheus
   endpoint:
     health:
       show-details: ALWAYS
@@ -50,6 +50,10 @@ jwt:
   expiration: 86400000
 
 common:
+  redis:
+    enabled: false
+  kafka:
+    enabled: false
   discovery:
     enabled: false
 

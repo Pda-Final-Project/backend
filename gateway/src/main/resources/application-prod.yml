@@ -37,7 +37,14 @@ spring:
       discovery:
         locator:
           enabled: true
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: ALWAYS
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
   expiration: 86400000

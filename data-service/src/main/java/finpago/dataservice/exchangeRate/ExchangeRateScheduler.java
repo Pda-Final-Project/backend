@@ -23,11 +23,6 @@ public class ExchangeRateScheduler {
                 "NOW", "INTC", "PLTR", "ASML", "V", "XOM", "KO", "WMT", "LIN", "MS"
         };
         // 나중에 동적으로 변경 가능
-        Double rate = exchangeRateService.getExchangeRate(tickers);
-        if (rate != null) {
-            System.out.println("[ " + LocalDateTime.now() + " ] 환율 업데이트: 1 USD = " + rate + " KRW");
-        } else {
-            System.out.println("환율 데이터를 가져오지 못했습니다.");
-        }
+        exchangeRateService.getExchangeRate(tickers);
     }
 }

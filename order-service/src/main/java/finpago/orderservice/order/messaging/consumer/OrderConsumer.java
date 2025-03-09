@@ -13,7 +13,8 @@ public class OrderConsumer {
 
     private final OrderService orderService;
 
-    @KafkaListener(topics = "unmatched-orders-topic", groupId = "order-service-group")
+    @KafkaListener(topics = "unmatched-orders-topic", groupId = "order-service-group",
+            containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleUnmatchedOrder(OrderCreateReqEvent event) {
         log.warn("미체결 주문 수신 - 다시 매칭 모듈로 전송 준비: {}", event);
         orderService.retryUnmatchedOrder(event);

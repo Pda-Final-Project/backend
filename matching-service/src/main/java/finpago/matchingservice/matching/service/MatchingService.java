@@ -35,7 +35,7 @@ public class MatchingService {
             Comparator.comparing(OrderCreateReqEvent::getCreatedAt)
     );
 
-    private static final long MAX_WAIT_TIME = 5 * 60 * 1000; // 5분 (밀리초 단위)
+    private static final long MAX_WAIT_TIME = 5 * 1000; // 5초 (밀리초 단위)
 
     public void processOrder(OrderCreateReqEvent order) {
         log.info("주문 접수: {}", order);

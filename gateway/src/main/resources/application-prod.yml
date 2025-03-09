@@ -10,37 +10,27 @@ spring:
         - id: user-service
           uri: http://user-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/api/users/**, /api/auth/**, /api/stocks/**, /api/likes/**
-          filters:
-            - StripPrefix=2
+            - Path= /v1/api/users/**, /v1/api/auth/**, /v1/api/stocks/**, /v1/api/likes/**
 
         - id: order-service
           uri: http://order-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/api/order/**
-          filters:
-            - StripPrefix=2
+            - Path=/v1/api/order/**
 
         - id: execution-service
           uri: http://execution-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/api/execution/**
-          filters:
-            - StripPrefix=2
+            - Path=/v1/api/execution/**
 
         - id: notification-service
           uri: http://notification-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/api/notification/**
-          filters:
-            - StripPrefix=2
+            - Path=/v1/api/notification/**
 
         - id: filling-service
           uri: http://filling-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/api/filling/**, /api/news/**
-          filters:
-            - StripPrefix=2
+            - Path=/v1/api/filling/**, /v1/api/news/**
 
       discovery:
         locator:

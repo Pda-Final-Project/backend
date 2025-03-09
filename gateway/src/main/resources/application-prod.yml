@@ -12,27 +12,27 @@ spring:
     gateway:
       routes:
         - id: user-service
-          uri: lb://user-service
+          uri: http://user-service.backend.svc.cluster.local:8080
           predicates:
             - Path=/api/users/**, /api/auth/**, /api/stocks/**, /api/likes/**
 
         - id: order-service
-          uri: lb://order-service
+          uri: http://order-service.backend.svc.cluster.local:8080
           predicates:
             - Path=/api/order/**
 
         - id: execution-service
-          uri: lb://execution-service
+          uri: http://execution-service.backend.svc.cluster.local:8080
           predicates:
             - Path=/api/execution/**
 
         - id: notification-service
-          uri: lb://notification-service
+          uri: http://notification-service.backend.svc.cluster.local:8080
           predicates:
             - Path=/api/notification/**
 
         - id: filling-service
-          uri: lb://filling-service
+          uri: http://filling-service.backend.svc.cluster.local:8080
           predicates:
             - Path=/api/filling/**, /api/news/**
 

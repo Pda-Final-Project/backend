@@ -1,6 +1,7 @@
 package finpago.userservice.account.controller;
 
 import finpago.common.global.common.ApiResponse;
+import finpago.userservice.account.dto.AccountInfoDto;
 import finpago.userservice.account.service.AccountService;
 import finpago.userservice.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,18 @@ public class AccountController {
         Long userId = getUserIdFromAuth();
         Long balance = accountService.getBalance(userId);
         return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "실제 예수금 조회 성공", balance));
+    }
+
+
+    /**
+     * 사용자 계좌 정보 조회 API
+     */
+    @GetMapping("/info")
+    public ResponseEntity<ApiResponse<AccountInfoDto>> getAccountInfo() {
+        Long userId = getUserIdFromAuth();
+        AccountInfoDto accountInfo = accountService.getAccountInfo(userId);
+
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "계좌 정보 조회 성공", accountInfo));
     }
 
     /**

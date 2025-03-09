@@ -11,3 +11,13 @@ eureka:
   cloud:
     discovery:
       enabled: false
+
+common:
+  redis:
+
+
+    enabled: false
+  kafka:
+    enabled: false
+  discovery:
+    enabled: false

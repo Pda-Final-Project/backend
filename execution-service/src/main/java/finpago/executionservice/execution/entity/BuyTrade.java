@@ -2,6 +2,7 @@ package finpago.executionservice.execution.entity;
 
 import finpago.common.global.common.BaseEntity;
 import finpago.common.global.enums.TradeStatus;
+import finpago.executionservice.execution.config.UUIDToStringConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -17,8 +18,8 @@ import java.util.UUID;
 public class BuyTrade extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "buy_trade_number", length = 64, nullable = false, updatable = false)
+    @Convert(converter = UUIDToStringConverter.class)
     private UUID buyTradeNumber; // 매수 체결 고유 번호
 
     @Column(name = "buy_offer_number", length = 64, nullable = false)

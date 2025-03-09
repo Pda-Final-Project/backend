@@ -48,6 +48,7 @@ public class ExecutionService {
         TradeStatus status = (event.getUnfilledQuantity() > 0) ? TradeStatus.PENDING : TradeStatus.SUCCESS;
 
         BuyTrade trade = BuyTrade.builder()
+                .buyTradeNumber(event.getTradeId())
                 .buyOfferNumber(event.getBuyOfferNumber())
                 .tradeTicker(event.getStockTicker())
                 .buyerUserId(event.getBuyerUserId())
@@ -74,6 +75,7 @@ public class ExecutionService {
         TradeStatus status = (event.getUnfilledQuantity() > 0) ? TradeStatus.PENDING : TradeStatus.SUCCESS;
 
         SellTrade trade = SellTrade.builder()
+                .sellTradeNumber(event.getTradeId())
                 .sellOfferNumber(event.getSellOfferNumber())
                 .tradeTicker(event.getStockTicker())
                 .sellerUserId(event.getSellerUserId())

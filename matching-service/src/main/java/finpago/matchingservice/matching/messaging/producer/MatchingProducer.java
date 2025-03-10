@@ -24,24 +24,29 @@ public class MatchingProducer {
 
     public void sendBuyTradeToExecution(BuyTradeMatchEvent event) {
         System.out.println("들어옵니다");
-        try {
-            buyTradeKafkaTemplate.send(BUY_TRADE_MATCHING_TOPIC, event).get();
-            log.info("매수 체결 이벤트 Execution 모듈로 전송: {}", event);
-        } catch (Exception e) {
-            log.error("매수 체결 이벤트 전송 실패: {}", e.getMessage());
-            throw new RuntimeException("Kafka 전송 실패로 롤백 발생");
-        }
+        buyTradeKafkaTemplate.send(BUY_TRADE_MATCHING_TOPIC, event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("매수 체결 이벤트 전송 실패: {}", ex.getMessage());
+                    } else {
+                        log.info("매수 체결 이벤트 Execution 모듈로 비동기 전송 완료: {}, 파티션: {}",
+                                event, result.getRecordMetadata().partition());
+                    }
+                });
     }
 
     public void sendSellTradeToExecution(SellTradeMatchEvent event) {
-        try {
-            sellTradeKafkaTemplate.send(SELL_TRADE_MATCHING_TOPIC, event).get();
-            log.info("매도 체결 이벤트 Execution 모듈로 전송: {}", event);
-        } catch (Exception e) {
-            log.error("매도 체결 이벤트 전송 실패: {}", e.getMessage());
-            throw new RuntimeException("Kafka 전송 실패로 롤백 발생");
-        }
+        sellTradeKafkaTemplate.send(SELL_TRADE_MATCHING_TOPIC, event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("매도 체결 이벤트 전송 실패: {}", ex.getMessage());
+                    } else {
+                        log.info("매도 체결 이벤트 Execution 모듈로 비동기 전송 완료: {}, 파티션: {}",
+                                event, result.getRecordMetadata().partition());
+                    }
+                });
     }
+
 
     public void sendUnmatchedOrderToOrderService(OrderCreateReqEvent orderEvent) {
         orderKafkaTemplate.send(UNMATCHED_ORDER_TOPIC, orderEvent);

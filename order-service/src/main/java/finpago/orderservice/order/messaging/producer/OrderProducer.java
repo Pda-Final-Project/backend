@@ -1,5 +1,6 @@
 package finpago.orderservice.order.messaging.producer;
 
+import finpago.common.global.messaging.BuyTradeMatchEvent;
 import finpago.common.global.messaging.OrderCreateReqEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,5 +26,6 @@ public class OrderProducer {
                     }
                 });
     }
+
 }
 

@@ -19,7 +19,7 @@ public class BuyTrade extends BaseEntity {
 
     @Id
     @Column(name = "buy_trade_number", length = 64, nullable = false, updatable = false)
-    @Convert(converter = UUIDToStringConverter.class)
+//    @Convert(converter = UUIDToStringConverter.class)
     private UUID buyTradeNumber; // 매수 체결 고유 번호
 
     @Column(name = "buy_offer_number", length = 64, nullable = false)

@@ -159,10 +159,19 @@ public class MatchingService {
                         int matchedIndex = linearSearch(sortedTrades, order.getOfferPrice());
                         if (matchedIndex != -1) {
                             Map<String, Object> matchedTrade = sortedTrades.get(matchedIndex);
-                            long tradePrice = (long) matchedTrade.get("price");
-                            long tradeVolume = (long) matchedTrade.get("volume");
 
-                            long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
+                            // Number 타입 변환 후 long으로 변환
+                            Number priceValue = (Number) matchedTrade.get("price");
+                            long tradePrice = Math.round(priceValue.doubleValue());
+
+                            Number volumeValue = (Number) matchedTrade.get("volume");
+                            long tradeVolume = volumeValue.longValue();
+
+
+                            Number orderQuantityValue = ((Number) order.getOfferQuantity());
+                            long  orderQuantity = orderQuantityValue.longValue();
+
+                            long matchedQuantity = Math.min(orderQuantity, tradeVolume);
                             long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
 
                             handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, false);

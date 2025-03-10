@@ -224,7 +224,7 @@ public class ExecutionService {
     @Transactional
     public void handleSellSettlementFailure(SellTradeMatchEvent event) {
         log.warn("매도 체결 실패 처리 시작: {}", event);
-        Optional<SellTrade> tradeOptional = sellTradeRepository.findById(event.getSellOfferNumber());
+        Optional<SellTrade> tradeOptional = sellTradeRepository.findById(event.getTradeId());
 
         if (tradeOptional.isPresent()) {
             SellTrade trade = tradeOptional.get();
@@ -233,7 +233,7 @@ public class ExecutionService {
             log.warn("매도 체결 상태 FAILED로 업데이트 완료: {}", trade);
             sendFailedSellTradeToMatching(event);
         } else {
-            log.error("매도 정산 실패 처리 중 해당 체결을 찾을 수 없음: {}", event.getSellOfferNumber());
+            log.error("매도 정산 실패 처리 중 해당 체결을 찾을 수 없음: {}", event.getTradeId());
         }
     }
 

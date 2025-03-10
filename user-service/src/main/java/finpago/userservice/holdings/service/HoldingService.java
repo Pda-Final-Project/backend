@@ -1,6 +1,7 @@
 package finpago.userservice.holdings.service;
 
 import finpago.common.global.messaging.BuyTradeMatchEvent;
+import finpago.common.global.messaging.SellTradeMatchEvent;
 import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.userservice.holdings.dto.UserHoldingsDto;
 import finpago.userservice.holdings.entity.Holdings;
@@ -144,6 +145,30 @@ public class HoldingService {
                     .exchangeRate(event.getExchangeRate())
                     .build();
             holdingsRepository.save(newHoldings);
+        }
+    }
+
+
+    /**
+     * 매도 체결 시 보유 주식 업데이트 (매도 체결 시 주식 감소)
+     */
+    @Transactional
+    public void updateHoldingsForSell(SellTradeMatchEvent event) {
+        Optional<Holdings> existingHolding = holdingsRepository.findByUserIdAndStockTicker(
+                event.getSellerUserId(), event.getStockTicker());
+
+        if (existingHolding.isEmpty()) {
+            throw new IllegalArgumentException("매도할 보유 주식이 존재하지 않습니다.");
+        }
+
+        Holdings holdings = existingHolding.get();
+        holdings.updateHoldingsForSell(event.getTradeQuantity(), event.getTradePrice(), event.getExchangeRate());
+
+        // 남은 수량이 0이면 삭제
+        if (holdings.getHoldingQuantity() == 0) {
+            holdingsRepository.delete(holdings);
+        } else {
+            holdingsRepository.save(holdings);
         }
     }
 

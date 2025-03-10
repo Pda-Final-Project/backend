@@ -48,7 +48,6 @@ public class ExecutionService {
         TradeStatus status = (event.getUnfilledQuantity() > 0) ? TradeStatus.PENDING : TradeStatus.SUCCESS;
 
         BuyTrade trade = BuyTrade.builder()
-                .buyTradeNumber(event.getTradeId())
                 .buyOfferNumber(event.getBuyOfferNumber())
                 .tradeTicker(event.getStockTicker())
                 .buyerUserId(event.getBuyerUserId())
@@ -75,7 +74,6 @@ public class ExecutionService {
         TradeStatus status = (event.getUnfilledQuantity() > 0) ? TradeStatus.PENDING : TradeStatus.SUCCESS;
 
         SellTrade trade = SellTrade.builder()
-                .sellTradeNumber(event.getTradeId())
                 .sellOfferNumber(event.getSellOfferNumber())
                 .tradeTicker(event.getStockTicker())
                 .sellerUserId(event.getSellerUserId())
@@ -157,11 +155,10 @@ public class ExecutionService {
             log.error("Redis 저장 중 오류 발생: ", e);
         }
     }
-    /**
-     * 매수자의 예수금 검증
+  /**
+    * 매수자의 예수금 검증
      */
     private void validateBuyerBalance(BuyTradeMatchEvent event) {
-        System.out.println("들어와요");
         Long buyerAvailableBalance = getCachedBalance(event.getBuyerUserId());
         System.out.println(buyerAvailableBalance);
         Long requiredAmount = event.getTradePrice() * event.getTradeQuantity();
@@ -189,10 +186,8 @@ public class ExecutionService {
     }
 
     private Long getCachedBalance(Long userId) {
-        System.out.println("문제잇나?");
         String balanceKey = "user:" + userId + ":balance";
         String balanceStr = redisTemplate.opsForValue().get(balanceKey);
-        System.out.println("balanceStr: " + balanceStr);
         return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE;
     }
 

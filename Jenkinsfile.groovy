@@ -8,12 +8,17 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                    branches: [[name: 'P3-96-Feat/Jenkins&ArgoCD']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/Pda-Final-Project/backend.git',
-                        credentialsId: GIT_CREDENTIALS_ID
-                    ]]
+                          branches: [[name: 'P3-101-Feat/클라우드-설정']],
+                          userRemoteConfigs: [[
+                                                      url: 'https://github.com/Pda-Final-Project/backend.git',
+                                                      credentialsId: GIT_CREDENTIALS_ID
+                                              ]]
                 ])
+            }
+        }
+        stage('Cleanup Gradle Daemon First') {
+            steps {
+                sh './gradlew --stop || echo "✅ Gradle daemon already stopped."'
             }
         }
         stage('Cleanup Docker Cache') {
@@ -75,6 +80,11 @@ pipeline {
                 }
             }
         }
+        stage('Cleanup Gradle Daemon') {
+            steps {
+                sh './gradlew --stop'
+            }
+        }
         stage('ArgoCD Manifest Update') {
             steps {
                 checkout([$class: 'GitSCM',
@@ -84,6 +94,20 @@ pipeline {
                         credentialsId: GIT_CREDENTIALS_ID
                     ]]
                 ])
+
+                withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    sh """
+                        git config --global user.email "tomy8964@naver.com"
+                        git config --global user.name "tomy8964"
+                        
+                        git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+                        
+                        git checkout main
+                        git fetch origin main
+                        git reset --hard origin/main
+                        git pull --rebase origin main
+                    """
+                }
                 dir('apps') {
                     sh 'ls -l'
 
@@ -95,22 +119,29 @@ pipeline {
                     updateArgoCDManifest('settlement-service')
                     updateArgoCDManifest('user-service')
                     updateArgoCDManifest('order-service')
-
-                    withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        sh """
-                            git config --global user.email "tomy8964@naver.com"
-                            git config --global user.name "tomy8964"
-                            
-                            git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
-                            
-                            # 🚀 🔥 브랜치가 존재하는지 확인 후 checkout
-                            git fetch origin main
-                            git checkout main || git checkout -b main
-                            
-                            git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning' || echo "No changes to commit"
-                            git push origin main || echo "Nothing to push"
-                        """
-                    }
+                    updateArgoCDManifest('data-service')
+                }
+            }
+        }
+        stage('Commit & Push Updates') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    sh """
+                        git config --global user.email "tomy8964@naver.com"
+                        git config --global user.name "tomy8964"
+        
+                        git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
+                        
+                        # 🔥 변경 사항 중 ArgoCD 관련 파일만 스테이징
+                        git add apps/*.yaml
+                        
+                        if ! git diff --cached --quiet; then
+                            git commit -m '[UPDATE] v${env.BUILD_NUMBER} image versioning'
+                            git push origin main
+                        else
+                            echo "✅ No changes to commit and push"
+                        fi
+                    """
                 }
             }
         }
@@ -120,6 +151,11 @@ pipeline {
 def buildAndPushDockerImage(serviceName) {
     dir(serviceName) {
         sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
+
+        sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" > gradle.properties'
+        sh 'echo "org.gradle.daemon.idleTimeout=60000" >> gradle.properties'
+
+        sh './gradlew bootJar --no-daemon --build-cache -Pprod --parallel --continue -Dspring.profiles.active=prod'
         
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """

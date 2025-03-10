@@ -2,11 +2,11 @@ package finpago.settlementservice.settlement.config.kafka;
 
 import finpago.common.global.messaging.BuyTradeMatchEvent;
 import finpago.common.global.messaging.SellTradeMatchEvent;
-import finpago.common.global.messaging.TradeMatchingEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -22,8 +22,9 @@ import java.util.Map;
 @EnableKafka
 public class KafkaConfig {
 
-    private static final String BOOTSTRAP_SERVERS = "localhost:9092";
     private static final String GROUP_ID = "settlement-service-group";
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String BOOTSTRAP_SERVERS;
 
     @Bean
     public ProducerFactory<String, Object> defaultProducerFactory() {

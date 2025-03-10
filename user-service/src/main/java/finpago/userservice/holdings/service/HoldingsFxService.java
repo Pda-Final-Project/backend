@@ -28,7 +28,6 @@ public class HoldingsFxService {
     public TradeSummaryDto getUserTradeSummary(Long userId) {
         // 사용자의 전체 매도 체결 내역 가져오기
         List<TradeFetchService.SellTrade> sellTrades = tradeFetchService.getUserSellTrades(userId);
-        System.out.println("sell trades " + sellTrades);
 
         // 합산 값 초기화
         double totalEvaluationAmount = 0.0; //평가금액
@@ -135,9 +134,7 @@ public class HoldingsFxService {
      */
     public double calculateBuyAmount(Long userId, String stockTicker) {
         // 매도한 종목의 holdings 데이터 가져오기
-        System.out.println("들어옵니다111");
         Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, stockTicker);
-        System.out.println("holdings: " + holdingsOptional);
         if (holdingsOptional.isEmpty()) {
             return 0.0; // holdings 데이터가 없으면 0 반환
         }
@@ -172,7 +169,6 @@ public class HoldingsFxService {
      * @return 평가금액 (KRW)
      */
     public double calculateEvaluationAmount(Long userId, TradeFetchService.SellTrade trade) {
-        System.out.println("trade " + trade.getTradeTicker());
         // 매수금액(KRW) 계산
         double buyAmount = calculateBuyAmount(userId, trade.getTradeTicker());
 

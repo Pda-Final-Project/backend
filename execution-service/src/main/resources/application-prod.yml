@@ -1,11 +1,11 @@
 spring:
   application:
-    name: user-service
+    name: execution-service
 
   datasource:
-    url: jdbc:mysql://localhost:3306/test
+    url: jdbc:mysql://executiondb-cluster.db.svc.cluster.local:3306/finpagodb?useSSL=false&characterEncoding=UTF-8
     username: root
-    password: 1234
+    password: admin
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -15,14 +15,10 @@ spring:
   jpa:
     generate-ddl: true
     hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
+      ddl-auto: create
     open-in-view: false
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka.kafka.svc.cluster.local:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -33,25 +29,19 @@ spring:
 common:
   redis:
     enabled: true
-  kafka:
-    enabled: true
   discovery:
-    enabled: true
+    enabled: false
 
-server:
-  port: 19092
-
-eureka:
-  instance:
-    instance-id: ${spring.cloud.client.hostname}:${spring.application.instance_id:${random.value}}
-  client:
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: http://127.0.0.1:19090/eureka
-
-# JWT 설정
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
   expiration: 86400000
 
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+  cloud:
+    discovery:
+      enabled: false

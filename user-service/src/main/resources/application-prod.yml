@@ -1,11 +1,11 @@
 spring:
   application:
-    name: order-service
+    name: user-service
 
   datasource:
-    url: jdbc:mysql://localhost:3306/orders
+    url: jdbc:mysql://userdb-cluster.db.svc.cluster.local:3306/finpagodb?allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul
     username: root
-    password: 1234
+    password: admin
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10
@@ -13,16 +13,16 @@ spring:
       idle-timeout: 30000
       max-lifetime: 1800000
   jpa:
-    database: mysql
-    hibernate:
-      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
-        show_sql: true
+    hibernate:
+      ddl-auto: create
+    database: mysql
+    open-in-view: false
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka.kafka.svc.cluster.local:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -36,22 +36,24 @@ common:
   kafka:
     enabled: true
   discovery:
-    enabled: true
-
-server:
-  port: 19093
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:19090/eureka/
-    register-with-eureka: true
-    fetch-registry: true
-
-  instance:
-    instance-id: ${spring.application.name}:${server.port}
-    prefer-ip-address: true
+    enabled: false
 
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
   expiration: 86400000
+
+feign:
+  client:
+    config:
+      order-service:
+        url: http://order-service.default.svc.cluster.local
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+  cloud:
+    discovery:
+      enabled: false

@@ -35,9 +35,6 @@ dependencies {
     runtimeOnly 'mysql:mysql-connector-java:8.0.33'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    //eureka
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-
     // FeignClient
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
@@ -47,6 +44,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    //eureka
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
     compileOnly 'org.projectlombok:lombok'

@@ -1,5 +1,6 @@
 package finpago.userservice.holdings.service;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
@@ -58,6 +59,7 @@ public class TradeFetchService {
     /**
      * BuyTrade 객체 (Redis JSON 변환용)
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @Getter
     @Setter
     @NoArgsConstructor
@@ -81,6 +83,7 @@ public class TradeFetchService {
     /**
      * SellTrade 객체 (Redis JSON 변환용)
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @Getter
     @Setter
     @NoArgsConstructor

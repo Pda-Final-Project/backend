@@ -24,11 +24,13 @@ public class TradeViewService {
 
     @Transactional(readOnly = true)
     public List<TradeDto> getSuccessfulOrPendingTrades(Long userId) {
+        System.out.println("또뭐가문제냐");
         List<TradeDto> buyTrades = buyTradeRepository.findByBuyerUserIdAndTradeStatusIn(userId, List.of(TradeStatus.SUCCESS, TradeStatus.PENDING))
                 .stream()
                 .map(this::convertToTradeDto)
                 .collect(Collectors.toList());
 
+        System.out.println("buyTrades: " + buyTrades);
         List<TradeDto> sellTrades = sellTradeRepository.findBySellerUserIdAndTradeStatusIn(userId, List.of(TradeStatus.SUCCESS, TradeStatus.PENDING))
                 .stream()
                 .map(this::convertToTradeDto)

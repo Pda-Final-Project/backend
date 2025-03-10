@@ -22,6 +22,7 @@ public class NotificationService {
      * 매수자 알림 생성 및 발송
      */
     public void sendBuyOrderNotification(BuyTradeMatchEvent event) {
+        System.out.println("들어옵니다");
 //        boolean isNotificationEnabled = userClient.getNotificationSetting();
 //
 //        if (!isNotificationEnabled) {
@@ -38,6 +39,7 @@ public class NotificationService {
                 event.getTradePrice()
         );
 
+        System.out.println("noticeEvent: " + noticeEvent);
         notificationProducer.sendNotification(noticeEvent);
         log.info("매수자 알림 발송: {}", noticeEvent);
     }
@@ -46,12 +48,12 @@ public class NotificationService {
      * 매도자 알림 생성 및 발송
      */
     public void sendSellOrderNotification(SellTradeMatchEvent event) {
-        boolean isNotificationEnabled = userClient.getNotificationSetting();
-
-        if (!isNotificationEnabled) {
-            log.info("매도자({})의 알림 설정이 OFF 상태이므로 알림을 발송하지 않음.", event.getSellerUserId());
-            return;
-        }
+//        boolean isNotificationEnabled = userClient.getNotificationSetting();
+//
+//        if (!isNotificationEnabled) {
+//            log.info("매도자({})의 알림 설정이 OFF 상태이므로 알림을 발송하지 않음.", event.getSellerUserId());
+//            return;
+//        }
 
         NoticeEvent noticeEvent = new NoticeEvent(
                 event.getSellerUserId(),

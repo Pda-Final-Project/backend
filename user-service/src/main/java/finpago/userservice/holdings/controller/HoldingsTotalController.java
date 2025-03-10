@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 //해외주식 잔고조회(원화기준)
 @RestController
-@RequestMapping("/api/holdings/total")
+@RequestMapping("/v1/api/holdings/total")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class HoldingsTotalController {

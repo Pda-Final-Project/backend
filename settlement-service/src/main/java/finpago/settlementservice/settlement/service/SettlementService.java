@@ -78,8 +78,10 @@ public class SettlementService {
      * 매도자의 보유 주식 검증
      */
     private void validateSellerStocks(SellTradeMatchEvent event) {
+        System.out.println("들어옵니다");
         Long sellerAvailableStocks = getCachedAvailableStocks(event.getSellerUserId(), event.getStockTicker());
 
+        System.out.println("sellerAvailableStocks: " + sellerAvailableStocks);
         if (sellerAvailableStocks < event.getTradeQuantity()) {
             log.error("보유 주식 부족 - 매도자 ID: {}, 필요 주식: {}, 보유 주식: {}",
                     event.getSellerUserId(), event.getTradeQuantity(), sellerAvailableStocks);
@@ -101,6 +103,7 @@ public class SettlementService {
      * 사용 가능 주식 조회
      */
     private Long getCachedAvailableStocks(Long userId, String stockTicker) {
+        System.out.println("뭐가문제야");
         String stockKey = "user:" + userId + ":holdings:" + stockTicker;
         String stockStr = redisTemplate.opsForValue().get(stockKey);
         return stockStr != null ? Long.parseLong(stockStr) : DEFAULT_STOCKS;

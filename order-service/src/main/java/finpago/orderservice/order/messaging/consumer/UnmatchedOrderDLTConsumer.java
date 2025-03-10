@@ -19,7 +19,8 @@ public class UnmatchedOrderDLTConsumer {
 
     private final OrderRepository orderRepository;
 
-    @KafkaListener(topics = "unmatched-orders-dlt-topic", groupId = "order-service-group")
+    @KafkaListener(topics = "unmatched-order-dlt-topic", groupId = "order-service-group"
+            ,containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleUnmatchedOrderDLT(OrderCreateReqEvent event) {
         log.error("DLT에서 미체결 주문 복구 시도 실패: {}", event.getOfferNumber());
 

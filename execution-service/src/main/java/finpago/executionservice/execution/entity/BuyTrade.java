@@ -17,7 +17,7 @@ import java.util.UUID;
 public class BuyTrade extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+//    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "buy_trade_number", length = 64, nullable = false, updatable = false)
     private UUID buyTradeNumber; // 매수 체결 고유 번호
 

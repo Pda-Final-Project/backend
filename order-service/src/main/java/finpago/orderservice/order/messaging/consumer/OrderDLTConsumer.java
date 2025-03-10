@@ -19,7 +19,8 @@ public class OrderDLTConsumer {
 
     private final OrderRepository orderRepository;
 
-    @KafkaListener(topics = "order-dlt-topic", groupId = "order-service-group")
+    @KafkaListener(topics = "order-dlt-topic", groupId = "order-service-group"
+            ,containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleFailedOrder(OrderCreateReqEvent event) {
         log.warn("DLT에서 주문 복구 시도: {}", event.getOfferNumber());
 

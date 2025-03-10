@@ -65,4 +65,39 @@ public class Holdings extends BaseEntity {
         this.holdingTotalPrice = newTotalCost;
         this.exchangeRate = newAverageExchangeRate;
     }
+
+    /**
+     * 매도 체결 시 보유 주식 차감
+     */
+    public void updateHoldingsForSell(Long sellQuantity, Long tradePrice, Float tradeExchangeRate) {
+        long newTotalQuantity = this.holdingQuantity - sellQuantity;
+
+        if (newTotalQuantity < 0) {
+            throw new IllegalArgumentException("매도할 주식이 부족합니다.");
+        }
+
+        // 보유 수량이 0이 되면 초기화
+        if (newTotalQuantity == 0) {
+            this.holdingQuantity = 0L;
+            this.holdingPrice = 0L;
+            this.holdingTotalPrice = 0L;
+            this.exchangeRate = 0.0f;
+            return;
+        }
+
+        // 총 보유 금액 = 기존 총 금액 - (매도한 수량 * 평단가)
+        long newTotalCost = this.holdingTotalPrice - (this.holdingPrice * sellQuantity);
+
+        // 새로운 평균 매수 가격 (매도 이후에도 남아있는 주식 기준)
+        long newAveragePrice = newTotalCost / newTotalQuantity;
+
+        // 새로운 평균 환율 (기존 환율 기준으로 조정)
+        float newTotalExchangeRate = (this.exchangeRate * this.holdingQuantity) - (tradeExchangeRate * sellQuantity);
+        float newAverageExchangeRate = newTotalExchangeRate / newTotalQuantity;
+
+        this.holdingQuantity = newTotalQuantity;
+        this.holdingPrice = newAveragePrice;
+        this.holdingTotalPrice = newTotalCost;
+        this.exchangeRate = newAverageExchangeRate;
+    }
 }

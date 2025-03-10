@@ -165,20 +165,20 @@ public class OrderService {
 
         Order order;
         if (existingOrder.isPresent()) {
-            // 기존 주문이 있으면 상태만 PENDING으로 변경
+            // 기존 주문이 있으면 상태만 FAILED으로 변경
             order = existingOrder.get();
-            order.setOfferStatus(OrderStatus.PENDING);
+            order.setOfferStatus(OrderStatus.FAILED);
             log.info("기존 주문 PENDING 상태로 업데이트: {}", order);
         } else {
             // 주문이 존재하지 않으면 새로 저장
+
             order = Order.builder()
-                    .offerNumber(orderId)
                     .userId(event.getUserId())
                     .offerType(event.getOfferType())
                     .offerQuantity(event.getOfferQuantity())
                     .offerPrice(event.getOfferPrice())
                     .stockTicker(event.getStockTicker())
-                    .offerStatus(OrderStatus.PENDING) // PENDING 상태로 설정
+                    .offerStatus(OrderStatus.FAILED) // PENDING 상태로 설정
                     .build();
             log.info("새로운 미체결 주문 저장: {}", order);
         }

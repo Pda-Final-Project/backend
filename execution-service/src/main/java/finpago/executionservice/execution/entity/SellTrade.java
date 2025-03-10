@@ -20,7 +20,7 @@ public class SellTrade extends BaseEntity {
     @Id
 //    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "sell_trade_number", length = 64, nullable = false, updatable = false)
-    @Convert(converter = UUIDToStringConverter.class)
+//    @Convert(converter = UUIDToStringConverter.class)
     private UUID sellTradeNumber; // 매도 체결 고유 번호
 
     @Column(name = "sell_offer_number", length = 64, nullable = false)

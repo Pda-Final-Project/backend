@@ -48,7 +48,6 @@ public class ExecutionService {
         TradeStatus status = (event.getUnfilledQuantity() > 0) ? TradeStatus.PENDING : TradeStatus.SUCCESS;
 
         BuyTrade trade = BuyTrade.builder()
-                .buyTradeNumber(event.getTradeId())
                 .buyOfferNumber(event.getBuyOfferNumber())
                 .tradeTicker(event.getStockTicker())
                 .buyerUserId(event.getBuyerUserId())
@@ -75,7 +74,6 @@ public class ExecutionService {
         TradeStatus status = (event.getUnfilledQuantity() > 0) ? TradeStatus.PENDING : TradeStatus.SUCCESS;
 
         SellTrade trade = SellTrade.builder()
-                .sellTradeNumber(event.getTradeId())
                 .sellOfferNumber(event.getSellOfferNumber())
                 .tradeTicker(event.getStockTicker())
                 .sellerUserId(event.getSellerUserId())
@@ -157,8 +155,8 @@ public class ExecutionService {
             log.error("Redis 저장 중 오류 발생: ", e);
         }
     }
-  /**
-    * 매수자의 예수금 검증
+    /**
+     * 매수자의 예수금 검증
      */
     private void validateBuyerBalance(BuyTradeMatchEvent event) {
         Long buyerAvailableBalance = getCachedBalance(event.getBuyerUserId());
@@ -224,7 +222,7 @@ public class ExecutionService {
     @Transactional
     public void handleSellSettlementFailure(SellTradeMatchEvent event) {
         log.warn("매도 체결 실패 처리 시작: {}", event);
-        Optional<SellTrade> tradeOptional = sellTradeRepository.findById(event.getTradeId());
+        Optional<SellTrade> tradeOptional = sellTradeRepository.findById(event.getSellOfferNumber());
 
         if (tradeOptional.isPresent()) {
             SellTrade trade = tradeOptional.get();
@@ -233,7 +231,7 @@ public class ExecutionService {
             log.warn("매도 체결 상태 FAILED로 업데이트 완료: {}", trade);
             sendFailedSellTradeToMatching(event);
         } else {
-            log.error("매도 정산 실패 처리 중 해당 체결을 찾을 수 없음: {}", event.getTradeId());
+            log.error("매도 정산 실패 처리 중 해당 체결을 찾을 수 없음: {}", event.getSellOfferNumber());
         }
     }
 

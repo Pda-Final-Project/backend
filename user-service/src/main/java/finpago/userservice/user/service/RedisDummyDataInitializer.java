@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class RedisDummyDataInitializer {
 
     private final StringRedisTemplate redisTemplate;

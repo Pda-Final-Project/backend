@@ -1,0 +1,71 @@
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  application:
+    name: gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: http://user-service.backend.svc.cluster.local:8080
+          predicates:
+            - Path= /v1/api/users/**, /v1/api/notification/**
+
+        - id: order-service
+          uri: http://order-service.backend.svc.cluster.local:8080
+          predicates:
+            - Path=/v1/api/order/**
+
+        - id: execution-service
+          uri: http://execution-service.backend.svc.cluster.local:8080
+          predicates:
+            - Path=/v1/api/execution/**
+
+        - id: filling-service
+          uri: http://filling-service.backend.svc.cluster.local:8080
+          predicates:
+            - Path=/v1/api/filling/**
+
+        - id: data-service
+          uri: http://data-service.backend.svc.cluster.local:8080
+          predicates:
+            - Path=/v1/api/news/**, /v1/api/stocks/**
+
+      discovery:
+        locator:
+          enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, httpexchanges
+  endpoint:
+    health:
+      show-details: ALWAYS
+jwt:
+  secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"
+  expiration: 86400000
+
+common:
+  redis:
+    enabled: false
+  kafka:
+    enabled: false
+  discovery:
+    enabled: false
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+  cloud:
+    discovery:
+      enabled: false
+
+logging:
+  level:
+    org.springframework.cloud.gateway: trace
+    reactor.netty: trace

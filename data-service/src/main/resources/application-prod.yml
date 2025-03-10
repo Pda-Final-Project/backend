@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: data-service
+
+  datasource:
+    url: jdbc:mysql://executiondb-cluster.db.svc.cluster.local:3306/finpagodb?useSSL=false&characterEncoding=UTF-8
+    username: root
+    password: admin
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 1800000
+  jpa:
+    database: mysql
+    generate-ddl: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: create
+common:
+  redis:
+    enabled: true
+  kafka:
+    enabled: false
+  discovery:
+    enabled: false
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+  cloud:
+    discovery:
+      enabled: false

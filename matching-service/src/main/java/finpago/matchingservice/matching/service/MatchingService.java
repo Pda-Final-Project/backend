@@ -35,7 +35,7 @@ public class MatchingService {
             Comparator.comparing(OrderCreateReqEvent::getCreatedAt)
     );
 
-    private static final long MAX_WAIT_TIME = 5 * 1000; // 5초 (밀리초 단위)
+    private static final long MAX_WAIT_TIME = 5 * 60 * 1000; // 5분 (밀리초 단위)
 
     public void processOrder(OrderCreateReqEvent order) {
         log.info("주문 접수: {}", order);
@@ -159,19 +159,10 @@ public class MatchingService {
                         int matchedIndex = linearSearch(sortedTrades, order.getOfferPrice());
                         if (matchedIndex != -1) {
                             Map<String, Object> matchedTrade = sortedTrades.get(matchedIndex);
+                            long tradePrice = (long) matchedTrade.get("price");
+                            long tradeVolume = (long) matchedTrade.get("volume");
 
-                            // Number 타입 변환 후 long으로 변환
-                            Number priceValue = (Number) matchedTrade.get("price");
-                            long tradePrice = Math.round(priceValue.doubleValue());
-
-                            Number volumeValue = (Number) matchedTrade.get("volume");
-                            long tradeVolume = volumeValue.longValue();
-
-
-                            Number orderQuantityValue = ((Number) order.getOfferQuantity());
-                            long  orderQuantity = orderQuantityValue.longValue();
-
-                            long matchedQuantity = Math.min(orderQuantity, tradeVolume);
+                            long matchedQuantity = Math.min(order.getOfferQuantity(), tradeVolume);
                             long unfilledQuantity = order.getOfferQuantity() - matchedQuantity;
 
                             handleTradeExecution(order, matchedQuantity, unfilledQuantity, tradePrice, false);

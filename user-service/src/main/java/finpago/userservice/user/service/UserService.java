@@ -46,7 +46,7 @@ public class UserService {
 
     private static final String NOTIFICATION_KEY_PREFIX = "user:%s:notifications"; // Redis 키 패턴
     private static final long EXPIRATION_DAYS = 7; // 알림 보관 기간 (7일)
-    private static final String BANK_NAME = "[CMA 종합 계좌]";
+    private static final String BANK_NAME = "신한";
     private static final long DEFAULT_WITHHOLDING = 10_000_000L;
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String NOTIFICATION_SETTING_KEY = "user:%d:notification-settings";

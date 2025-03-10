@@ -1,10 +1,22 @@
 spring:
   application:
     name: matching-service
-  data:
-    redis:
-      host: localhost
-      port: 6379
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+common:
+  redis:
+    enabled: true
+  kafka:
+    enabled: true
+  discovery:
+    enabled: true
 
 server:
   port: 19094

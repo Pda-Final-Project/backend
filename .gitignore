@@ -37,3 +37,5 @@ out/
 .vscode/
 
 data/kafka/
+
+/lib/groovy*

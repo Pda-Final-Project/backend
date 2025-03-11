@@ -42,9 +42,9 @@ public class TradeController {
     }
 
     /**
-     * 유저의 체결 내역 조회 API (FAILED)
+     * 유저의 체결 내역 조회 API (UNFILLED)
      */
-    @GetMapping("/trades/failed")
+    @GetMapping("/trades/unfilled")
     public ResponseEntity<ApiResponse<List<TradeDto>>> getFailedTrades() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -54,7 +54,7 @@ public class TradeController {
         }
 
         Long userId = Long.parseLong(authentication.getName());
-        List<TradeDto> trades = tradeViewService.getFailedTrades(userId);
+        List<TradeDto> trades = tradeViewService.getUnfilledTrades(userId);
 
         return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "미체결 내역 조회 성공", trades));
     }

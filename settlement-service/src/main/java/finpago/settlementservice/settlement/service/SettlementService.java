@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -25,6 +28,8 @@ public class SettlementService {
     private static final long DEFAULT_STOCKS = 100; // 기본 보유 주식 수량
     private static final float DEFAULT_EXCHANGE_RATE = 1.0f; // 기본 환율 (1.0)
     private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
 
 
     @Transactional
@@ -35,7 +40,7 @@ public class SettlementService {
         event.setExchangeRate(exchangeRate);
 
         updateBatchBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
-        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
+//        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
         updateHoldings(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity());
         updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate, event.getTradePrice());
 
@@ -146,9 +151,13 @@ public class SettlementService {
      * - 사용자가 직접 조회하는 출금 가능 예수금과는 별도로 관리됨
      */
     private void updateBatchBalance(Long userId, Long amount) {
-        String batchBalanceKey = "user:" + userId + ":batch_balance";
+        String pendingDate = LocalDate.now().plusDays(2).format(DATE_FORMATTER); // D+2 날짜 계산
+        String batchBalanceKey = "user:" + userId + ":batch_balance:" + pendingDate;
+
         Long currentBalance = getCachedAvailableBalance(userId);
         redisTemplate.opsForValue().set(batchBalanceKey, String.valueOf(currentBalance + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
+
+        log.info("[배치 예수금 저장] 사용자ID: {}, 날짜: {}, 변경 후 예수금: {}", userId, pendingDate, currentBalance + amount);
     }
 
     /**

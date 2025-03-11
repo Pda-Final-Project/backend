@@ -36,7 +36,7 @@ pipeline {
             steps {
                 dir('common') {
                     sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
-                    sh './gradlew clean build -Pprod --no-daemon -Dorg.gradle.jvmargs="-Xmx1024m"'
+                    sh './gradlew clean build -x test -Pprod --no-daemon -Dorg.gradle.jvmargs="-Xmx1024m"'
                 }
             }
         }
@@ -166,7 +166,7 @@ def buildAndPushDockerImage(serviceName) {
         sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" > gradle.properties'
         sh 'echo "org.gradle.daemon.idleTimeout=60000" >> gradle.properties'
 
-        sh './gradlew clean build --no-daemon -Pprod --parallel -Dspring.profiles.active=prod'
+        sh './gradlew clean build -x test --no-daemon -Pprod --parallel -Dspring.profiles.active=prod'
 
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """

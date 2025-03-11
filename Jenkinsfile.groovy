@@ -1,102 +1,74 @@
-pipeline {
-    agent any
-    environment {
-        GIT_CREDENTIALS_ID = "github-credentials"
-        GIT_SSH = "git-ssh"
-        PYTHON_CRAWLER_IMAGE = "python-crawler"
+node {
+    stage('Checkout') {
+        checkout scm
     }
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout([$class: 'GitSCM',
-                          branches: [[name: 'P3-121-Feat/파이썬-크롤러-개발']],
-                          userRemoteConfigs: [[
-                                                      url: 'https://github.com/Pda-Final-Project/backend.git',
-                                                      credentialsId: GIT_CREDENTIALS_ID
-                                              ]]
-                ])
+
+    stage('Detect Changes') {
+        script {
+            def changedFiles = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim().split("\n")
+            def changedModules = changedFiles.collect { file ->
+                def module = file.split("/")[0]
+                return module
+            }.unique()
+
+            echo "Changed Modules: ${changedModules}"
+
+            if (changedModules.contains("common")) {
+                echo "Common module changed. Building all services."
+                env.CHANGED_MODULES = "all"
+            } else {
+                env.CHANGED_MODULES = changedModules.join(",")
             }
         }
-        stage('Detect Changes') {
-            steps {
-                script {
-                    def changedFiles = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim().split("\n")
-                    def changedModules = changedFiles.collect { file ->
-                        def module = file.split("/")[0]
-                        return module
-                    }.unique()
+    }
 
-                    // 변경된 모듈 로그 출력
-                    echo "Changed Modules: ${changedModules}"
-
-                    // common 모듈이 변경된 경우 모든 모듈을 빌드하도록 설정
-                    if (changedModules.contains("common")) {
-                        echo "Common module changed. Building all services."
-                        env.CHANGED_MODULES = "all"
-                    } else {
-                        env.CHANGED_MODULES = changedModules.join(",")
-                    }
-                }
-            }
-        }
+    if (env.CHANGED_MODULES.contains("common") || env.CHANGED_MODULES == "all") {
         stage('Build Common Module') {
-            when {
-                expression { env.CHANGED_MODULES.contains("common") || env.CHANGED_MODULES == "all" }
-            }
-            steps {
-                dir('common') {
-                    sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
-                    sh './gradlew clean build -Pprod --no-daemon -Dorg.gradle.jvmargs="-Xmx1024m"'
-                }
+            dir('common') {
+                sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
+                sh './gradlew clean build -Pprod --no-daemon -Dorg.gradle.jvmargs="-Xmx1024m"'
             }
         }
-        stage('Build & Push Docker Images') {
-            steps {
-                script {
-                    def modulesToBuild = []
+    }
 
-                    // 모든 모듈을 빌드해야 하는 경우
-                    if (env.CHANGED_MODULES == "all") {
-                        modulesToBuild = ['execution-service', 'data-service', 'filling-service', 'gateway',
-                                          'matching-service', 'notification-service', 'settlement-service',
-                                          'user-service', 'order-service', 'python-crawler']
-                    } else {
-                        modulesToBuild = env.CHANGED_MODULES.split(",")
-                    }
+    stage('Build & Push Docker Images') {
+        script {
+            def modulesToBuild = env.CHANGED_MODULES == "all" ?
+                    ['execution-service', 'data-service', 'filling-service', 'gateway',
+                     'matching-service', 'notification-service', 'settlement-service',
+                     'user-service', 'order-service', 'python-crawler']
+                    : env.CHANGED_MODULES.tokenize(",")
 
-                    def parallelStages = [:]
-                    modulesToBuild.each { module ->
-                        if (module in ['execution-service', 'data-service', 'filling-service', 'gateway',
-                                       'matching-service', 'notification-service', 'settlement-service',
-                                       'user-service', 'order-service', 'python-crawler']) {
-                            parallelStages[module] = {
-                                if (module == "python-crawler") {
-                                    buildAndPushPythonCrawler()
-                                } else {
-                                    buildAndPushDockerImage(module)
-                                }
-                            }
+            def parallelStages = [:]
+            modulesToBuild.each { module ->
+                if (module in ['execution-service', 'data-service', 'filling-service', 'gateway',
+                               'matching-service', 'notification-service', 'settlement-service',
+                               'user-service', 'order-service', 'python-crawler']) {
+                    parallelStages[module] = {
+                        if (module == "python-crawler") {
+                            buildAndPushPythonCrawler()
+                        } else {
+                            buildAndPushDockerImage(module)
                         }
                     }
-
-                    if (parallelStages.size() > 0) {
-                        parallel parallelStages
-                    } else {
-                        echo "✅ No services need to be built."
-                    }
                 }
             }
-        }
-        stage('Cleanup Gradle Daemon') {
-            steps {
-                sh './gradlew --stop'
+
+            if (parallelStages.size() > 0) {
+                parallel parallelStages
+            } else {
+                echo "✅ No services need to be built."
             }
         }
-        stage('ArgoCD Manifest Update') {
-            when {
-                expression { env.CHANGED_MODULES != "" }
-            }
-            steps {
+    }
+
+    stage('Cleanup Gradle Daemon') {
+        sh './gradlew --stop'
+    }
+
+    stage('ArgoCD Manifest Update') {
+        script {
+            if (env.CHANGED_MODULES != "") {
                 checkout([$class: 'GitSCM',
                           branches: [[name: 'main']],
                           userRemoteConfigs: [[
@@ -118,19 +90,20 @@ pipeline {
                         git pull --rebase origin main
                     """
                 }
+
                 dir('apps') {
                     sh 'ls -l'
-                    env.CHANGED_MODULES.split(",").each { module ->
+                    env.CHANGED_MODULES.tokenize(",").each { module ->
                         updateArgoCDManifest(module)
                     }
                 }
             }
         }
-        stage('Commit & Push Updates') {
-            when {
-                expression { env.CHANGED_MODULES != "" }
-            }
-            steps {
+    }
+
+    stage('Commit & Push Updates') {
+        script {
+            if (env.CHANGED_MODULES != "") {
                 withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh """
                         git config --global user.email "tomy8964@naver.com"
@@ -153,6 +126,7 @@ pipeline {
     }
 }
 
+// Docker 빌드 및 푸시 함수
 def buildAndPushDockerImage(serviceName) {
     dir(serviceName) {
         sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
@@ -172,6 +146,7 @@ def buildAndPushDockerImage(serviceName) {
     }
 }
 
+// Python Crawler 빌드 및 푸시 함수
 def buildAndPushPythonCrawler() {
     dir('python-crawler') {
         sh 'echo "Building Python Crawler Docker Image..."'
@@ -186,9 +161,9 @@ def buildAndPushPythonCrawler() {
     }
 }
 
+// ArgoCD 매니페스트 업데이트 함수
 def updateArgoCDManifest(serviceName) {
     if (serviceName == "python-crawler") {
-        // python-crawler가 변경되었을 때 관련된 ArgoCD 매니페스트를 업데이트
         def pythonCrawlerManifests = [
                 "update-chart",
                 "update-fillings",
@@ -205,7 +180,6 @@ def updateArgoCDManifest(serviceName) {
             """
         }
     } else {
-        // 일반 서비스의 ArgoCD 매니페스트 업데이트
         sh """
             sed -i 's|\\(image: .*/${serviceName}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' apps/${serviceName}.yaml
             git add apps/${serviceName}.yaml

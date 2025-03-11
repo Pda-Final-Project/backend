@@ -17,88 +17,92 @@ pipeline {
                 ])
             }
         }
-        stage('Cleanup Gradle Daemon First') {
-            steps {
-                sh './gradlew --stop || echo "✅ Gradle daemon already stopped."'
-            }
-        }
-        stage('Cleanup Docker Cache') {
+        stage('Detect Changes') {
             steps {
                 script {
-                    def diskUsage = sh(script: "df -h | awk '/ \\/\$/ {print \$5}' | sed 's/%//'", returnStdout: true).trim().toInteger()
-                    if (diskUsage > 80) {
-                        sh 'docker system prune -a -f --volumes'
+                    def changedFiles = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim().split("\n")
+                    def changedModules = changedFiles.collect { file ->
+                        def module = file.split("/")[0]
+                        return module
+                    }.unique()
+
+                    // 변경된 모듈 로그 출력
+                    echo "Changed Modules: ${changedModules}"
+
+                    // common 모듈이 변경된 경우 모든 모듈을 빌드하도록 설정
+                    if (changedModules.contains("common")) {
+                        echo "Common module changed. Building all services."
+                        env.CHANGED_MODULES = "all"
+                    } else {
+                        env.CHANGED_MODULES = changedModules.join(",")
                     }
                 }
             }
         }
         stage('Build Common Module') {
+            when {
+                expression { env.CHANGED_MODULES.contains("common") || env.CHANGED_MODULES == "all" }
+            }
             steps {
                 dir('common') {
                     sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
-                    sh './gradlew clean --no-daemon'
                     sh './gradlew clean build -Pprod --no-daemon -Dorg.gradle.jvmargs="-Xmx1024m"'
                 }
             }
         }
-        stage('Build & Push Docker Images - Group 1') {
-            parallel {
-                stage('Execution Service') {
-                    steps { buildAndPushDockerImage('execution-service') }
-                }
-                stage('Data Service') {
-                    steps { buildAndPushDockerImage('data-service') }
-                }
-                stage('Filling Service') {
-                    steps { buildAndPushDockerImage('filling-service') }
-                }
-                stage('Gateway Service') {
-                    steps { buildAndPushDockerImage('gateway') }
+        stage('Build & Push Docker Images') {
+            steps {
+                script {
+                    def modulesToBuild = []
+
+                    // 모든 모듈을 빌드해야 하는 경우
+                    if (env.CHANGED_MODULES == "all") {
+                        modulesToBuild = ['execution-service', 'data-service', 'filling-service', 'gateway',
+                                          'matching-service', 'notification-service', 'settlement-service',
+                                          'user-service', 'order-service', 'python-crawler']
+                    } else {
+                        modulesToBuild = env.CHANGED_MODULES.split(",")
+                    }
+
+                    def parallelStages = [:]
+                    modulesToBuild.each { module ->
+                        if (module in ['execution-service', 'data-service', 'filling-service', 'gateway',
+                                       'matching-service', 'notification-service', 'settlement-service',
+                                       'user-service', 'order-service', 'python-crawler']) {
+                            parallelStages[module] = {
+                                if (module == "python-crawler") {
+                                    buildAndPushPythonCrawler()
+                                } else {
+                                    buildAndPushDockerImage(module)
+                                }
+                            }
+                        }
+                    }
+
+                    if (parallelStages.size() > 0) {
+                        parallel parallelStages
+                    } else {
+                        echo "✅ No services need to be built."
+                    }
                 }
             }
         }
-
-        stage('Build & Push Docker Images - Group 2') {
-            parallel {
-                stage('Matching Service') {
-                    steps { buildAndPushDockerImage('matching-service') }
-                }
-                stage('Notification Service') {
-                    steps { buildAndPushDockerImage('notification-service') }
-                }
-                stage('Settlement Service') {
-                    steps { buildAndPushDockerImage('settlement-service') }
-                }
-            }
-        }
-
-        stage('Build & Push Docker Images - Group 3') {
-            parallel {
-                stage('User Service') {
-                    steps { buildAndPushDockerImage('user-service') }
-                }
-                stage('Order Service') {
-                    steps { buildAndPushDockerImage('order-service') }
-                }
-                stage('Python Crawler') {
-                    steps { buildAndPushPythonCrawler() }
-                }
-            }
-        }
-
         stage('Cleanup Gradle Daemon') {
             steps {
                 sh './gradlew --stop'
             }
         }
         stage('ArgoCD Manifest Update') {
+            when {
+                expression { env.CHANGED_MODULES != "" }
+            }
             steps {
                 checkout([$class: 'GitSCM',
-                    branches: [[name: 'main']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/Pda-Final-Project/argocd.git',
-                        credentialsId: GIT_CREDENTIALS_ID
-                    ]]
+                          branches: [[name: 'main']],
+                          userRemoteConfigs: [[
+                                                      url: 'https://github.com/Pda-Final-Project/argocd.git',
+                                                      credentialsId: GIT_CREDENTIALS_ID
+                                              ]]
                 ])
 
                 withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
@@ -116,26 +120,16 @@ pipeline {
                 }
                 dir('apps') {
                     sh 'ls -l'
-                    updateArgoCDManifest('execution-service')
-                    updateArgoCDManifest('filling-service')
-                    updateArgoCDManifest('gateway')
-                    updateArgoCDManifest('matching-service')
-                    updateArgoCDManifest('notification-service')
-                    updateArgoCDManifest('settlement-service')
-                    updateArgoCDManifest('user-service')
-                    updateArgoCDManifest('order-service')
-                    updateArgoCDManifest('data-service')
-                    updateArgoCDManifest('update-chart')
-                    updateArgoCDManifest('update-fillings')
-                    updateArgoCDManifest('update-news')
-                    updateArgoCDManifest('init-chart')
-                    updateArgoCDManifest('init-fillings')
-                    updateArgoCDManifest('init-stock')
-                    updateArgoCDManifest('get-stock-price')
+                    env.CHANGED_MODULES.split(",").each { module ->
+                        updateArgoCDManifest(module)
+                    }
                 }
             }
         }
         stage('Commit & Push Updates') {
+            when {
+                expression { env.CHANGED_MODULES != "" }
+            }
             steps {
                 withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh """
@@ -144,7 +138,6 @@ pipeline {
         
                         git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
                         
-                        # 🔥 변경 사항 중 ArgoCD 관련 파일만 스테이징
                         git add apps/*.yaml
                         
                         if ! git diff --cached --quiet; then
@@ -167,7 +160,7 @@ def buildAndPushDockerImage(serviceName) {
         sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" > gradle.properties'
         sh 'echo "org.gradle.daemon.idleTimeout=60000" >> gradle.properties'
 
-        sh './gradlew clean bootJar -Pprod --parallel -Dspring.profiles.active=prod'
+        sh './gradlew clean build --no-daemon -Pprod --parallel -Dspring.profiles.active=prod'
 
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """
@@ -194,8 +187,28 @@ def buildAndPushPythonCrawler() {
 }
 
 def updateArgoCDManifest(serviceName) {
-    sh """
-        sed -i 's|\\(image: .*/${serviceName}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' ${serviceName}.yaml
-        git add ${serviceName}.yaml
-    """
+    if (serviceName == "python-crawler") {
+        // python-crawler가 변경되었을 때 관련된 ArgoCD 매니페스트를 업데이트
+        def pythonCrawlerManifests = [
+                "update-chart",
+                "update-fillings",
+                "update-news",
+                "init-chart",
+                "init-fillings",
+                "init-stock",
+                "stock-price-listener"
+        ]
+        pythonCrawlerManifests.each { manifest ->
+            sh """
+                sed -i 's|\\(image: .*/${PYTHON_CRAWLER_IMAGE}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' apps/${manifest}.yaml
+                git add apps/${manifest}.yaml
+            """
+        }
+    } else {
+        // 일반 서비스의 ArgoCD 매니페스트 업데이트
+        sh """
+            sed -i 's|\\(image: .*/${serviceName}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' apps/${serviceName}.yaml
+            git add apps/${serviceName}.yaml
+        """
+    }
 }

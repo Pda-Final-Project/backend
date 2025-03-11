@@ -10,8 +10,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TradeMatchingEvent {
-    private UUID tradeId;       // 체결 고유 번호
-    private UUID buyOfferNumber;    // 매수 주문 ID
+    private Long tradeId;       // 체결 고유 번호
+    private Long buyOfferNumber;    // 매수 주문 ID
     private UUID sellOfferNumber;   // 매도 주문 ID
     private Long buyerUserId;       // 매수자 ID
     private Long sellerUserId;      // 매도자 ID

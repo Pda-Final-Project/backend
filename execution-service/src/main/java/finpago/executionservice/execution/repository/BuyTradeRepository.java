@@ -6,10 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.UUID;
 
 @Repository
-public interface BuyTradeRepository extends JpaRepository<BuyTrade, UUID> {
+public interface BuyTradeRepository extends JpaRepository<BuyTrade, Long> {
     List<BuyTrade> findByBuyerUserId(Long buyerUserId);
     List<BuyTrade> findByBuyerUserIdAndTradeStatusIn(Long buyerUserId, List<TradeStatus> tradeStatus);
     List<BuyTrade> findByBuyerUserIdAndTradeStatus(Long buyerUserId, TradeStatus tradeStatus);

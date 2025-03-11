@@ -24,7 +24,7 @@ public class OrderDLTConsumer {
     public void handleFailedOrder(OrderCreateReqEvent event) {
         log.warn("DLT에서 주문 복구 시도: {}", event.getOfferNumber());
 
-        UUID orderId = event.getOfferNumber();
+        Long orderId = event.getOfferNumber();
         Optional<Order> orderOptional = orderRepository.findById(orderId);
 
         if (orderOptional.isPresent()) {

@@ -7,13 +7,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderCreateReqEvent {
-    private UUID offerNumber;
+    private Long offerNumber;
     private Long userId;
     private OrderType offerType;
     private Long offerQuantity;

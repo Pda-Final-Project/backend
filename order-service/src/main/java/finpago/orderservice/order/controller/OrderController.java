@@ -35,7 +35,7 @@ public class OrderController {
         Long userId = getUserIdFromAuth();
         System.out.println("인증된 사용자 ID: " + userId);
 
-        UUID offerNumber = orderService.createOrder(userId, orderCreateReqDto);
+        Long offerNumber = orderService.createOrder(userId, orderCreateReqDto);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(HttpStatus.CREATED, "주문 생성 완료", offerNumber.toString()));

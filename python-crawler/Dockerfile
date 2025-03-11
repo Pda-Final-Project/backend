@@ -6,8 +6,7 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 
-RUN pip install --upgrade pip && pip install --no-cache-dir --ignore-installed -r requirements.txt
-
+RUN pip install --upgrade pip && pip install --no-cache-dir --ignore-installed  --use-deprecated=legacy-resolver -r requirements.txt
 
 COPY . .
 

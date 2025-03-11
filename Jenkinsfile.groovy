@@ -35,6 +35,7 @@ pipeline {
         stage('Build Common Module') {
             steps {
                 dir('common') {
+                    sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
                     sh './gradlew clean --no-daemon'
                     sh './gradlew clean build -Pprod --no-daemon -Dorg.gradle.jvmargs="-Xmx1024m"'
                 }

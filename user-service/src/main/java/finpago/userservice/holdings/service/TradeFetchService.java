@@ -66,8 +66,8 @@ public class TradeFetchService {
     @AllArgsConstructor
     @Builder
     public static class BuyTrade {
-        private UUID buyTradeNumber;
-        private UUID buyOfferNumber;
+        private Long buyTradeNumber;
+        private Long buyOfferNumber;
         private String tradeTicker;
         private Long buyerUserId;
         private String tradeDate;
@@ -90,8 +90,8 @@ public class TradeFetchService {
     @AllArgsConstructor
     @Builder
     public static class SellTrade {
-        private UUID sellTradeNumber;
-        private UUID sellOfferNumber;
+        private Long sellTradeNumber;
+        private Long sellOfferNumber;
         private String tradeTicker;
         private Long sellerUserId;
         private String tradeDate;

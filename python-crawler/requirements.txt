@@ -69,7 +69,7 @@ mysql-connector==2.2.9
 mysql-connector-python==9.2.0
 Naked==0.1.32
 networkx==3.1
-numpy==2.0.2
+numpy>=1.24
 ollama==0.4.7
 openai==1.55.3
 opencv-python==4.11.0.86

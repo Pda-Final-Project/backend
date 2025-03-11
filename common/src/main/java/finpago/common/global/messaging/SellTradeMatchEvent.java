@@ -5,14 +5,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class SellTradeMatchEvent {
-    private UUID tradeId;       // 체결 고유 번호
-    private UUID sellOfferNumber;   // 매도 주문 ID
+    private Long tradeId;       // 체결 고유 번호
+    private Long sellOfferNumber;   // 매도 주문 ID
     private Long sellerUserId;      // 매도자 ID
     private String stockTicker; // 주식 티커
     private Long tradeQuantity; // 체결 수량

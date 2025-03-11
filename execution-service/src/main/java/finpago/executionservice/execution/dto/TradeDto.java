@@ -4,7 +4,6 @@ import finpago.common.global.enums.TradeStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.UUID;
 import java.time.LocalDateTime;
 
 @Data
@@ -19,6 +18,6 @@ public class TradeDto {
     private Long tradeQuantity;
     private Long unfilledQuantity;
     private TradeStatus tradeStatus;
-    private UUID tradeNumber;
+    private Long tradeNumber;
     private LocalDateTime tradeDate;
 }

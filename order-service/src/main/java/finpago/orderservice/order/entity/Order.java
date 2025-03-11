@@ -18,9 +18,9 @@ import java.util.UUID;
 public class Order extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "offer_number", length = 64, nullable = false, updatable = false)
-    private UUID offerNumber;
+    private Long offerNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "offer_status", length = 10, nullable = false)

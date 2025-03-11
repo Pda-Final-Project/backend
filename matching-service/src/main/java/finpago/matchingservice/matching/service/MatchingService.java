@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -203,7 +205,7 @@ public class MatchingService {
         System.out.println("체결 처리시작");
         if (isBuy) {
             BuyTradeMatchEvent event = new BuyTradeMatchEvent(
-                    UUID.randomUUID(),
+                    generateRandomId(),
                     order.getOfferNumber(),
                     order.getUserId(),
                     order.getStockTicker(),
@@ -218,7 +220,7 @@ public class MatchingService {
             sendBuyTradeToExecution(event);
         } else {
             SellTradeMatchEvent event = new SellTradeMatchEvent(
-                    UUID.randomUUID(),
+                    generateRandomId(),
                     order.getOfferNumber(),
                     order.getUserId(),
                     order.getStockTicker(),
@@ -232,6 +234,13 @@ public class MatchingService {
             );
             sendSellTradeToExecution(event);
         }
+    }
+
+    /**
+     * Long 타입 랜덤 ID 생성
+     */
+    private Long generateRandomId() {
+        return ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
     }
 
     /**

@@ -33,7 +33,7 @@ public class OrderService {
     private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
     @Transactional
-    public UUID createOrder(Long userId, OrderCreateReqDto orderCreateReqDto) {
+    public Long createOrder(Long userId, OrderCreateReqDto orderCreateReqDto) {
         OrderType orderType = OrderType.valueOf(orderCreateReqDto.getOfferType());
 
         if (orderType == OrderType.BUY) {
@@ -160,7 +160,7 @@ public class OrderService {
 
     @Transactional
     public void retryUnmatchedOrder(OrderCreateReqEvent event) {
-        UUID orderId = event.getOfferNumber();
+        Long orderId = event.getOfferNumber();
         Optional<Order> existingOrder = orderRepository.findById(orderId);
 
         Order order;

@@ -11,8 +11,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BuyTradeMatchEvent {
-    private UUID tradeId;       // 체결 고유 번호
-    private UUID buyOfferNumber;    // 매수 주문 ID
+    private Long tradeId;       // 체결 고유 번호
+    private Long buyOfferNumber;    // 매수 주문 ID
     private Long buyerUserId;       // 매수자 ID
     private String stockTicker; // 주식 티커
     private Long tradeQuantity; // 체결 수량

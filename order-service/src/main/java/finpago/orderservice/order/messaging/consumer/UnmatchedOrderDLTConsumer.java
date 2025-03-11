@@ -24,7 +24,7 @@ public class UnmatchedOrderDLTConsumer {
     public void handleUnmatchedOrderDLT(OrderCreateReqEvent event) {
         log.error("DLT에서 미체결 주문 복구 시도 실패: {}", event.getOfferNumber());
 
-        UUID orderId = event.getOfferNumber();
+        Long orderId = event.getOfferNumber();
         Optional<Order> orderOptional = orderRepository.findById(orderId);
 
         if (orderOptional.isPresent()) {

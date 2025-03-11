@@ -5,7 +5,6 @@ import finpago.common.global.enums.TradeStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "sell_trades")
@@ -17,12 +16,11 @@ import java.util.UUID;
 public class SellTrade extends BaseEntity {
 
     @Id
-//    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "sell_trade_number", length = 64, nullable = false, updatable = false)
-    private UUID sellTradeNumber; // 매도 체결 고유 번호
+    private Long sellTradeNumber; // 매도 체결 고유 번호
 
     @Column(name = "sell_offer_number", length = 64, nullable = false)
-    private UUID sellOfferNumber; // 매도 주문 고유 번호
+    private Long sellOfferNumber; // 매도 주문 고유 번호
 
     @Column(name = "trade_ticker", length = 10, nullable = false)
     private String tradeTicker; // 주식 티커

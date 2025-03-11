@@ -1,5 +1,5 @@
 package finpago.common.global.enums;
 
 public enum TradeStatus {
-    SUCCESS,PENDING,FAILED
+    SUCCESS,PENDING,FAILED,UNFILLED
 }

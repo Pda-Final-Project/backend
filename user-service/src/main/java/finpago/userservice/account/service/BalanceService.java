@@ -18,7 +18,9 @@ public class BalanceService {
 
     private final StringRedisTemplate redisTemplate;
 
-    private static final String BALANCE_KEY = "user:%d:available_balance";  // 주문 가능 금액
+
+    private static final String BALANCE_KEY = "user:%d:available_balance";
+    private static final String AVAILABLE_BALANCE_KEY = "user:%d:available_balance";  // 주문 가능 금액
     private static final String BATCH_BALANCE_KEY = "user:%d:batch_balance";  // 배치 예수금
     private static final String PENDING_UPDATE_KEY = "pending_update:%s:balance:%d"; // D+1, D+2 업데이트 예약 키
 
@@ -62,6 +64,7 @@ public class BalanceService {
         //현재 주문 가능 금액 조회
         Long availableBalance = getCachedAvailableBalance(userId);
 
+        //출금가능금액
         Long balance=getCachedBalance(userId);
         //D+1 예수금 조회 (없으면 가장 최근 데이터 유지)
         String d1Key = String.format(PENDING_UPDATE_KEY, LocalDate.now().plusDays(1), userId);
@@ -84,7 +87,7 @@ public class BalanceService {
      * @return 현재 사용 가능한 예수금
      */
     private Long getCachedAvailableBalance(Long userId) {
-        String balanceKey = String.format(BALANCE_KEY, userId);
+        String balanceKey = String.format(AVAILABLE_BALANCE_KEY, userId);
         String balanceStr = redisTemplate.opsForValue().get(balanceKey);
         return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE;
     }

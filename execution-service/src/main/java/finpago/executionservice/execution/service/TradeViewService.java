@@ -41,13 +41,13 @@ public class TradeViewService {
     }
 
     @Transactional(readOnly = true)
-    public List<TradeDto> getFailedTrades(Long userId) {
-        List<TradeDto> buyTrades = buyTradeRepository.findByBuyerUserIdAndTradeStatus(userId, TradeStatus.FAILED)
+    public List<TradeDto> getUnfilledTrades(Long userId) {
+        List<TradeDto> buyTrades = buyTradeRepository.findByBuyerUserIdAndTradeStatus(userId, TradeStatus.UNFILLED)
                 .stream()
                 .map(this::convertToTradeDto)
                 .collect(Collectors.toList());
 
-        List<TradeDto> sellTrades = sellTradeRepository.findBySellerUserIdAndTradeStatus(userId, TradeStatus.FAILED)
+        List<TradeDto> sellTrades = sellTradeRepository.findBySellerUserIdAndTradeStatus(userId, TradeStatus.UNFILLED)
                 .stream()
                 .map(this::convertToTradeDto)
                 .collect(Collectors.toList());

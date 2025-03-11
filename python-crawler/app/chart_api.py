@@ -93,10 +93,10 @@ def save_to_mysql(data_list, stock_ticker, chart_type):
 
     try:
         conn = mysql.connector.connect(
-            host="127.0.0.1",
+            host="executiondb-cluster.db.svc.cluster.local",
             user="root",
             password="admin",
-            database="executiondb",
+            database="finpagodb",
             port=3306
         )
         cursor = conn.cursor()

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -20,84 +21,34 @@ public class TradingSettlementBatchService {
 
     private final StringRedisTemplate redisTemplate;
     private final AccountRepository accountRepository;
-    private final HoldingsRepository holdingsRepository;
     private static final long EXPIRATION_DAYS = 30;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     /**
-     * 매일 00:00 실행 → 2일 후(D+2)에 업데이트할 데이터 저장 (예약)
+     * 스케줄러: 오늘 날짜의 pending_date 데이터를 적용
      */
-    @Scheduled(cron = "0 0 0 * * ?") // 매일 자정 실행
-    public void schedulePendingUpdates() {
-        log.info("[D+2 예약 배치 시작] 사용자 예수금 예약 업데이트");
-
-        LocalDate executionDate = LocalDate.now().plusDays(2); // D+2 저장
-        String pendingUpdateKey = "pending_update:" + executionDate;
-
-        Set<String> balanceKeys = redisTemplate.keys("user:*:batch_balance"); // 배치 계산용 예수금 사용
-        if (balanceKeys == null || balanceKeys.isEmpty()) {
-            log.warn("예약할 사용자 예수금 데이터 없음");
-            return;
-        }
-
-        for (String balanceKey : balanceKeys) {
-            String userId = balanceKey.split(":")[1]; // user:{userId}:batch_balance
-            String balanceStr = redisTemplate.opsForValue().get(balanceKey);
-
-            if (balanceStr != null) {
-                String userBalanceKey = pendingUpdateKey + ":balance:" + userId;
-                redisTemplate.opsForValue().set(userBalanceKey, balanceStr, EXPIRATION_DAYS, TimeUnit.DAYS);
-                log.info("사용자 {} 예수금 예약 저장 (D+2): {}", userId, balanceStr);
-            }
-        }
-        log.info("[D+2 예약 배치 완료]");
-    }
-
-    /**
-     * 매일 00:05 실행 → 2일 전(D-2)에 저장된 예수금 데이터로 실제 업데이트 수행
-     */
-    @Scheduled(cron = "0 5 0 * * ?") // 매일 00:05 실행
-    @Transactional
+    @Scheduled(cron = "0 0 0 * * ?") // 매일 00:00 실행
     public void applyPendingUpdates() {
-        LocalDate executionDate = LocalDate.now();
-        String pendingUpdateKey = "pending_update:" + executionDate;
+        String today = LocalDate.now().format(DATE_FORMATTER);
+        Set<String> keys = redisTemplate.keys("user:*:batch_balance:" + today);
 
-        log.info("[D+2 반영 배치 시작] {} 데이터 반영 시작", executionDate);
-
-        Set<String> balanceKeys = redisTemplate.keys(pendingUpdateKey + ":balance:*");
-        if (balanceKeys == null || balanceKeys.isEmpty()) {
-            log.warn("반영할 사용자 예수금 데이터 없음");
+        if (keys == null || keys.isEmpty()) {
+            log.info("[배치 처리] 오늘({}) 적용할 예수금 데이터 없음.", today);
             return;
         }
 
-        for (String balanceKey : balanceKeys) {
-            String userId = balanceKey.split(":")[2]; // pending_update:{date}:balance:{userId}
-            String balanceStr = redisTemplate.opsForValue().get(balanceKey);
+        for (String key : keys) {
+            String userId = key.split(":")[1];
+            String balanceStr = redisTemplate.opsForValue().get(key);
+            String newBalance = balanceStr;
+            accountRepository.updateAccountWithholding(Long.parseLong(userId), Long.parseLong(newBalance));
+            log.info("사용자 {} 예수금 DB 업데이트 (D+2 반영): {}", userId, newBalance);
 
-            if (balanceStr != null) {
-                String newBalance = balanceStr;
-                accountRepository.updateAccountWithholding(Long.parseLong(userId), Long.parseLong(newBalance));
-                log.info("사용자 {} 예수금 DB 업데이트 (D+2 반영): {}", userId, newBalance);
+            String userBalanceKey = "user:" + userId + ":balance";
+            redisTemplate.opsForValue().set(userBalanceKey, newBalance, EXPIRATION_DAYS, TimeUnit.DAYS);
+            log.info("Redis 사용자 {} 실제 예수금 업데이트: {}", userId, newBalance);
 
-                String userBalanceKey = "user:" + userId + ":balance";
-                redisTemplate.opsForValue().set(userBalanceKey, newBalance, EXPIRATION_DAYS, TimeUnit.DAYS);
-                log.info("Redis 사용자 {} 실제 예수금 업데이트: {}", userId, newBalance);
-            }
+            log.info("[배치 적용 완료] 사용자ID: {}, 적용 예수금: {}", userId, newBalance);
         }
-        log.info("[D+2 반영 배치 완료]");
-    }
-
-    /**
-     * Redis에서 현재 주가 가져오기
-     */
-    private Long getCurrentStockPrice(String stockTicker) {
-        String stockPriceKey = "stock:" + stockTicker + ":price";
-        String stockPriceStr = redisTemplate.opsForValue().get(stockPriceKey);
-
-        if (stockPriceStr != null) {
-            return Long.parseLong(stockPriceStr);
-        }
-
-        log.warn("Redis에 현재 주가 정보 없음: {}, 기본값(50,000원) 반환", stockTicker);
-        return 50000L; // 기본값
     }
 }

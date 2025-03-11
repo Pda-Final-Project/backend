@@ -149,7 +149,15 @@ public class MatchingService {
                             }
                         } else {
                             System.out.println("들어와요88");
-                            orders.offer(order);
+                            long tradePrice=order.getOfferPrice();
+
+                            Number orderQuantityValue = ((Number) order.getOfferQuantity());
+                            long  orderQuantity = orderQuantityValue.longValue();
+
+                            long unfilledQuantity =orderQuantity;
+
+                            handleTradeExecution(order, 0, unfilledQuantity, tradePrice, true);
+//                            orders.offer(order);
                         }
                     }
                 } else {
@@ -181,7 +189,15 @@ public class MatchingService {
                                 orders.offer(order);
                             }
                         } else {
-                            orders.offer(order);
+                            long tradePrice=order.getOfferPrice();
+
+                            Number orderQuantityValue = ((Number) order.getOfferQuantity());
+                            long  orderQuantity = orderQuantityValue.longValue();
+
+                            long unfilledQuantity =orderQuantity;
+
+                            handleTradeExecution(order, 0, unfilledQuantity, tradePrice, false);
+//                            orders.offer(order);
                         }
                     }
                 }

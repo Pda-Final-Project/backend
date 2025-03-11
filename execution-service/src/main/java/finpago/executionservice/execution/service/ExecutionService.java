@@ -45,7 +45,16 @@ public class ExecutionService {
     public void processBuyTrade(BuyTradeMatchEvent event) {
         validateBuyerBalance(event);
         System.out.println("체결 정보는용: "+event);
-        TradeStatus status = (event.getUnfilledQuantity() > 0) ? TradeStatus.PENDING : TradeStatus.SUCCESS;
+        TradeStatus status;
+
+        if (event.getUnfilledQuantity().equals(event.getBuyerOrderQuantity())) {
+            status = TradeStatus.UNFILLED;
+        } else if (event.getUnfilledQuantity() > 0) {
+            status = TradeStatus.PENDING;
+        } else {
+            status = TradeStatus.SUCCESS;
+        }
+
 
         BuyTrade trade = BuyTrade.builder()
                 .buyTradeNumber(event.getTradeId())
@@ -63,16 +72,26 @@ public class ExecutionService {
                 .build();
 
         buyTradeRepository.save(trade);
-        saveBuyTradeToRedis(event.getBuyerUserId(), trade);
-        saveBuyTradeExecutionToRedis(trade);
-        executionProducer.sendBuyTradeToSettlement(event);
+
+        if (status != TradeStatus.UNFILLED) {
+            saveBuyTradeToRedis(event.getBuyerUserId(), trade);
+            saveBuyTradeExecutionToRedis(trade);
+            executionProducer.sendBuyTradeToSettlement(event);
+        }
     }
 
     @Transactional
     public void processSellTrade(SellTradeMatchEvent event) {
         validateSellerStocks(event);
 
-        TradeStatus status = (event.getUnfilledQuantity() > 0) ? TradeStatus.PENDING : TradeStatus.SUCCESS;
+        TradeStatus status;
+        if (event.getUnfilledQuantity().equals(event.getSellerOrderQuantity())) {
+            status = TradeStatus.UNFILLED;
+        } else if (event.getUnfilledQuantity() > 0) {
+            status = TradeStatus.PENDING;
+        } else {
+            status = TradeStatus.SUCCESS;
+        }
 
         SellTrade trade = SellTrade.builder()
                 .sellTradeNumber(event.getTradeId())
@@ -90,9 +109,11 @@ public class ExecutionService {
                 .build();
 
         sellTradeRepository.save(trade);
-        saveSellTradeToRedis(event.getSellerUserId(), trade);
-        saveSellTradeExecutionToRedis(trade);
-        executionProducer.sendSellTradeToSettlement(event);
+        if (status != TradeStatus.UNFILLED) {
+            saveSellTradeToRedis(event.getSellerUserId(), trade);
+            saveSellTradeExecutionToRedis(trade);
+            executionProducer.sendSellTradeToSettlement(event);
+        }
     }
 
     public void saveBuyTradeExecutionToRedis(BuyTrade trade) {

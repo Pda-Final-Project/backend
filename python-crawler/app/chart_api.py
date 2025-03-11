@@ -12,16 +12,17 @@ g_appsecret = "ZtH0c5eLI1BJnBZ1f9LVn9ggNT7Af2NHVTOu7dMBdvxCy7OhDxnuBjKU8YkpiYXgx
 TOKEN_KEY = "stock:access_token"
 TOKEN_EXPIRATION_KEY = "stock:access_token_expiration"
 
-# 🔍 토큰 만료 여부 확인
+# 🔍 **토큰 만료 여부 확인**
 def is_token_expired():
     """Redis에 저장된 만료 시간이 현재 시간보다 이전이면 True 반환 (즉, 만료됨)"""
     expiration_time = r.get(TOKEN_EXPIRATION_KEY)
     if expiration_time:
         expiration_time = datetime.strptime(expiration_time, "%Y-%m-%d %H:%M:%S")
-        return datetime.now() >= expiration_time  # 만료 여부 반환
+        return datetime.now() >= expiration_time  # 현재 시간이 만료 시간보다 크거나 같으면 만료됨
     return True  # 만료 시간이 없으면 무조건 새 토큰 발급
 
-# 🔄 유효한 토큰 가져오기 (토큰 발급 요청 최소화)
+
+# 🔄 **유효한 토큰 가져오기 (토큰 발급 요청 최소화)**
 def get_valid_access_token():
     """유효한 토큰을 Redis에서 가져오거나 만료되었을 경우 새로 발급"""
     if not is_token_expired():
@@ -43,7 +44,8 @@ def get_valid_access_token():
     print("❌ [ERROR] 토큰 발급 3회 실패, 요청 중단")
     return None
 
-# 🔑 토큰 발급 (오류 처리 추가)
+
+# 🔑 **토큰 발급 (오류 처리 추가)**
 def get_access_token(key, secret):
     """토큰 발급"""
     headers = {"content-type": "application/json"}
@@ -74,7 +76,7 @@ def get_access_token(key, secret):
         return None
 
 
-access_token = get_access_token(g_appkey, g_appsecret)
+access_token = get_valid_access_token()
 
 # 환율 변환 함수
 def get_exchange_rate():
@@ -86,45 +88,56 @@ def get_exchange_rate():
 #mysql에 저장
 def save_to_mysql(data_list, stock_ticker, chart_type):
     """MySQL에 데이터를 저장하는 함수"""
-    create_charts_table_if_not_exists()
-    exchange_rate = get_exchange_rate()
-    
+    create_charts_table_if_not_exists()  # 테이블 생성
+    exchange_rate = get_exchange_rate()  # 환율 가져오기
+
     try:
         conn = mysql.connector.connect(
-            host="executiondb-cluster.db.svc.cluster.local",
+            host="127.0.0.1",
             user="root",
             password="admin",
-            database="finpagodb",
+            database="executiondb",
             port=3306
         )
         cursor = conn.cursor()
-        
+
+        # 📌 중복 확인 쿼리 (WHERE 절로 중복 여부 확인)
+        check_query = """
+        SELECT COUNT(*) FROM charts 
+        WHERE report_date = %s AND stock_ticker = %s AND chart_type = %s
+        """
+
+        # 📌 실제 데이터 삽입 쿼리
         insert_query = """
         INSERT INTO charts (report_date, stock_ticker, chart_type, chart_open, chart_high, chart_low, chart_close, chart_volume, created_at)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
-        ON DUPLICATE KEY UPDATE
-        chart_open = VALUES(chart_open),
-        chart_high = VALUES(chart_high),
-        chart_low = VALUES(chart_low),
-        chart_close = VALUES(chart_close),
-        chart_volume = VALUES(chart_volume)
         """
-        
+
+        new_data_count = 0
         for record in data_list:
+            report_date = datetime.strptime(record["stck_bsop_date"], "%Y%m%d")  # 날짜 변환
             values = (
-                datetime.strptime(record["stck_bsop_date"], "%Y%m%d"),
+                report_date,
                 stock_ticker,
                 chart_type,
-                int(float(record["ovrs_nmix_oprc"])*exchange_rate),
-                int(float(record["ovrs_nmix_hgpr"])*exchange_rate),
-                int(float(record["ovrs_nmix_lwpr"])*exchange_rate),
-                int(float(record["ovrs_nmix_prpr"])*exchange_rate),
+                int(float(record["ovrs_nmix_oprc"]) * exchange_rate),
+                int(float(record["ovrs_nmix_hgpr"]) * exchange_rate),
+                int(float(record["ovrs_nmix_lwpr"]) * exchange_rate),
+                int(float(record["ovrs_nmix_prpr"]) * exchange_rate),
                 int(record["acml_vol"])
             )
-            cursor.execute(insert_query, values)
-        
+
+            # 📌 중복 데이터 체크
+            cursor.execute(check_query, (report_date, stock_ticker, chart_type))
+            count = cursor.fetchone()[0]  # 중복 데이터 개수 가져오기
+
+            if count == 0:  # 데이터가 없으면 새로 삽입
+                cursor.execute(insert_query, values)
+                new_data_count += 1
+
         conn.commit()
-        print(f"✅ {len(data_list)} records saved to MySQL for {stock_ticker} ({chart_type})")
+        print(f"✅ {new_data_count} new records inserted into MySQL for {stock_ticker} ({chart_type})")
+
     except mysql.connector.Error as err:
         print(f"❌ MySQL Error: {err}")
     finally:
@@ -299,7 +312,7 @@ def get_chart_data(appkey, appsecret, access_token, fid_input_iscd, period_code,
 # 가장 초기에 실행(과거 데이터까지 모두 가져옴)
 def init_chart_data():
     for stock in stocks:
-        for period_code in ["D"]: #D,W,M
+        for period_code in ["D", "W", "M"]: #D,W,M
             data = get_chart_data(g_appkey, g_appsecret, access_token, stock["ticker"], period_code, 'history')
             if data:
                 save_to_mysql(data, stock["ticker"], period_code)
@@ -308,7 +321,7 @@ def init_chart_data():
 # 가장 최근 데이터 하나만 가져와서 추가
 def update_chart_data():
     for stock in stocks:
-        for period_code in ["D"]: #D,W,M
+        for period_code in ["D", "W", "M"]: #D,W,M
             data = get_chart_data(g_appkey, g_appsecret, access_token, stock["ticker"], period_code, 'latest')
             if data:
                 save_to_mysql(data, stock["ticker"], period_code)

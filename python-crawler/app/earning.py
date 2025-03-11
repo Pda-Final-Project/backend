@@ -3,7 +3,6 @@
 '''
 
 import requests
-import redis
 import json
 import time
 from stocks_data import stocks

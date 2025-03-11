@@ -1,5 +1,4 @@
 import os
-from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
 import requests
 import re

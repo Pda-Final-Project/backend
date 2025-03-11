@@ -1,12 +1,12 @@
 
 import json
 import time
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from bs4 import BeautifulSoup
 from redis_config import redis_client
 
 # Investing.com 뉴스 크롤링

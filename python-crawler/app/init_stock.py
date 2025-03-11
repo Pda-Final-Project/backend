@@ -5,7 +5,7 @@ from redis_config import redis_client
 from stocks_data import stocks
 
 # Redis에 저장하는 함수
-def store_stocks_in_redis(redis_client, stocks):
+def store_stocks_in_redis(stocks):
     for stock in stocks:
         key = f"stock:{stock['ticker']}"
         data = {
@@ -20,5 +20,5 @@ def store_stocks_in_redis(redis_client, stocks):
 
     print("init stock success!")
 
-# 저장 실행
-store_stocks_in_redis(r, stocks)
+if __name__ == "__main__":
+    store_stocks_in_redis(stocks)

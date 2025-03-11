@@ -1,6 +1,4 @@
-import requests
 import json
-import os
 import boto3
 
 # JSON 파일에서 AWS 자격 증명 불러오기

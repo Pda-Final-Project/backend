@@ -58,7 +58,8 @@ def analyze_combined_summary(summary_texts: List[str], filing_type: str) -> str:
     prompt = (
         f"{base_prompt}\n\n"
         "아래는 이전 단계에서 생성된 공시 요약 결과입니다. 이를 바탕으로 전체 공시 내용을 통합하여 "
-        "공시 내용 요약 및 투자 의견을 도출해 주세요:\n"
+        "공시의 주요 내용을 요약하고, 투자자들이 참고할 수 있는 핵심 인사이트를 제공해 주세요. "
+        "객관적인 데이터를 바탕으로 시장에 미칠 영향, 재무적 변화, 리스크 요인 등을 분석해 주세요.\n"
         f"{combined_summary}"
     )
     try:
@@ -131,20 +132,6 @@ def map_filing_type(filing_type: str) -> str:
         "4/A": "fil_f4"
     }
     return mapping.get(filing_type, "unknown")
-
-# html로 요약 출력하는 최종 함수
-def save_summary_as_html(filling_url, filling_type, headers):
-    try:
-        response = requests.get(filling_url, headers=headers)
-        response.raise_for_status()
-        original_text = response.text
-        order_filling_type = map_filing_type(filling_type)
-        
-        summary_content = process_summarize_fil(order_filling_type, original_text)
-        summary_content = summary_content.strip("```").replace("html\n", "", 1).strip()
-    except requests.exceptions.RequestException as e:
-        logging.error(f"❌ 요청 실패: {e}")
-    return summary_content
 
 def get_summary_as_json(filling_url, filling_type, headers):
     try:

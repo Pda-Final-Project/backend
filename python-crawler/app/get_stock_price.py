@@ -1,8 +1,7 @@
 """
 주식 종목에서 실시간 체결 내역(체결가, 체결량, 거래량, 시간) 및 현재가, 변동률을 가져오는 코드
 """
-
-import redis
+from redis_config import redis_client as r
 import asyncio
 import json
 import time
@@ -10,7 +9,6 @@ import requests
 import websockets
 import pandas as pd
 from stocks_data import stocks
-from redis_config import redis_client
 
 
 ### 📌 API Key 설정 ###
@@ -31,9 +29,9 @@ def get_approval(key, secret):
 
 # 환율 변환 함수
 def get_exchange_rate():
-    exchange_rate = redis_client.get("stock:TSLA:exchange_rate")  # Redis에 저장된 환율 키
+    exchange_rate = r.get("stock:TSLA:exchange_rate")  # Redis에 저장된 환율 키
     print(exchange_rate)
-    return float(exchange_rate)*1000 if exchange_rate else 1320.0  # 환율이 없으면 0 반환 (예외 처리)
+    return float(exchange_rate)*1000 if exchange_rate else 0  # 환율이 없으면 0 반환 (예외 처리)
 
 
 # 실시간 체결 내역 redis에 저장
@@ -47,14 +45,17 @@ def save_stock_purchase_data(ticker, price, volume, trade_volume, time):
 
     # 데이터 저장 형식
     data = {
+        "trade_ticker": ticker,
         "current_price": round(price, 2),  # 가격 소수점 2자리 유지
         "volume": volume,
         "trade_volume": trade_volume,
-        "time": time
+        "time": time,
+        "trade_type": buy_sell_flag
     }
 
-    redis_client.lpush(key, json.dumps(data))
-    redis_client.ltrim(key, 0, 19)
+    r.lpush(key, json.dumps(data))
+    r.publish("trade_updates", json.dumps(data))
+    r.ltrim(key, 0, 19)
 
     print(f"{ticker} 데이터 저장 완료: {data}")
 
@@ -71,15 +72,15 @@ def save_stock_data(ticker, price, change_rate, trade_volume):
         "change_rate": change_rate,
         "volume": trade_volume
     }
-    redis_client.hmset(key, data)
+    r.hmset(key, data)
     stock_update = {
         "ticker": ticker,
-        "name": redis_client.hget(key, "name"),
+        "name": r.hget(key, "name"),
         "current_price": round(price, 2),
         "change_rate": change_rate,
         "volume": trade_volume
     }
-    redis_client.publish("stock_updates", json.dumps(stock_update))
+    r.publish("stock_updates", json.dumps(stock_update))
     print(f"{ticker} 현재가 및 등락율 업데이트 완료: {data}")
 
 
@@ -160,7 +161,7 @@ async def connect(code_list):
         print('오류 발생:', e)
         print('재접속 시도 중...')
         time.sleep(0.1)
-        await connect()
+        await connect(code_list)
 
 
 ### 메인 실행 ###

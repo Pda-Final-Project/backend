@@ -1,9 +1,5 @@
 import requests
 import pandas as pd
-import os
-import time
-from bs4 import BeautifulSoup
-import re
 import json
 
 from s3 import check_s3_file_exists, upload_translated_document_to_s3, upload_json_to_s3

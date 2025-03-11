@@ -3,12 +3,13 @@ pipeline {
     environment {
         GIT_CREDENTIALS_ID = "github-credentials"
         GIT_SSH = "git-ssh"
+        PYTHON_CRAWLER_IMAGE = "python-crawler"
     }
     stages {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                          branches: [[name: 'P3-101-Feat/클라우드-설정']],
+                          branches: [[name: 'P3-121-Feat/파이썬-크롤러-개발']],
                           userRemoteConfigs: [[
                                                       url: 'https://github.com/Pda-Final-Project/backend.git',
                                                       credentialsId: GIT_CREDENTIALS_ID
@@ -78,6 +79,11 @@ pipeline {
                         buildAndPushDockerImage('order-service')
                     }
                 }
+                stage('Python Crawler') {
+                    steps {
+                        buildAndPushPythonCrawler()
+                    }
+                }
             }
         }
         stage('Cleanup Gradle Daemon') {
@@ -121,6 +127,22 @@ pipeline {
                     updateArgoCDManifest('order-service')
                     updateArgoCDManifest('data-service')
                 }
+                dir('jobs') {
+                    sh 'ls -l'
+                    updateArgoCDManifest('init-chart')
+                    updateArgoCDManifest('init-fillings')
+                    updateArgoCDManifest('init-stock')
+                }
+                dir('cronjobs') {
+                    sh 'ls -l'
+                    updateArgoCDManifest('update-chart')
+                    updateArgoCDManifest('update-fillings')
+                    updateArgoCDManifest('update-news')
+                }
+                dir('deployments') {
+                    sh 'ls -l'
+                    updateArgoCDManifest('get-stock-price')
+                }
             }
         }
         stage('Commit & Push Updates') {
@@ -162,6 +184,20 @@ def buildAndPushDockerImage(serviceName) {
                 echo $DOCKER_PASSWORD | docker login -u $DOCKER_HUB_USER --password-stdin
                 docker build -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} .
                 docker push $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER}
+            """
+        }
+    }
+}
+
+def buildAndPushPythonCrawler() {
+    dir('python-crawler') {
+        sh 'echo "Building Python Crawler Docker Image..."'
+
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+            sh """
+                echo $DOCKER_PASSWORD | docker login -u $DOCKER_HUB_USER --password-stdin
+                docker build -t $DOCKER_HUB_USER/${PYTHON_CRAWLER_IMAGE}:${env.BUILD_NUMBER} .
+                docker push $DOCKER_HUB_USER/${PYTHON_CRAWLER_IMAGE}:${env.BUILD_NUMBER}
             """
         }
     }

@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -117,14 +118,16 @@ public class ExecutionService {
     }
 
     public void saveBuyTradeExecutionToRedis(BuyTrade trade) {
-        String redisKey = "stock:" + trade.getTradeTicker() + ":purchase";
+        String redisKey = "stock:" + trade.getTradeTicker() + ":purchase_inner";
 
         // Redis 저장 형식에 맞게 데이터 변환
         Map<String, Object> tradeData = new HashMap<>();
-        tradeData.put("price", trade.getTradePrice()); // 체결가
+        tradeData.put("trade_ticker", trade.getTradeTicker());
+        tradeData.put("current_price", trade.getTradePrice()); // 체결가
         tradeData.put("volume", trade.getTradeQuantity()); // 체결량
         tradeData.put("trade_volume", 0); // 거래량 (0으로 채움)
         tradeData.put("time", trade.getTradeDate().format(DateTimeFormatter.ofPattern("HHmmss"))); // 체결 시간
+        tradeData.put("trade_type", "BUY");
 
         try {
             // JSON 직렬화 후 Redis 리스트에 추가
@@ -140,19 +143,24 @@ public class ExecutionService {
     }
 
     public void saveSellTradeExecutionToRedis(SellTrade trade) {
-        String redisKey = "stock:" + trade.getTradeTicker() + ":purchase";
+        String redisKey = "stock:" + trade.getTradeTicker() + ":purchase_inner";
 
         // Redis 저장 형식에 맞게 데이터 변환
         Map<String, Object> tradeData = new HashMap<>();
-        tradeData.put("price", trade.getTradePrice()); // 체결가
+        tradeData.put("trade_ticker", trade.getTradeTicker());
+        tradeData.put("current_price", trade.getTradePrice()); // 체결가
         tradeData.put("volume", trade.getTradeQuantity()); // 체결량
         tradeData.put("trade_volume", 0); // 거래량 (0으로 채움)
         tradeData.put("time", trade.getTradeDate().format(DateTimeFormatter.ofPattern("HHmmss"))); // 체결 시간
+        tradeData.put("trade_type", "SELL");
 
         try {
             // JSON 직렬화 후 Redis 리스트에 추가
             String tradeJson = objectMapper.writeValueAsString(tradeData);
             redisTemplate.opsForList().leftPush(redisKey, tradeJson);
+
+            // 체결 내역 업데이트 Pub/Sub 발행
+            redisTemplate.convertAndSend("trade_updates", tradeJson);
 
         } catch (JsonProcessingException e) {
             System.err.println("Redis 저장 오류: " + e.getMessage());
@@ -291,6 +299,14 @@ public class ExecutionService {
                 LocalDateTime.now()
         );
         executionProducer.sendFailedTradeToMatching(orderEvent);
+    }
+
+    /**
+     * 특정 종목의 최신 20개 체결 내역을 Redis에서 조회
+     */
+    public List<String> getLatestTrades(String stockTicker) {
+        String redisKey = "stock:" + stockTicker + ":purchase";
+        return redisTemplate.opsForList().range(redisKey, 0, 19);
     }
 
 }

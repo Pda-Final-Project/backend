@@ -2,9 +2,12 @@ from redis.cluster import RedisCluster, ClusterNode
 
 # Redis 클러스터 설정
 startup_nodes = [
-    ClusterNode("127.0.0.1", 7001),
-    ClusterNode("127.0.0.1", 7002),
-    ClusterNode("127.0.0.1", 7003),
+    ClusterNode("redis-cluster-0.redis-cluster-headless.redis.svc.cluster.local", 6379),
+    ClusterNode("redis-cluster-1.redis-cluster-headless.redis.svc.cluster.local", 6379),
+    ClusterNode("redis-cluster-2.redis-cluster-headless.redis.svc.cluster.local", 6379),
+    ClusterNode("redis-cluster-3.redis-cluster-headless.redis.svc.cluster.local", 6379),
+    ClusterNode("redis-cluster-4.redis-cluster-headless.redis.svc.cluster.local", 6379),
+    ClusterNode("redis-cluster-5.redis-cluster-headless.redis.svc.cluster.local", 6379),
 ]
 
 # Redis 클러스터에 연결

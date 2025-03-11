@@ -32,60 +32,59 @@ pipeline {
                 }
             }
         }
-        stage('Build & Push Docker Images') {
-            parallel {
-                stage('Execution Service') {
-                    steps {
-                        buildAndPushDockerImage('execution-service')
-                    }
-                }
-                stage('Data Service') {
-                    steps {
-                        buildAndPushDockerImage('data-service')
-                    }
-                }
-                stage('Filling Service') {
-                    steps {
-                        buildAndPushDockerImage('filling-service')
-                    }
-                }
-                stage('Gateway Service') {  
-                    steps {
-                        buildAndPushDockerImage('gateway')
-                    }
-                }
-                stage('Matching Service') {  
-                    steps {
-                        buildAndPushDockerImage('matching-service')
-                    }
-                }
-                stage('Notification Service') {
-                    steps {
-                        buildAndPushDockerImage('notification-service')
-                    }
-                }
-                stage('Settlement Service') {
-                    steps {
-                        buildAndPushDockerImage('settlement-service')
-                    }
-                }
-                stage('User Service') {
-                    steps {
-                        buildAndPushDockerImage('user-service')
-                    }
-                }
-                stage('Order Service') {
-                    steps {
-                        buildAndPushDockerImage('order-service')
-                    }
-                }
-                stage('Python Crawler') {
-                    steps {
-                        buildAndPushPythonCrawler()
-                    }
+        stage('Build Common Module') {
+            steps {
+                dir('common') {
+                    sh './gradlew clean --no-daemon'
+                    sh './gradlew clean build -Pprod --no-daemon -Dorg.gradle.jvmargs="-Xmx1024m"'
                 }
             }
         }
+        stage('Build & Push Docker Images - Group 1') {
+            parallel {
+                stage('Execution Service') {
+                    steps { buildAndPushDockerImage('execution-service') }
+                }
+                stage('Data Service') {
+                    steps { buildAndPushDockerImage('data-service') }
+                }
+                stage('Filling Service') {
+                    steps { buildAndPushDockerImage('filling-service') }
+                }
+                stage('Gateway Service') {
+                    steps { buildAndPushDockerImage('gateway') }
+                }
+            }
+        }
+
+        stage('Build & Push Docker Images - Group 2') {
+            parallel {
+                stage('Matching Service') {
+                    steps { buildAndPushDockerImage('matching-service') }
+                }
+                stage('Notification Service') {
+                    steps { buildAndPushDockerImage('notification-service') }
+                }
+                stage('Settlement Service') {
+                    steps { buildAndPushDockerImage('settlement-service') }
+                }
+            }
+        }
+
+        stage('Build & Push Docker Images - Group 3') {
+            parallel {
+                stage('User Service') {
+                    steps { buildAndPushDockerImage('user-service') }
+                }
+                stage('Order Service') {
+                    steps { buildAndPushDockerImage('order-service') }
+                }
+                stage('Python Crawler') {
+                    steps { buildAndPushPythonCrawler() }
+                }
+            }
+        }
+
         stage('Cleanup Gradle Daemon') {
             steps {
                 sh './gradlew --stop'

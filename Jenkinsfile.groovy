@@ -196,7 +196,7 @@ def updateArgoCDManifest(serviceName) {
         ]
         pythonCrawlerManifests.each { manifest ->
             sh """
-                sed -i 's|\\(image: .*/${PYTHON_CRAWLER_IMAGE}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' apps/${manifest}.yaml
+                sed -i 's|\\(image: .*/${PYTHON_CRAWLER_IMAGE}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' ${manifest}.yaml
                 git add apps/${manifest}.yaml
             """
         }

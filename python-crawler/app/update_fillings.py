@@ -5,6 +5,7 @@ from thread import translate_html
 from json_10q import get_filtered_10q_data
 from mysql_config import save_df_to_mysql, get_latest_filing_date_from_mysql
 from redis_config import redis_client
+from stocks_data import stocks
 
 # S3 버킷 설정
 bucket_name = 'finpago-bucket'
@@ -23,10 +24,6 @@ headers = {
 # 모니터링할 종목 리스트
 tickers = ['TSLA', 'AAPL', 'NVDA']
 
-# proxies = {
-#     "http": None,
-#     "https": None
-# }
 # TICKER와 CIK 매칭 데이터 수집
 tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
 df_ticker = pd.json_normalize(pd.json_normalize(tickers_cik.json(), max_level=0).values[0])
@@ -47,7 +44,8 @@ filling_names = {
     "Form 4": "내부자 거래 공시", "4": "내부자 거래 공시"
 }
 
-for tic in tickers:
+for stock in stocks:
+    tic = stock["ticker"]
     cik = df_ticker[df_ticker['ticker'] == tic]['cik_str'].iloc[0]
 
     # Redis에서 최신 공시 날짜 가져오기
@@ -72,7 +70,6 @@ for tic in tickers:
     # SEC에서 최신 공시 가져오기
     url = f"https://data.sec.gov/submissions/CIK{cik}.json"
     response = requests.get(url, headers=headers)
-    print(response.json())
     response.raise_for_status()
     data = response.json()
 
@@ -106,56 +103,56 @@ for tic in tickers:
 
     df_filing = df_filing[['filling_id', 'filling_title', 'filling_type', 'filling_ticker', 'filling_url', 'filling_file_type', 'filling_summary_content_url', 'filling_translated_content_url', 'filling_10q_json_url', 'filling_8k_json_url', 'submit_timestamp', 'created_at', 'updated_at']]
 
-    # for index, row in df_filing.iterrows():
-    #     # 번역 처리
-    #     file_type = row['filling_file_type']
-    #     if file_type in ["xml", "htm", "txt"]:
-    #         # S3에 요약 파일이 이미 존재하는지 확인
-    #         s3_key = f"fillings/summary/{row['filling_id']}.json"
-    #         if not check_s3_file_exists(s3_key):
-    #             filling_url = row['filling_url']
-    #             summary_json = get_summary_as_json(filling_url,row['filling_type'], headers)
-    #             file_url = upload_json_to_s3(summary_json, s3_key)
-    #             df_filing.at[index, 'filling_summary_content_url'] = file_url
-    #         else:
-    #             df_filing.at[index, 'filling_summary_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
-    #
-    #         s3_key = f"fillings/{row['filling_id']}.html"
-    #         if not check_s3_file_exists(s3_key):
-    #             filling_url = row['filling_url']
-    #             if file_type == 'txt':
-    #                 # txt 파일 처리 로직 추가
-    #                 response = requests.get(filling_url, headers=headers)
-    #                 response.raise_for_status()
-    #                 original_text = response.text
-    #                 translated_text = translate_texts_google([original_text])
-    #                 translated_html = f"<html><body><pre>{translated_text[0]}</pre></body></html>"
-    #                 html_url = upload_translated_document_to_s3(s3_key, translated_html)
-    #                 # html_url = "번역 초과로 인한 처리 불가"
-    #             else:
-    #                 # HTML 파일 처리 로직
-    #                 translated_html = translate_html(filling_url, headers)
-    #                 html_url = upload_translated_document_to_s3(s3_key, translated_html)
-    #                 # html_url = "번역 초과로 인한 처리 불가"
-    #         else:
-    #             df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
-    #
-    #     # 10-Q JSON 처리
-    #     json_key = f"fillings/json/{row['filling_id']}.json"
-    #     if row['filling_type'] in ['10-Q', '10-QT']:
-    #         if not check_s3_file_exists(json_key):
-    #             json_10q = get_filtered_10q_data(row['filling_id'])
-    #             json_url = upload_json_to_s3(json_10q, json_key)
-    #             df_filing.at[index, 'filling_10q_json_url'] = json_url
-    #             # df_filing.at[index, 'filling_10q_json_url'] = "SEC API 초과로 인한 10-Q JSON 처리 불가"
-    #             # print(f"SEC API 초과로 인한 10-Q JSON 처리 불가")
-    #         else:
-    #             df_filing.at[index, 'filling_10q_json_url'] = f"https://{bucket_name}.s3.amazonaws.com/{json_key}"
-    #
-    # # MySQL 저장
-    # save_df_to_mysql(df_filing)
-    #
-    # latest_datetime = df_filing['submit_timestamp'].max()
-    # redis_client.set(redis_key, latest_datetime)
+    for index, row in df_filing.iterrows():
+        # 번역 처리
+        file_type = row['filling_file_type']
+        if file_type in ["xml", "htm", "txt"]:
+            # S3에 요약 파일이 이미 존재하는지 확인
+            s3_key = f"fillings/summary/{row['filling_id']}.json"
+            if not check_s3_file_exists(s3_key):
+                filling_url = row['filling_url']
+                summary_json = get_summary_as_json(filling_url,row['filling_type'], headers)
+                file_url = upload_json_to_s3(summary_json, s3_key)
+                df_filing.at[index, 'filling_summary_content_url'] = file_url
+            else:
+                df_filing.at[index, 'filling_summary_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
+
+            s3_key = f"fillings/{row['filling_id']}.html"
+            if not check_s3_file_exists(s3_key):
+                filling_url = row['filling_url']
+                if file_type == 'txt':
+                    # txt 파일 처리 로직 추가
+                    response = requests.get(filling_url, headers=headers)
+                    response.raise_for_status()
+                    original_text = response.text
+                    translated_text = translate_texts_google([original_text])
+                    translated_html = f"<html><body><pre>{translated_text[0]}</pre></body></html>"
+                    html_url = upload_translated_document_to_s3(s3_key, translated_html)
+                    # html_url = "번역 초과로 인한 처리 불가"
+                else:
+                    # HTML 파일 처리 로직
+                    translated_html = translate_html(filling_url, headers)
+                    html_url = upload_translated_document_to_s3(s3_key, translated_html)
+                    # html_url = "번역 초과로 인한 처리 불가"
+            else:
+                df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
+
+        # 10-Q JSON 처리
+        json_key = f"fillings/json/{row['filling_id']}.json"
+        if row['filling_type'] in ['10-Q', '10-QT']:
+            if not check_s3_file_exists(json_key):
+                json_10q = get_filtered_10q_data(row['filling_id'])
+                json_url = upload_json_to_s3(json_10q, json_key)
+                df_filing.at[index, 'filling_10q_json_url'] = json_url
+                # df_filing.at[index, 'filling_10q_json_url'] = "SEC API 초과로 인한 10-Q JSON 처리 불가"
+                # print(f"SEC API 초과로 인한 10-Q JSON 처리 불가")
+            else:
+                df_filing.at[index, 'filling_10q_json_url'] = f"https://{bucket_name}.s3.amazonaws.com/{json_key}"
+
+    # MySQL 저장
+    save_df_to_mysql(df_filing)
+
+    latest_datetime = df_filing['submit_timestamp'].max()
+    redis_client.set(redis_key, latest_datetime)
 
     print(f"✅ [{tic}] 새로운 공시 {len(df_filing)}건 저장 완료")

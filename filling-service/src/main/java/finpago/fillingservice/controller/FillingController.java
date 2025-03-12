@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/api/fillings")
+@CrossOrigin(origins = "*")
 public class FillingController {
 
     private final FillingService fillingService;

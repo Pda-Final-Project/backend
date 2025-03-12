@@ -124,13 +124,13 @@ pipeline {
                     updateArgoCDManifest('user-service')
                     updateArgoCDManifest('order-service')
                     updateArgoCDManifest('data-service')
-                    updateArgoCDManifest('update-chart')
-                    updateArgoCDManifest('update-fillings')
-                    updateArgoCDManifest('update-news')
-                    updateArgoCDManifest('init-chart')
-                    updateArgoCDManifest('init-fillings')
-                    updateArgoCDManifest('init-stock')
-                    updateArgoCDManifest('stock-price-listener')
+                    updateArgoCDManifestPython('update-chart')
+                    updateArgoCDManifestPython('update-fillings')
+                    updateArgoCDManifestPython('update-news')
+                    updateArgoCDManifestPython('init-chart')
+                    updateArgoCDManifestPython('init-fillings')
+                    updateArgoCDManifestPython('init-stock')
+                    updateArgoCDManifestPython('stock-price-listener')
                 }
             }
         }

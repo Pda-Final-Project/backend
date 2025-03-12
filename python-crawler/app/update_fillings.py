@@ -71,7 +71,7 @@ for tic in tickers:
 
     # SEC에서 최신 공시 가져오기
     url = f"https://data.sec.gov/submissions/CIK{cik}.json"
-    response = requests.get(url, headers=headers, proxies=proxies)
+    response = requests.get(url, headers=headers)
     print(response.json())
     response.raise_for_status()
     data = response.json()

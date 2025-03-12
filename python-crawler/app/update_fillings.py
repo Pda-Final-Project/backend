@@ -21,8 +21,7 @@ headers = {
     "Connection": "keep-alive"
 }
 
-# 모니터링할 종목 리스트
-tickers = ['TSLA', 'AAPL', 'NVDA']
+tickers = [stock["ticker"] for stock in stocks_data.stocks]
 
 # TICKER와 CIK 매칭 데이터 수집
 tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
@@ -30,8 +29,21 @@ df_ticker = pd.json_normalize(pd.json_normalize(tickers_cik.json(), max_level=0)
 df_ticker["cik_str"] = df_ticker["cik_str"].astype(str).str.zfill(10)
 
 # 처리할 공시 유형
-valid_forms = ["SCHEDULE 13G", "SCHEDULE 13D", "Form S-1", "S-1", "SC 13D", "SC 13G",
-               "Form S-1MEF", "S-1MEF", "10-Q", "10-QT", "8-K", "Form 4", "4"]
+valid_forms = [
+    "SCHEDULE 13G",
+    "SCHEDULE 13D",
+    # "Form S-1",
+    # "S-1",
+    "SC 13D",
+    "SC 13G",
+    # "Form S-1MEF",
+    # "S-1MEF",
+    "10-Q",
+    "10-QT",
+    "8-K",
+    "Form 4",
+    "4"
+]
 
 # 공시 유형 설명
 filling_names = {
@@ -136,18 +148,6 @@ for stock in stocks:
                     # html_url = "번역 초과로 인한 처리 불가"
             else:
                 df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
-
-        # 10-Q JSON 처리
-        json_key = f"fillings/json/{row['filling_id']}.json"
-        if row['filling_type'] in ['10-Q', '10-QT']:
-            if not check_s3_file_exists(json_key):
-                json_10q = get_filtered_10q_data(row['filling_id'])
-                json_url = upload_json_to_s3(json_10q, json_key)
-                df_filing.at[index, 'filling_10q_json_url'] = json_url
-                # df_filing.at[index, 'filling_10q_json_url'] = "SEC API 초과로 인한 10-Q JSON 처리 불가"
-                # print(f"SEC API 초과로 인한 10-Q JSON 처리 불가")
-            else:
-                df_filing.at[index, 'filling_10q_json_url'] = f"https://{bucket_name}.s3.amazonaws.com/{json_key}"
 
     # MySQL 저장
     save_df_to_mysql(df_filing)

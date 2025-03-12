@@ -47,21 +47,21 @@ try:
             # "SCHEDULE 13G/A",
             #  "SCHEDULE 13D/A", 
              "SCHEDULE 13D", 
-             "Form S-1", 
-             "S-1", 
+             # "Form S-1",
+             # "S-1",
             #  "SC 13D/A", 
              "SC 13D", 
              "SC 13G", 
             #  "SC 13G/A",
-            "Form S-1MEF", 
-            "S-1MEF", 
-            "10-Q", 
-            "10-QT", 
+            # "Form S-1MEF",
+            # "S-1MEF",
+            "10-Q",
+            "10-QT",
             "8-K", 
-            # "8-K/A", 
+            "8-K/A",
             "Form 4", 
             "4"
-            # , "4/A"
+            , "4/A"
         ]
         
         # # form 값에 따라 필터링
@@ -77,10 +77,6 @@ try:
             "SC 13G": "지분 공시",
             "SCHEDULE 13G/A": "지분 공시(수정)",
             "SCHEDULE 13G": "지분 공시",
-            "Form S-1": "예비 증권 거래 신고서",
-            "S-1": "예비 증권 거래 신고서",
-            "Form S-1MEF": "예비 증권 거래 신고서",
-            "S-1MEF": "예비 증권 거래 신고서",
             "10-Q": "분기 보고서",
             "10-QT": "분기 보고서",
             "8-K": "수시 보고서",
@@ -127,8 +123,13 @@ try:
         
         # fillingDate 기준으로 내림차순 정렬
         df_filing = df_filing.sort_values(by="submit_timestamp", ascending=False)
-        # 각 filling_type 별로 5개씩만 유지
-        df_filing = df_filing.groupby("filling_type").head(5)
+        
+        # 각 filling_type 별로 3개씩만 유지 / 10Q,10QT는 하나만 유지
+        df_filing = (
+            df_filing.groupby("filling_type", group_keys=False)
+            .apply(lambda x: x.head(1) if x['form'].iloc[0] in ["10-Q", "10-QT"] else x.head(3))
+        )
+
         # 최근 100개만 남기고 나머지 삭제
         # df_filing = df_filing.head(100)
 

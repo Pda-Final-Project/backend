@@ -118,7 +118,7 @@ for stock in stocks:
     for index, row in df_filing.iterrows():
         # 번역 처리
         file_type = row['filling_file_type']
-        if file_type in ["xml", "htm", "txt"]:
+        if file_type in ["xml", "htm"]:
             # S3에 요약 파일이 이미 존재하는지 확인
             s3_key = f"fillings/summary/{row['filling_id']}.json"
             if not check_s3_file_exists(s3_key):

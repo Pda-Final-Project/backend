@@ -14,7 +14,7 @@ s3 = boto3.client(
 )
 
 # S3 버킷 이름 설정
-bucket_name = 'finpago-bucket'  
+bucket_name = 'finpago-bucket'
 
 def check_s3_file_exists(s3_key):
     try:
@@ -22,8 +22,14 @@ def check_s3_file_exists(s3_key):
         print(f"File already exists in S3: {s3_key}")
         return True
     except s3.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == '404':
-            return False
+        if e.response["Error"]["Code"] == "404":
+            print(f"❌ File not found in S3: {s3_key}")
+        elif e.response["Error"]["Code"] == "403":
+            print(f"🚨 Permission denied for S3 file: {s3_key}")
+            print(f"🚨 Permission denied for S3 file: {e}")
+        else:
+            print(f"⚠️ Unexpected S3 error: {e.response}")
+        return False
 
 def upload_translated_document_to_s3(s3_key, translate_html_file):
     try:

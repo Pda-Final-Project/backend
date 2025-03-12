@@ -6,10 +6,18 @@ import lombok.*;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
+
 @Entity
-@Table(name = "charts")
+@Table(
+        name = "charts",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "unique_chart",
+                        columnNames = {"report_date", "stock_ticker", "chart_type"}
+                )
+        }
+)
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

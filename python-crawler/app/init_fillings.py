@@ -1,6 +1,8 @@
 import requests
 import pandas as pd
 import time
+
+from kafka_producer import send_kafka_notification
 from stocks_data import stocks
 import json
 from s3 import check_s3_file_exists, upload_translated_document_to_s3, upload_json_to_s3
@@ -137,7 +139,7 @@ try:
 
         # 번역된 파일 형식 추적
         translated_files = {
-            "xml": False, "htm": False, "txt": False  # 각 파일 형식별 번역 여부 저장
+            "xml": False, "htm": False  # 각 파일 형식별 번역 여부 저장
         }
 
         for index, row in df_filing.iterrows():
@@ -150,6 +152,7 @@ try:
             # S3에 요약 파일이 이미 존재하는지 확인
             s3_key = f"fillings/summary/{row['filling_id']}.json"
             if not check_s3_file_exists(s3_key):
+                print(f"요약 파일이 존재하지 않음: {s3_key}")
                 filling_url = row['filling_url']
                 summary_json = get_summary_as_json(filling_url,row['filling_type'], headers)
                 file_url = upload_json_to_s3(summary_json, s3_key)
@@ -162,20 +165,10 @@ try:
             s3_key = f"fillings/{row['filling_id']}.html"
             if not check_s3_file_exists(s3_key):
                 filling_url = row['filling_url']
-                if file_type == 'txt':
-                    # txt 파일 처리 로직 추가
-                    response = requests.get(filling_url, headers=headers, proxies=proxies)
-                    response.raise_for_status()
-                    original_text = response.text
-                    translated_text = translate_texts_google([original_text])
-                    translated_html = f"<html><body><pre>{translated_text[0]}</pre></body></html>"
-                    html_url = upload_translated_document_to_s3(s3_key, translated_html)
-                    # html_url = "번역 초과로 인한 처리 불가"
-                else:
-                    # HTML 파일 처리 로직
-                    translated_html = translate_html(filling_url, headers)
-                    html_url = upload_translated_document_to_s3(s3_key, translated_html)
-                    # html_url = "번역 초과로 인한 처리 불가"
+                # HTML 파일 처리 로직
+                translated_html = translate_html(filling_url, headers)
+                html_url = upload_translated_document_to_s3(s3_key, translated_html)
+                # html_url = "번역 초과로 인한 처리 불가"
                 df_filing.at[index, 'filling_translated_content_url'] = html_url
             else:
                 df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
@@ -197,6 +190,10 @@ try:
 
                 except Exception as e:
                     print(f"An error occurred while processing 10-Q/10-QT: {e}")
+
+        # ✅ Kafka 알림 메시지 전송
+        for index, row in df_filing.iterrows():
+            send_kafka_notification(row['filling_ticker'], row['filling_type'])  # ✅ Kafka 토픽 전송
 
         # MySQL 저장
         save_df_to_mysql(df_filing)

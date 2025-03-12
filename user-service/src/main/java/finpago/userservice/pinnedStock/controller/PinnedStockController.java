@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/api/stocks")
+@RequestMapping("/v1/api/pinnedStocks")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class PinnedStockController {

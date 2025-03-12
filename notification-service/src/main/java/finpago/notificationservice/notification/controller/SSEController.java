@@ -2,8 +2,13 @@ package finpago.notificationservice.notification.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,24 +22,22 @@ public class SSEController {
     private static final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     /**
-     * 클라이언트가 SSE 연결을 시작
+     * 토큰 기반 SSE 구독
      */
-    @GetMapping("/subscribe/{userId}")
-    public SseEmitter subscribe(@PathVariable Long userId) {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+    @GetMapping("/subscribe")
+    public SseEmitter subscribe() {
+        Long userId = getUserIdFromAuth();
 
-        // Emitter 저장
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
         emitters.put(userId, emitter);
         log.info("SSE 연결됨 - 사용자 ID: {}", userId);
 
-        // 연결 유지 핑 보내기 (선택적)
         try {
             emitter.send(SseEmitter.event().name("connect").data("SSE 연결 성공"));
         } catch (IOException e) {
             log.error("SSE 초기 연결 실패 - 사용자 ID: {}", userId);
         }
 
-        // 연결 종료 시 삭제
         emitter.onCompletion(() -> emitters.remove(userId));
         emitter.onTimeout(() -> emitters.remove(userId));
 
@@ -58,5 +61,16 @@ public class SSEController {
             log.warn("SSE 연결 없음 - 사용자 ID: {}", userId);
         }
     }
-}
 
+    /**
+     * userId 가져오기
+     */
+    private Long getUserIdFromAuth() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자");
+        }
+        return Long.parseLong(authentication.getName());
+    }
+}

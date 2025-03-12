@@ -5,7 +5,7 @@ from thread import translate_html
 from json_10q import get_filtered_10q_data
 from mysql_config import save_df_to_mysql, get_latest_filing_date_from_mysql
 from redis_config import redis_client
-from stocks_data import stocks_data
+from stocks_data import stocks
 
 # S3 버킷 설정
 bucket_name = 'finpago-bucket'
@@ -21,7 +21,7 @@ headers = {
     "Connection": "keep-alive"
 }
 
-tickers = [stock["ticker"] for stock in stocks_data.stocks]
+tickers = [stock["ticker"] for stock in stocks]
 
 # TICKER와 CIK 매칭 데이터 수집
 tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)

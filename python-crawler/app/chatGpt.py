@@ -5,14 +5,16 @@ import logging
 from typing import List
 from fil_order import fil_order
 import json
+import openai
+import os
+
+# ✅ 환경 변수에서 API Key 가져오기
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# OpenAI API 키 설정
-client = openai.OpenAI(api_key="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")
-
-# 최대 분할 토큰 수 (실제 모델의 컨텍스트 한계를 고려하여 설정)
+client = openai.OpenAI(api_key="OPENAI_API_KEY")
 MAX_CHUNK_TOKENS = 5000
 
 # 토큰 분할 함수
@@ -41,7 +43,7 @@ def summarize_chunk(chunk: str) -> str:
                 {"role": "system", "content": "You are a concise financial summarizer."},
                 {"role": "user", "content": prompt_text}
             ],
-            max_tokens=1000,
+            max_tokens=MAX_CHUNK_TOKENS,
             temperature=0.5
         )
         summary = response.choices[0].message.content.strip()
@@ -69,7 +71,7 @@ def analyze_combined_summary(summary_texts: List[str], filing_type: str) -> str:
                 {"role": "system", "content": "You are an expert financial analyst."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1000,
+            max_tokens=MAX_CHUNK_TOKENS,
             temperature=0.7
         )
         analysis_result = response.choices[0].message.content.strip()

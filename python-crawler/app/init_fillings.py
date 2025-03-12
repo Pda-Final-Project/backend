@@ -1,7 +1,6 @@
 import requests
 import pandas as pd
 import json
-
 from s3 import check_s3_file_exists, upload_translated_document_to_s3, upload_json_to_s3
 from thread import translate_html
 from json_10q import get_filtered_10q_data
@@ -30,8 +29,12 @@ headers = {
 }
 
 try:
+    proxies = {
+        "http": None,
+        "https": None
+    }
     # TICKER와 CIK 매칭을 위한 데이터 수집
-    tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
+    tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers, proxies=proxies)
     df_ticker = pd.json_normalize(pd.json_normalize(tickers_cik.json(), max_level=0).values[0])
 
     df_ticker["cik_str"] = df_ticker["cik_str"].astype(str).str.zfill(10)
@@ -132,81 +135,84 @@ try:
         df_filing['updated_at'] = None  # 새로운 열 추가
 
         # 중복되지 않는 form 값들에 대해 각각 하나의 행만 선택
-        df_filing = df_filing.drop_duplicates(subset=['filling_type'])
+        # df_filing = df_filing.drop_duplicates(subset=['filling_type'])
         
         # fillingDate 기준으로 내림차순 정렬
         df_filing = df_filing.sort_values(by="submit_timestamp", ascending=False)
-
+        # 각 filling_type 별로 5개씩만 유지
+        df_filing = df_filing.groupby("filling_type").head(5)
         # 최근 100개만 남기고 나머지 삭제
         # df_filing = df_filing.head(100)
 
         df_filing = df_filing[['filling_id', 'filling_title', 'filling_type', 'filling_ticker', 'filling_url', 'filling_file_type', 'filling_summary_content_url', 'filling_translated_content_url', 'filling_10q_json_url', 'submit_timestamp', 'created_at', 'updated_at']]
 
-        # 번역된 파일 형식 추적
-        translated_files = {
-            "xml": False, "htm": False, "txt": False  # 각 파일 형식별 번역 여부 저장
-        }
+        print(df_filing)
 
-        for index, row in df_filing.iterrows():
-            file_type = row['filling_file_type']  # 확장자 확인
-
-            # 번역 대상이 아닌 경우 건너뜀
-            if file_type not in translated_files:
-                continue
-            
-            # S3에 요약 파일이 이미 존재하는지 확인
-            s3_key = f"fillings/summary/{row['filling_id']}.json"
-            if not check_s3_file_exists(s3_key):
-                filling_url = row['filling_url']
-                summary_json = get_summary_as_json(filling_url,row['filling_type'], headers)
-                file_url = upload_json_to_s3(summary_json, s3_key)
-                df_filing.at[index, 'filling_summary_content_url'] = file_url
-            else:
-                df_filing.at[index, 'filling_summary_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
-            
-
-            # S3에 번역 파일이 이미 존재하는지 확인
-            s3_key = f"fillings/{row['filling_id']}.html"
-            if not check_s3_file_exists(s3_key):
-                filling_url = row['filling_url']
-                if file_type == 'txt':
-                    # txt 파일 처리 로직 추가
-                    response = requests.get(filling_url, headers=headers)
-                    response.raise_for_status()
-                    original_text = response.text
-                    translated_text = translate_texts_google([original_text])
-                    translated_html = f"<html><body><pre>{translated_text[0]}</pre></body></html>"
-                    html_url = upload_translated_document_to_s3(s3_key, translated_html)
-                    # html_url = "번역 초과로 인한 처리 불가"
-                else:
-                    # HTML 파일 처리 로직
-                    translated_html = translate_html(filling_url, headers)
-                    html_url = upload_translated_document_to_s3(s3_key, translated_html)
-                    # html_url = "번역 초과로 인한 처리 불가"
-                df_filing.at[index, 'filling_translated_content_url'] = html_url
-            else:
-                df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
-            
-            # filling_type이 10-Q 또는 10-QT인 경우 XBRL API를 사용하여 JSON 파일 생성 및 업로드
-            json_file_name = f"{row['filling_id']}.json"
-            json_key = f"fillings/json/{json_file_name}"
-            s3_key = "fillings/json/" + row['filling_id'] + ".json"
-            if row['filling_type'] in ['10-Q', '10-QT']:
-                try:
-                    # S3에 JSON 파일이 이미 존재하는지 확인
-                    if not check_s3_file_exists(json_key):
-                        json_1oq = get_filtered_10q_data(row['filling_id'])
-                        json_url = upload_json_to_s3(json_1oq, s3_key)
-                        # json_url = "sec api 초과로 인한 10-Q JSON 처리 불가"
-                        # df_filing.at[index, 'filling_10q_json_url'] = json_url
-                    else:
-                        df_filing.at[index, 'filling_10q_json_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
-            
-                except Exception as e:
-                    print(f"An error occurred while processing 10-Q/10-QT: {e}")
-            
-        # MySQL 저장
-        save_df_to_mysql(df_filing)
+        # # 번역된 파일 형식 추적
+        # translated_files = {
+        #     "xml": False, "htm": False, "txt": False  # 각 파일 형식별 번역 여부 저장
+        # }
+        #
+        # for index, row in df_filing.iterrows():
+        #     file_type = row['filling_file_type']  # 확장자 확인
+        #
+        #     # 번역 대상이 아닌 경우 건너뜀
+        #     if file_type not in translated_files:
+        #         continue
+        #
+        #     # S3에 요약 파일이 이미 존재하는지 확인
+        #     s3_key = f"fillings/summary/{row['filling_id']}.json"
+        #     if not check_s3_file_exists(s3_key):
+        #         filling_url = row['filling_url']
+        #         summary_json = get_summary_as_json(filling_url,row['filling_type'], headers)
+        #         file_url = upload_json_to_s3(summary_json, s3_key)
+        #         df_filing.at[index, 'filling_summary_content_url'] = file_url
+        #     else:
+        #         df_filing.at[index, 'filling_summary_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
+        #
+        #
+        #     # S3에 번역 파일이 이미 존재하는지 확인
+        #     s3_key = f"fillings/{row['filling_id']}.html"
+        #     if not check_s3_file_exists(s3_key):
+        #         filling_url = row['filling_url']
+        #         if file_type == 'txt':
+        #             # txt 파일 처리 로직 추가
+        #             response = requests.get(filling_url, headers=headers)
+        #             response.raise_for_status()
+        #             original_text = response.text
+        #             translated_text = translate_texts_google([original_text])
+        #             translated_html = f"<html><body><pre>{translated_text[0]}</pre></body></html>"
+        #             html_url = upload_translated_document_to_s3(s3_key, translated_html)
+        #             # html_url = "번역 초과로 인한 처리 불가"
+        #         else:
+        #             # HTML 파일 처리 로직
+        #             translated_html = translate_html(filling_url, headers)
+        #             html_url = upload_translated_document_to_s3(s3_key, translated_html)
+        #             # html_url = "번역 초과로 인한 처리 불가"
+        #         df_filing.at[index, 'filling_translated_content_url'] = html_url
+        #     else:
+        #         df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
+        #
+        #     # filling_type이 10-Q 또는 10-QT인 경우 XBRL API를 사용하여 JSON 파일 생성 및 업로드
+        #     json_file_name = f"{row['filling_id']}.json"
+        #     json_key = f"fillings/json/{json_file_name}"
+        #     s3_key = "fillings/json/" + row['filling_id'] + ".json"
+        #     if row['filling_type'] in ['10-Q', '10-QT']:
+        #         try:
+        #             # S3에 JSON 파일이 이미 존재하는지 확인
+        #             if not check_s3_file_exists(json_key):
+        #                 json_1oq = get_filtered_10q_data(row['filling_id'])
+        #                 json_url = upload_json_to_s3(json_1oq, s3_key)
+        #                 # json_url = "sec api 초과로 인한 10-Q JSON 처리 불가"
+        #                 # df_filing.at[index, 'filling_10q_json_url'] = json_url
+        #             else:
+        #                 df_filing.at[index, 'filling_10q_json_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
+        #
+        #         except Exception as e:
+        #             print(f"An error occurred while processing 10-Q/10-QT: {e}")
+        #
+        # # MySQL 저장
+        # save_df_to_mysql(df_filing)
 
 except requests.exceptions.RequestException as e:
     print(f"Request failed: {e}")

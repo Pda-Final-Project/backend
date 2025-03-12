@@ -10,18 +10,17 @@ import finpago.userservice.user.entity.User;
 import finpago.userservice.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PinnedStockService {
 
     private final PinnedStockRepository pinnedStockRepository;
@@ -43,7 +42,6 @@ public class PinnedStockService {
         }
 
         PinnedStock pinnedStock = PinnedStock.builder()
-                .pinnedStockId(UUID.randomUUID())
                 .user(user)
                 .stockTicker(stockTicker)
                 .build();
@@ -53,7 +51,7 @@ public class PinnedStockService {
     }
 
     /**
-     * 관심 종목 조회 기능
+     * 관심 종목 조회 기능 (Redis 현재가 & 변동률 불러오기)
      */
     @Transactional
     public ApiResponse<List<PinnedStockResDto>> getPinnedStocks(Long userId) {
@@ -62,28 +60,42 @@ public class PinnedStockService {
 
         List<PinnedStock> pinnedStocks = pinnedStockRepository.findByUser(user);
 
+        // 관심 종목 리스트 조회
         List<PinnedStockResDto> pinnedStockList = pinnedStocks.stream()
                 .map(stock -> {
                     String ticker = stock.getStockTicker();
-                    String redisKey = "stock:" + ticker;
-                    Object redisData = redisTemplate.opsForValue().get(redisKey);
+                    String redisKey = "stock:" + ticker; // Redis에서 해당 종목 조회
 
-                    StockInfo stockInfo = null;
-                    if (redisData instanceof LinkedHashMap) {
-                        stockInfo = objectMapper.convertValue(redisData, StockInfo.class);
-                    } else if (redisData instanceof StockInfo) {
-                        stockInfo = (StockInfo) redisData;
+                    Map<Object, Object> redisData = redisTemplate.opsForHash().entries(redisKey);
+
+                    if (redisData.isEmpty()) {
+                        log.warn("🚨 Redis에서 종목 데이터 없음: {}", ticker);
+                        return new PinnedStockResDto(
+                                ticker,
+                                "정보 없음",  // 종목명 없음
+                                0.0,        // 현재가 없음
+                                0.0         // 변동률 없음
+                        );
                     }
 
-                    if (stockInfo == null) {
-                        return new PinnedStockResDto(ticker, "정보 없음", 0, 0);
+                    try {
+                        String priceStr = redisData.getOrDefault("current_price", "0").toString();
+                        String rateStr = redisData.getOrDefault("change_rate", "0").toString();
+                        String name = redisData.getOrDefault("name", "정보 없음").toString();
+
+                        double currentPrice = Double.parseDouble(priceStr);
+                        double changeRate = Double.parseDouble(rateStr);
+
+                        return new PinnedStockResDto(ticker, name, currentPrice, changeRate);
+                    } catch (Exception e) {
+                        log.error("🚨 Redis 데이터 파싱 오류 ({}): {}", ticker, e.getMessage());
+                        return new PinnedStockResDto(
+                                ticker,
+                                "정보 없음",
+                                0.0,
+                                0.0
+                        );
                     }
-                    return new PinnedStockResDto(
-                            ticker,
-                            stockInfo.getName(),
-                            stockInfo.getPrice(),
-                            stockInfo.getChange()
-                    );
                 })
                 .collect(Collectors.toList());
 

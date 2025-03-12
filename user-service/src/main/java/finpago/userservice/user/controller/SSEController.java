@@ -1,4 +1,4 @@
-package finpago.notificationservice.notification.controller;
+package finpago.userservice.user.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
-@RequestMapping("/v1/api/notification")
+@RequestMapping("/v1/api/sse")
 @RequiredArgsConstructor
 @Slf4j
 public class SSEController {
@@ -62,9 +62,6 @@ public class SSEController {
         }
     }
 
-    /**
-     * userId 가져오기
-     */
     private Long getUserIdFromAuth() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

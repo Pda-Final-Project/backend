@@ -11,4 +11,4 @@ startup_nodes = [
 ]
 
 # Redis 클러스터에 연결
-redis_client = RedisCluster(startup_nodes=startup_nodes, decode_responses=True)
+redis_client = RedisCluster(startup_nodes=startup_nodes, password="CTg0n49k0M", decode_responses=True)

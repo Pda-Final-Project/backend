@@ -8,7 +8,7 @@ import lombok.Getter;
 public class PinnedStockResDto {
     private String ticker;
     private String name;
-    private int price;
+    private double price;
     private double change;
 }
 

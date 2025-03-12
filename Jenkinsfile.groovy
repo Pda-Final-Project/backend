@@ -23,6 +23,9 @@ pipeline {
                     def changedFiles = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim().split("\n")
                     def changedModules = changedFiles.collect { file -> file.split("/")[0] }.unique()
 
+                    // Jenkinsfile.groovy 파일은 변경된 모듈 목록에서 제외
+                    changedModules = changedModules.findAll { it != "Jenkinsfile.groovy" }
+
                     echo "Changed Modules: ${changedModules}"
 
                     if (changedModules.contains("common")) {
@@ -34,6 +37,7 @@ pipeline {
                 }
             }
         }
+
         stage('Build Common Module') {
             when {
                 expression { env.CHANGED_MODULES.contains("common") || env.CHANGED_MODULES == "all" }

@@ -16,8 +16,8 @@ import java.util.UUID;
 public class PinnedStock {
 
     @Id
-    @Column(columnDefinition = "BINARY(16)")
-    private UUID pinnedStockId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long pinnedStockId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -33,11 +33,4 @@ public class PinnedStock {
     @Builder.Default
     @Column(nullable = false)
     private LocalDateTime updateTimestamp = LocalDateTime.now();
-
-    @PrePersist
-    public void generateUUID() {
-        if (pinnedStockId == null) {
-            pinnedStockId = UUID.randomUUID();
-        }
-    }
 }

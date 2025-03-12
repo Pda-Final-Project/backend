@@ -123,11 +123,11 @@ try:
         
         # fillingDate 기준으로 내림차순 정렬
         df_filing = df_filing.sort_values(by="submit_timestamp", ascending=False)
-        
+
         # 각 filling_type 별로 3개씩만 유지 / 10Q,10QT는 하나만 유지
         df_filing = (
             df_filing.groupby("filling_type", group_keys=False)
-            .apply(lambda x: x.head(1) if x['form'].iloc[0] in ["10-Q", "10-QT"] else x.head(3))
+            .apply(lambda x: x.head(1) if x['filling_type'].iloc[0] in ["10-Q", "10-QT"] else x.head(3))
         )
 
         # 최근 100개만 남기고 나머지 삭제

@@ -5,7 +5,7 @@ from thread import translate_html
 from json_10q import get_filtered_10q_data
 from mysql_config import save_df_to_mysql, get_latest_filing_date_from_mysql
 from redis_config import redis_client
-from stocks_data import stocks
+from stocks_data import stocks_data
 
 # S3 버킷 설정
 bucket_name = 'finpago-bucket'

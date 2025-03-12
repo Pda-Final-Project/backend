@@ -4,6 +4,7 @@ import requests
 import re
 from multiprocessing.dummy import Pool as ThreadPool
 import time
+from bs4 import BeautifulSoup
 
 ## 미국 공시 원본 html을 받아서 번역 후 수정된 html을 반환하는 함수
 

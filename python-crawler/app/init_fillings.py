@@ -29,8 +29,6 @@ try:
 
     df_ticker["cik_str"] = df_ticker["cik_str"].astype(str).str.zfill(10)
 
-    print(df_ticker)
-
     for stock in stocks:
         tic = stock["ticker"]
         cik = df_ticker[df_ticker['ticker'] == tic]['cik_str'].iloc[0]
@@ -135,8 +133,6 @@ try:
         # df_filing = df_filing.head(100)
 
         df_filing = df_filing[['filling_id', 'filling_title', 'filling_type', 'filling_ticker', 'filling_url', 'filling_file_type', 'filling_summary_content_url', 'filling_translated_content_url', 'filling_10q_json_url', 'submit_timestamp', 'created_at', 'updated_at']]
-
-        print(df_filing)
 
         # 번역된 파일 형식 추적
         translated_files = {

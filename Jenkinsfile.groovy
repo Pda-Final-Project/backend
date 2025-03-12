@@ -171,7 +171,7 @@ def buildAndPushDockerImage(serviceName) {
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """
                 echo $DOCKER_PASSWORD | docker login -u $DOCKER_HUB_USER --password-stdin
-                docker build -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} .
+                docker build --no-cache -t $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER} .
                 docker push $DOCKER_HUB_USER/${serviceName}:${env.BUILD_NUMBER}
             """
         }

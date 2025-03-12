@@ -1,5 +1,6 @@
 server:
   port: 19091
+  address: 0.0.0.0
 
 eureka:
   client:

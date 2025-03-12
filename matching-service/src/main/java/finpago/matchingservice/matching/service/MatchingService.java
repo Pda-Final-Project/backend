@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +27,8 @@ public class MatchingService {
 
     private final MatchingProducer matchingProducer;
     private final StringRedisTemplate redisTemplate;
+    private static final long DEFAULT_BALANCE = 10000000;
+    private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
     //주문 시간순 정렬
     private final PriorityQueue<OrderCreateReqEvent> orders = new PriorityQueue<>(
@@ -108,14 +111,20 @@ public class MatchingService {
                 long maxTradePrice = (long) sortedTrades.get(sortedTrades.size() - 1).get("current_price");
                 long minTradePrice = (long) sortedTrades.get(0).get("current_price");
 
+
                 System.out.println("maxTradePrice: " + maxTradePrice);
                 System.out.println("minTradePrice: " + minTradePrice);
 
                 if (order.getOfferType() == OrderType.BUY) {
+
+                    long currentPrice = maxTradePrice;
                     System.out.println("들어와요33");
                     if (order.getOfferPrice() > maxTradePrice) {
                         System.out.println("들어와요44");
-                        handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), true);
+                        handleTradeExecution(order, order.getOfferQuantity(), 0L, currentPrice, true);
+                        long refundAmount = (order.getOfferPrice() - currentPrice) * order.getOfferQuantity();
+                        updateAvailableBalance(order.getUserId(), refundAmount);
+
                     } else {
                         System.out.println("들어와요55");
                         int matchedIndex = linearSearch(sortedTrades, order.getOfferPrice());
@@ -165,8 +174,12 @@ public class MatchingService {
                         }
                     }
                 } else {
+                    long currentPrice = minTradePrice;
                     if (order.getOfferPrice() < minTradePrice) {
-                        handleTradeExecution(order, order.getOfferQuantity(), 0L, order.getOfferPrice(), false);
+
+                        handleTradeExecution(order, order.getOfferQuantity(), 0L, currentPrice, false);
+                        long refundAmount = (currentPrice - order.getOfferPrice()) * order.getOfferQuantity();
+                        updateAvailableBalance(order.getUserId(), refundAmount);
                     } else {
                         int matchedIndex = linearSearch(sortedTrades, order.getOfferPrice());
                         if (matchedIndex != -1) {
@@ -323,5 +336,22 @@ public class MatchingService {
             log.error("Redis 환율 데이터 변환 오류: {}", e.getMessage());
             return 1.0f;
         }
+    }
+
+    /**
+     * 사용 가능 예수금 업데이트 (30일 보관)
+     */
+    private void updateAvailableBalance(Long userId, Long amount) {
+        System.out.println("유저아이딩: " + userId);
+        System.out.println("돈은용: " + amount);
+
+        String key = "user:" + userId + ":available_balance";
+        Long current = getCachedAvailableBalance(userId);
+        redisTemplate.opsForValue().set(key, String.valueOf(current + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
+    }
+
+    private Long getCachedAvailableBalance(Long userId) {
+        String key = "user:" + userId + ":available_balance";
+        return redisTemplate.opsForValue().get(key) != null ? Long.parseLong(redisTemplate.opsForValue().get(key)) : DEFAULT_BALANCE;
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/v1/api/balance")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class BalanceController {
 
     private final BalanceService balanceService;

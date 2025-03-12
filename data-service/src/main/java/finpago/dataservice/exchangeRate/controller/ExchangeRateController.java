@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/v1/api/exchange-rate")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class ExchangeRateController {
 
     private final RedisTemplate<String, String> redisTemplate;
@@ -23,6 +24,7 @@ public class ExchangeRateController {
      */
     @GetMapping("/{ticker}")
     public ResponseEntity<ApiResponse<ExchangeRateDto>> getExchangeRateByTicker(@PathVariable String ticker) {
+        System.out.println("요청들어옵니다");
         String redisKey = "stock:" + ticker + ":exchange_rate";
         String exchangeRate = redisTemplate.opsForValue().get(redisKey);
 

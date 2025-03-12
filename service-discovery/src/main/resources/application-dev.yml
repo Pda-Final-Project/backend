@@ -4,6 +4,7 @@ spring:
 
 server:
   port: 19090
+  address: 0.0.0.0
 
 eureka:
   client:

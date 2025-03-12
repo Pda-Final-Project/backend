@@ -20,6 +20,7 @@ common:
 
 server:
   port: 19094
+  address: 0.0.0.0
 
 eureka:
   client:

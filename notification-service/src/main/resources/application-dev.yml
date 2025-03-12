@@ -12,6 +12,8 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 server:
   port: 19097
+  address: 0.0.0.0
+
 eureka:
   client:
     service-url:

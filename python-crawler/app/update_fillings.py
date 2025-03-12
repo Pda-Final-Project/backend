@@ -6,6 +6,7 @@ from json_10q import get_filtered_10q_data
 from mysql_config import save_df_to_mysql, get_latest_filing_date_from_mysql
 from redis_config import redis_client
 from stocks_data import stocks
+from kafka_producer import send_kafka_notification
 
 # S3 버킷 설정
 bucket_name = 'finpago-bucket'
@@ -148,6 +149,7 @@ for stock in stocks:
                     # html_url = "번역 초과로 인한 처리 불가"
             else:
                 df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
+        send_kafka_notification(row['filling_ticker'], row['filling_type'])
 
     # MySQL 저장
     save_df_to_mysql(df_filing)

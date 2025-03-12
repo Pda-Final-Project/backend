@@ -2,7 +2,6 @@ import requests
 import pandas as pd
 import time
 
-from kafka_producer import send_kafka_notification
 from stocks_data import stocks
 import json
 from s3 import check_s3_file_exists, upload_translated_document_to_s3, upload_json_to_s3
@@ -190,10 +189,6 @@ try:
 
                 except Exception as e:
                     print(f"An error occurred while processing 10-Q/10-QT: {e}")
-
-        # ✅ Kafka 알림 메시지 전송
-        for index, row in df_filing.iterrows():
-            send_kafka_notification(row['filling_ticker'], row['filling_type'])  # ✅ Kafka 토픽 전송
 
         # MySQL 저장
         save_df_to_mysql(df_filing)

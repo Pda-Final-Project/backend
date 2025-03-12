@@ -12,7 +12,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import java.util.concurrent.TimeUnit;
 
 @RestController
-@RequestMapping("/api/exchange-rate")
+@RequestMapping("/v1/api/exchange-rate")
 @RequiredArgsConstructor
 public class ExchangeRateController {
 

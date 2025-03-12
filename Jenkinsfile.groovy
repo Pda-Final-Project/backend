@@ -17,82 +17,87 @@ pipeline {
                 ])
             }
         }
-        stage('Detect Changes') {
+        stage('Cleanup Gradle Daemon First') {
+            steps {
+                sh './gradlew --stop || echo "✅ Gradle daemon already stopped."'
+            }
+        }
+        stage('Cleanup Docker Cache') {
             steps {
                 script {
-                    def changedFiles = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim().split("\n")
-                    def changedModules = changedFiles.collect { file -> file.split("/")[0] }.unique()
-
-                    // Jenkinsfile.groovy 파일은 변경된 모듈 목록에서 제외
-                    changedModules = changedModules.findAll { it != "Jenkinsfile.groovy" }
-
-                    echo "Changed Modules: ${changedModules}"
-
-                    if (changedModules.contains("common")) {
-                        echo "Common module changed. Building all services."
-                        env.CHANGED_MODULES = "all"
-                    } else {
-                        env.CHANGED_MODULES = changedModules.join(",")
+                    def diskUsage = sh(script: "df -h | awk '/ \\/\$/ {print \$5}' | sed 's/%//'", returnStdout: true).trim().toInteger()
+                    if (diskUsage > 80) {
+                        sh 'docker system prune -a -f --volumes'
                     }
                 }
             }
         }
-
         stage('Build Common Module') {
-            when {
-                expression { env.CHANGED_MODULES.contains("common") || env.CHANGED_MODULES == "all" }
-            }
             steps {
                 dir('common') {
                     sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
-                    sh './gradlew clean build -x test -Pprod --no-daemon -Dorg.gradle.jvmargs="-Xmx1024m"'
+                    sh './gradlew build -x test -Pprod --no-daemon -Dorg.gradle.jvmargs="-Xmx1024m"'
                 }
             }
         }
-        stage('Build & Push Docker Images') {
-            steps {
-                script {
-                    def modulesToBuild = env.CHANGED_MODULES == "all" ?
-                            ['execution-service', 'data-service', 'filling-service', 'gateway',
-                             'matching-service', 'notification-service', 'settlement-service',
-                             'user-service', 'order-service', 'python-crawler']
-                            : env.CHANGED_MODULES.tokenize(",")
-
-                    def parallelStages = [:]
-                    modulesToBuild.each { module ->
-                        parallelStages[module] = {
-                            if (module == "python-crawler") {
-                                buildAndPushPythonCrawler()
-                            } else {
-                                buildAndPushDockerImage(module)
-                            }
-                        }
-                    }
-
-                    if (parallelStages.size() > 0) {
-                        parallel parallelStages
-                    } else {
-                        echo "✅ No services need to be built."
-                    }
+        stage('Build & Push Docker Images - Group 1') {
+            parallel {
+                stage('Execution Service') {
+                    steps { buildAndPushDockerImage('execution-service') }
+                }
+                stage('Data Service') {
+                    steps { buildAndPushDockerImage('data-service') }
+                }
+                stage('Filling Service') {
+                    steps { buildAndPushDockerImage('filling-service') }
+                }
+                stage('Gateway Service') {
+                    steps { buildAndPushDockerImage('gateway') }
                 }
             }
         }
+
+        stage('Build & Push Docker Images - Group 2') {
+            parallel {
+                stage('Matching Service') {
+                    steps { buildAndPushDockerImage('matching-service') }
+                }
+                stage('Notification Service') {
+                    steps { buildAndPushDockerImage('notification-service') }
+                }
+                stage('Settlement Service') {
+                    steps { buildAndPushDockerImage('settlement-service') }
+                }
+            }
+        }
+
+        stage('Build & Push Docker Images - Group 3') {
+            parallel {
+                stage('User Service') {
+                    steps { buildAndPushDockerImage('user-service') }
+                }
+                stage('Order Service') {
+                    steps { buildAndPushDockerImage('order-service') }
+                }
+                stage('Python Crawler') {
+                    steps { buildAndPushPythonCrawler() }
+                }
+            }
+        }
+
         stage('Cleanup Gradle Daemon') {
             steps {
                 sh './gradlew --stop'
             }
         }
         stage('ArgoCD Manifest Update') {
-            when {
-                expression { env.CHANGED_MODULES != "" }
-            }
             steps {
                 checkout([$class: 'GitSCM',
-                          branches: [[name: 'main']],
-                          userRemoteConfigs: [[
-                                                      url: 'https://github.com/Pda-Final-Project/argocd.git',
-                                                      credentialsId: GIT_CREDENTIALS_ID
-                                              ]]
+                    branches: [[name: 'main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/Pda-Final-Project/argocd.git',
+                        credentialsId: GIT_CREDENTIALS_ID
+                    ]]
                 ])
 
                 withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
@@ -108,22 +113,28 @@ pipeline {
                         git pull --rebase origin main
                     """
                 }
-
                 dir('apps') {
                     sh 'ls -l'
-                    script {
-                        def changedModulesList = env.CHANGED_MODULES.tokenize(",")
-                        changedModulesList.each { module ->
-                            updateArgoCDManifest(module)
-                        }
-                    }
+                    updateArgoCDManifest('execution-service')
+                    updateArgoCDManifest('filling-service')
+                    updateArgoCDManifest('gateway')
+                    updateArgoCDManifest('matching-service')
+                    updateArgoCDManifest('notification-service')
+                    updateArgoCDManifest('settlement-service')
+                    updateArgoCDManifest('user-service')
+                    updateArgoCDManifest('order-service')
+                    updateArgoCDManifest('data-service')
+                    updateArgoCDManifest('update-chart')
+                    updateArgoCDManifest('update-fillings')
+                    updateArgoCDManifest('update-news')
+                    updateArgoCDManifest('init-chart')
+                    updateArgoCDManifest('init-fillings')
+                    updateArgoCDManifest('init-stock')
+                    updateArgoCDManifest('stock-price-listener')
                 }
             }
         }
         stage('Commit & Push Updates') {
-            when {
-                expression { env.CHANGED_MODULES != "" }
-            }
             steps {
                 withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh """
@@ -132,6 +143,7 @@ pipeline {
         
                         git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/Pda-Final-Project/argocd.git
                         
+                        # 🔥 변경 사항 중 ArgoCD 관련 파일만 스테이징
                         git add apps/*.yaml
                         
                         if ! git diff --cached --quiet; then
@@ -147,7 +159,6 @@ pipeline {
     }
 }
 
-// Docker 빌드 및 푸시 함수
 def buildAndPushDockerImage(serviceName) {
     dir(serviceName) {
         sh 'if [ ! -x gradlew ]; then chmod +x gradlew; fi'
@@ -155,7 +166,7 @@ def buildAndPushDockerImage(serviceName) {
         sh 'echo "org.gradle.jvmargs=-Xms512m -Xmx2048m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" > gradle.properties'
         sh 'echo "org.gradle.daemon.idleTimeout=60000" >> gradle.properties'
 
-        sh './gradlew clean build -x test --no-daemon -Pprod --parallel -Dspring.profiles.active=prod'
+        sh './gradlew build -x test --no-daemon -Pprod --parallel -Dspring.profiles.active=prod'
 
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
             sh """
@@ -167,7 +178,6 @@ def buildAndPushDockerImage(serviceName) {
     }
 }
 
-// Python Crawler 빌드 및 푸시 함수
 def buildAndPushPythonCrawler() {
     dir('python-crawler') {
         sh 'echo "Building Python Crawler Docker Image..."'
@@ -182,28 +192,9 @@ def buildAndPushPythonCrawler() {
     }
 }
 
-// ArgoCD 매니페스트 업데이트 함수
 def updateArgoCDManifest(serviceName) {
-    if (serviceName == "python-crawler") {
-        def pythonCrawlerManifests = [
-                "update-chart",
-                "update-fillings",
-                "update-news",
-                "init-chart",
-                "init-fillings",
-                "init-stock",
-                "stock-price-listener"
-        ]
-        pythonCrawlerManifests.each { manifest ->
-            sh """
-                sed -i 's|\\(image: .*/${PYTHON_CRAWLER_IMAGE}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' ${manifest}.yaml
-                git add apps/${manifest}.yaml
-            """
-        }
-    } else {
-        sh """
-            sed -i 's|\\(image: .*/${serviceName}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' apps/${serviceName}.yaml
-            git add apps/${serviceName}.yaml
-        """
-    }
+    sh """
+        sed -i 's|\\(image: .*/${serviceName}:\\)[^ ]*|\\1${env.BUILD_NUMBER}|' ${serviceName}.yaml
+        git add ${serviceName}.yaml
+    """
 }

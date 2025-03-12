@@ -151,7 +151,7 @@ def create_charts_table_if_not_exists():
             host="executiondb-cluster.db.svc.cluster.local",
             user="root",
             password="admin",
-            database="executiondb",
+            database="finpagodb",
             port=3306
         )
         cursor = conn.cursor()

@@ -9,6 +9,6 @@ public class PinnedStockResDto {
     private String ticker;
     private String name;
     private double price;
-    private double change;
+    private String change;
 }
 

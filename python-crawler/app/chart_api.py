@@ -148,7 +148,7 @@ def create_charts_table_if_not_exists():
     """MySQL에 charts 테이블이 없으면 생성"""
     try:
         conn = mysql.connector.connect(
-            host="127.0.0.1",
+            host="executiondb-cluster.db.svc.cluster.local",
             user="root",
             password="admin",
             database="executiondb",

@@ -12,19 +12,12 @@ bucket_name = 'finpago-bucket'
 # HTTP 요청 헤더 설정
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-    'Accept-Language': 'ko,en-US;q=0.9,en;q=0.8',
-    'Accept-Encoding': 'gzip, deflate, br, zstd',
-    'Connection': 'keep-alive',
-    'Cache-Control': 'max-age=0',
-    'Priority': 'u=0, i',
-    'Sec-CH-UA': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
-    'Sec-CH-UA-Mobile': '?0',
-    'Sec-CH-UA-Platform': '"Windows"',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'none',
-    'Sec-Fetch-User': '?1',
-    'Upgrade-Insecure-Requests': '1'
+    'Referer': 'https://www.sec.gov/',
+    'Accept': 'application/json',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Connection': 'keep-alive'
 }
 
 # 모니터링할 종목 리스트
@@ -78,7 +71,7 @@ for tic in tickers:
 
     # SEC에서 최신 공시 가져오기
     url = f"https://data.sec.gov/submissions/CIK{cik}.json"
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, proxies=proxies)
     response.raise_for_status()
     data = response.json()
 

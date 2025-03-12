@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import time
 import json
 from s3 import check_s3_file_exists, upload_translated_document_to_s3, upload_json_to_s3
 from thread import translate_html
@@ -11,22 +12,43 @@ from chatGpt import get_summary_as_json
 bucket_name = 'finpago-bucket'  
 
 # 기본 설정
+# headers = {
+#     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+#     'Accept-Language': 'ko,en-US;q=0.9,en;q=0.8',
+#     'Accept-Encoding': 'gzip, deflate, br, zstd',
+#     'Connection': 'keep-alive',
+#     'Cache-Control': 'max-age=0',
+#     'Priority': 'u=0, i',
+#     'Sec-CH-UA': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
+#     'Sec-CH-UA-Mobile': '?0',
+#     'Sec-CH-UA-Platform': '"Windows"',
+#     'Sec-Fetch-Dest': 'document',
+#     'Sec-Fetch-Mode': 'navigate',
+#     'Sec-Fetch-Site': 'none',
+#     'Sec-Fetch-User': '?1',
+#     'Upgrade-Insecure-Requests': '1'
+# }
+#
+# headers = {
+#     "User-Agent": "Finpago finpago/1.0 (tomy8964@naver.com) Mozilla/5.0",
+#     "Referer": "https://www.sec.gov/",
+#     "Accept": "application/json",
+#     "Accept-Encoding": "gzip, deflate, br",
+#     "Cache-Control": "no-cache",
+#     "Pragma": "no-cache",
+#     "Connection": "keep-alive"
+# }
+
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-    'Accept-Language': 'ko,en-US;q=0.9,en;q=0.8',
-    'Accept-Encoding': 'gzip, deflate, br, zstd',
-    'Connection': 'keep-alive',
-    'Cache-Control': 'max-age=0',
-    'Priority': 'u=0, i',
-    'Sec-CH-UA': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
-    'Sec-CH-UA-Mobile': '?0',
-    'Sec-CH-UA-Platform': '"Windows"',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'none',
-    'Sec-Fetch-User': '?1',
-    'Upgrade-Insecure-Requests': '1'
+    'Referer': 'https://www.sec.gov/',
+    'Accept': 'application/json',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Connection': 'keep-alive'
 }
+
 
 try:
     proxies = {
@@ -39,6 +61,8 @@ try:
 
     df_ticker["cik_str"] = df_ticker["cik_str"].astype(str).str.zfill(10)
 
+    print(df_ticker)
+
     # 여러 종목 코드 설정 (예: AAPL, MSFT)
     tickers = ['TSLA', 'AAPL', 'NVDA']
 
@@ -47,7 +71,7 @@ try:
 
         # 공시 리스트 수집
         url = f"https://data.sec.gov/submissions/CIK{cik}.json"
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, proxies=proxies)
         response.raise_for_status()  # 요청이 실패하면 예외 발생
         data = response.json()
         
@@ -177,7 +201,7 @@ try:
         #         filling_url = row['filling_url']
         #         if file_type == 'txt':
         #             # txt 파일 처리 로직 추가
-        #             response = requests.get(filling_url, headers=headers)
+        #             response = requests.get(filling_url, headers=headers, proxies=proxies)
         #             response.raise_for_status()
         #             original_text = response.text
         #             translated_text = translate_texts_google([original_text])

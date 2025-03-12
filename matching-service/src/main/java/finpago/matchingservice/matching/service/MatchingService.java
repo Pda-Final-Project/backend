@@ -50,8 +50,9 @@ public class MatchingService {
     // Redis에서 최신 20개 체결가 가져오기
     private List<Map<String, Object>> getRecentTradesFromRedis(String stockTicker) {
         String redisKey = "stock:" + stockTicker + ":purchase";
+        System.out.println("redisKey: " + redisKey);
         List<String> tradeList = redisTemplate.opsForList().range(redisKey, 0, 19);
-
+        System.out.println("tradeList: " + tradeList);
         List<Map<String, Object>> tradeDataList = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -61,8 +62,8 @@ public class MatchingService {
                     Map<String, Object> tradeData = objectMapper.readValue(tradeJson, new TypeReference<>() {});
 
                     // 체결가 반올림 + Long타입 변환
-                    double originalPrice = (double) tradeData.get("price");
-                    tradeData.put("price", Math.round(originalPrice));
+                    double originalPrice = (double) tradeData.get("current_price");
+                    tradeData.put("current_price", Math.round(originalPrice));
 
                     tradeDataList.add(tradeData);
                 } catch (Exception e) {
@@ -72,8 +73,8 @@ public class MatchingService {
         }
         // 가격(price) 기준 내림차순 정렬
         tradeDataList.sort((trade1, trade2) -> Long.compare(
-                (long) trade2.get("price"),
-                (long) trade1.get("price")
+                (long) trade2.get("current_price"),
+                (long) trade1.get("current_price")
         ));
 
         return tradeDataList;
@@ -94,17 +95,18 @@ public class MatchingService {
             }
 
             OrderCreateReqEvent order = orders.poll();
+            System.out.println("뭐가안돼?");
             List<Map<String, Object>> recentTrades = getRecentTradesFromRedis(order.getStockTicker());
 
             if (!recentTrades.isEmpty()) {
                 System.out.println("들어와요22");
                 // 가격기준 정렬
                 List<Map<String, Object>> sortedTrades = recentTrades.stream()
-                        .sorted(Comparator.comparing(trade -> (long) trade.get("price")))
+                        .sorted(Comparator.comparing(trade -> (long) trade.get("current_price")))
                         .toList();
 
-                long maxTradePrice = (long) sortedTrades.get(sortedTrades.size() - 1).get("price");
-                long minTradePrice = (long) sortedTrades.get(0).get("price");
+                long maxTradePrice = (long) sortedTrades.get(sortedTrades.size() - 1).get("current_price");
+                long minTradePrice = (long) sortedTrades.get(0).get("current_price");
 
                 System.out.println("maxTradePrice: " + maxTradePrice);
                 System.out.println("minTradePrice: " + minTradePrice);
@@ -124,7 +126,7 @@ public class MatchingService {
                             Map<String, Object> matchedTrade = sortedTrades.get(matchedIndex);
                             System.out.println("matchedTrade은용: " + matchedTrade);
 
-                            Number priceValue = (Number) matchedTrade.get("price");
+                            Number priceValue = (Number) matchedTrade.get("current_price");
                             long tradePrice = Math.round(priceValue.doubleValue());
 
                             Number volumeValue = (Number) matchedTrade.get("volume");
@@ -171,7 +173,7 @@ public class MatchingService {
                             Map<String, Object> matchedTrade = sortedTrades.get(matchedIndex);
 
                             // Number 타입 변환 후 long으로 변환
-                            Number priceValue = (Number) matchedTrade.get("price");
+                            Number priceValue = (Number) matchedTrade.get("current_price");
                             long tradePrice = Math.round(priceValue.doubleValue());
 
                             Number volumeValue = (Number) matchedTrade.get("volume");
@@ -299,7 +301,7 @@ public class MatchingService {
         System.out.println("targetPrice: " + targetPrice);
 
         for (int i = 0; i < trades.size(); i++) {
-            long price = (long) trades.get(i).get("price");
+            long price = (long) trades.get(i).get("current_price");
             System.out.println("현재 탐색 중인 가격: " + price);
 
             if (price == targetPrice) {

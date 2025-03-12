@@ -33,7 +33,7 @@ public class RedisTradeScheduler {
 
             // 최신 데이터 삽입
             Map<String, Object> tradeData = new HashMap<>();
-            tradeData.put("price", generateRandomPrice(stock));
+            tradeData.put("current_price", generateRandomPrice(stock));
             tradeData.put("volume", random.nextInt(100) + 1); // 1 ~ 100 랜덤 수량
             tradeData.put("timestamp", System.currentTimeMillis());
 

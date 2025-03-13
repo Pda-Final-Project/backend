@@ -44,7 +44,7 @@ spring:
         - id: data-service
           uri: http://data-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/v1/api/news/**, /v1/api/stocks/**, /v1/api/exchange-rate/**, v1/api/earnings/**, /v1/api/chart/**
+            - Path=/v1/api/news/**, /v1/api/stocks/**, /v1/api/exchange-rate/**, /v1/api/earnings/**, /v1/api/chart/**
 
       discovery:
         locator:

@@ -14,10 +14,10 @@ def store_stocks_in_redis(stocks):
             "change_rate": "0",     # 기본값 설정
             "volume": 0
         }
-        
-        # Redis 3.x 이하에서 사용할 수 있는 hmset을 사용
-        redis_client.hmset(key, data)
 
+        redis_client.hset(key, data)
+
+    print(stocks)
     print("init stock success!")
 
 if __name__ == "__main__":

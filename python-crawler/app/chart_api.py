@@ -312,7 +312,7 @@ def get_chart_data(appkey, appsecret, access_token, fid_input_iscd, period_code,
 # 가장 초기에 실행(과거 데이터까지 모두 가져옴)
 def init_chart_data():
     for stock in stocks:
-        for period_code in ["D", "W", "M"]: #D,W,M
+        for period_code in ["D"]: #D,W,M
             data = get_chart_data(g_appkey, g_appsecret, access_token, stock["ticker"], period_code, 'history')
             if data:
                 save_to_mysql(data, stock["ticker"], period_code)
@@ -321,7 +321,7 @@ def init_chart_data():
 # 가장 최근 데이터 하나만 가져와서 추가
 def update_chart_data():
     for stock in stocks:
-        for period_code in ["D", "W", "M"]: #D,W,M
+        for period_code in ["D"]: #D,W,M
             data = get_chart_data(g_appkey, g_appsecret, access_token, stock["ticker"], period_code, 'latest')
             if data:
                 save_to_mysql(data, stock["ticker"], period_code)

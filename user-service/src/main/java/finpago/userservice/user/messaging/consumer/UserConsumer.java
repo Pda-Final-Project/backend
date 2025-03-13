@@ -1,6 +1,7 @@
 package finpago.userservice.user.messaging.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import finpago.common.global.messaging.FillingNoticeEvent;
 import finpago.common.global.messaging.NoticeEvent;
 import finpago.userservice.user.controller.SSEController;
 import finpago.userservice.user.service.UserService;
@@ -17,6 +18,7 @@ public class UserConsumer {
 
     private final UserService userService;
     private static final String NOTICE_TOPIC = "notice-topic";
+    private static final String FILLING_NOTICE_TOPIC = "filling-notice-topic";
     private final ObjectMapper objectMapper;
 
 
@@ -27,7 +29,16 @@ public class UserConsumer {
         userService.saveNotification(event);
     }
 
-    @KafkaListener(topics = "notice-topic", groupId = "notification-group")
+
+    @KafkaListener(topics = FILLING_NOTICE_TOPIC, groupId = "user-service-group",
+            containerFactory = "fillingNoticeRetryListenerContainerFactory")
+    public void consumeFillingNotice(FillingNoticeEvent event) {
+        log.info("공시 알림 수신 - 티커 {}: {}", event.getTicker(), event);
+        userService.saveFillingNotice(event);
+    }
+
+
+    @KafkaListener(topics = NOTICE_TOPIC, groupId = "user-service-group")
     public void consumeNotification(ConsumerRecord<String, String> record) {
         try {
             String message = record.value();

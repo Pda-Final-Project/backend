@@ -1,9 +1,6 @@
 package finpago.notificationservice.notification.service;
 
-import finpago.common.global.messaging.BuyTradeMatchEvent;
-import finpago.common.global.messaging.SellTradeMatchEvent;
-import finpago.common.global.messaging.TradeMatchingEvent;
-import finpago.common.global.messaging.NoticeEvent;
+import finpago.common.global.messaging.*;
 import finpago.notificationservice.notification.client.UserClient;
 import finpago.notificationservice.notification.messaging.producer.NotificationProducer;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +19,6 @@ public class NotificationService {
      * 매수자 알림 생성 및 발송
      */
     public void sendBuyOrderNotification(BuyTradeMatchEvent event) {
-//        boolean isNotificationEnabled = userClient.getNotificationSetting();
-//
-//        if (!isNotificationEnabled) {
-//            log.info("매수자({})의 알림 설정이 OFF 상태이므로 알림을 발송하지 않음.", event.getBuyerUserId());
-//            return;
-//        }
 
         NoticeEvent noticeEvent = new NoticeEvent(
                 event.getBuyerUserId(),
@@ -46,12 +37,6 @@ public class NotificationService {
      * 매도자 알림 생성 및 발송
      */
     public void sendSellOrderNotification(SellTradeMatchEvent event) {
-//        boolean isNotificationEnabled = userClient.getNotificationSetting();
-//
-//        if (!isNotificationEnabled) {
-//            log.info("매도자({})의 알림 설정이 OFF 상태이므로 알림을 발송하지 않음.", event.getSellerUserId());
-//            return;
-//        }
 
         NoticeEvent noticeEvent = new NoticeEvent(
                 event.getSellerUserId(),
@@ -64,5 +49,13 @@ public class NotificationService {
 
         notificationProducer.sendNotification(noticeEvent);
         log.info("매도자 알림 발송: {}", noticeEvent);
+    }
+
+    /**
+     * 공시 알림 생성 및 발송
+     */
+    public void sendFillingNotice(FillingNoticeEvent event) {
+        notificationProducer.sendFillingNotice(event);
+        log.info("공시 알림 발송: {}", event);
     }
 }

@@ -2,20 +2,21 @@ import json
 import boto3
 import os
 
-# ✅ 환경 변수에서 AWS 자격 증명 불러오기 (Kubernetes Secret 사용)
-aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
-aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-region_name = os.getenv("AWS_REGION")
+# ✅ 환경 변수에서 AWS 자격 증명 가져오기
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")  # 기본값 설정
 
-if not aws_access_key_id or not aws_secret_access_key or not region_name:
-    raise ValueError("❌ AWS 자격 증명 환경 변수가 설정되지 않았습니다.")
+# ✅ 환경 변수 값이 없을 경우 예외 처리
+if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+    raise ValueError("❌ AWS 자격 증명이 환경 변수에서 설정되지 않았습니다!")
 
-# AWS 자격 증명 설정
+# ✅ S3 클라이언트 설정
 s3 = boto3.client(
     's3',
-    aws_access_key_id=aws_credentials['aws_access_key_id'],
-    aws_secret_access_key=aws_credentials['aws_secret_access_key'],
-    region_name=aws_credentials['region_name']
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_REGION
 )
 
 # S3 버킷 이름 설정

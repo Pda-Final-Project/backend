@@ -27,6 +27,9 @@ public class Filling extends BaseEntity {
     @Column(name = "filling_file_type")
     private String fillingFileType;
 
+    @Column(name = "filling_summary_content_url")
+    private String fillingSummaryContentUrl;
+
     @Column(name = "filling_translated_content_url")
     private String fillingTranslatedContentUrl;
 

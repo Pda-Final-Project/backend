@@ -66,7 +66,7 @@ public class AccountController {
      * 간편 비밀번호(PIN) 인증
      */
     @PostMapping("/verify-pin")
-    public ResponseEntity<ApiResponse<String>> verifyPin(@RequestParam String pin) {
+    public ResponseEntity<ApiResponse<String>> verifyPin(@RequestBody String pin) {
         Long userId = getUserIdFromAuth();
 
         Account account = accountRepository.findByUserId(userId)

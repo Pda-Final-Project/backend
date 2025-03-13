@@ -59,6 +59,7 @@ public class UserService {
         }
 
         String encodedPassword = passwordEncoder.encode(joinReqDto.getUserPassword());
+        String encodedPin = passwordEncoder.encode(joinReqDto.getAccountPassword());
 
         User user = User.builder()
                 .userPhone(joinReqDto.getUserPhone())
@@ -74,7 +75,7 @@ public class UserService {
                 .userId(user.getUserId())
                 .accountName(BANK_NAME)
                 .accountNumber(generateRandomAccountNumber())
-                .accountPassword(joinReqDto.getAccountPassword())
+                .accountPassword(encodedPin)
                 .accountWithholding(DEFAULT_WITHHOLDING)
                 .build();
 

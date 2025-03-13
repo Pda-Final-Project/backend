@@ -20,8 +20,8 @@ public class KafkaRetryConfig {
 
     private static final String BUY_DLT_TOPIC = "buy-settlement-dlt-topic";
     private static final String SELL_DLT_TOPIC = "sell-settlement-dlt-topic";// TradeMatchingEvent DLT// NoticeEvent DLT
-    private static final long RETRY_INTERVAL = 1000L; // 재시도 간격 (1초)
-    private static final int RETRY_COUNT = 3; // 최대 재시도 횟수
+    private static final long RETRY_INTERVAL = 10000L; // 재시도 간격 (10초)
+    private static final int RETRY_COUNT = 10; // 최대 재시도 횟수
 
     // Default Retry Listener Factory (Generic)
     @Bean(name = "kafkaRetryListenerContainerFactory")

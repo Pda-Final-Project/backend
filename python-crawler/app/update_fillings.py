@@ -7,6 +7,7 @@ from mysql_config import save_df_to_mysql, get_latest_filing_date_from_mysql
 from redis_config import redis_client
 from stocks_data import stocks
 from kafka_producer import send_kafka_notification
+from chatGpt import get_summary_as_json
 
 # S3 버킷 설정
 bucket_name = 'finpago-bucket'

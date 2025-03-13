@@ -3,19 +3,13 @@ package finpago.dataservice.chart.entity;
 import finpago.common.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "charts",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "unique_chart",
-                        columnNames = {"report_date", "stock_ticker", "chart_type"}
-                )
-        }
-)
+@Table(name = "charts")
+@IdClass(ChartId.class) // 복합 키 적용
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -26,9 +20,11 @@ public class Chart extends BaseEntity {
     @Column(name = "report_date", nullable = false)
     private LocalDateTime reportDate;
 
+    @Id
     @Column(name = "stock_ticker", length = 10, nullable = false)
     private String stockTicker;
 
+    @Id
     @Column(name = "chart_type", length = 10)
     private String chartType;
 

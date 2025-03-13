@@ -1,9 +1,6 @@
 package finpago.notificationservice.notification.config.kafka;
 
-import finpago.common.global.messaging.BuyTradeMatchEvent;
-import finpago.common.global.messaging.SellTradeMatchEvent;
-import finpago.common.global.messaging.TradeMatchingEvent;
-import finpago.common.global.messaging.NoticeEvent;
+import finpago.common.global.messaging.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -41,6 +38,22 @@ public class KafkaConfig {
     @Bean
     public KafkaTemplate<String, Object> defaultKafkaTemplate() {
         return new KafkaTemplate<>(defaultProducerFactory());
+    }
+
+    // ProducerFactory: FillingNoticeEvent
+    @Bean
+    public ProducerFactory<String, FillingNoticeEvent> fillingNoticeProducerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        return new DefaultKafkaProducerFactory<>(props);
+    }
+
+    @Bean
+    public KafkaTemplate<String, FillingNoticeEvent> fillingNoticeKafkaTemplate() {
+        return new KafkaTemplate<>(fillingNoticeProducerFactory());
     }
 
     // BuyTradeMatchEvent ProducerFactory
@@ -132,6 +145,28 @@ public class KafkaConfig {
     public ConcurrentKafkaListenerContainerFactory<String, SellTradeMatchEvent> sellTradeKafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, SellTradeMatchEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(sellTradeConsumerFactory());
+        return factory;
+    }
+
+    // ConsumerFactory: FillingNoticeEvent
+    @Bean
+    public ConsumerFactory<String, FillingNoticeEvent> fillingNoticeConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.FillingNoticeEvent");
+
+        return new DefaultKafkaConsumerFactory<>(props);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, FillingNoticeEvent> fillingNoticeKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, FillingNoticeEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(fillingNoticeConsumerFactory());
         return factory;
     }
 

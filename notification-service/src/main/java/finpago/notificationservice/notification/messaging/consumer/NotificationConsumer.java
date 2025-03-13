@@ -2,6 +2,7 @@ package finpago.notificationservice.notification.messaging.consumer;
 
 
 import finpago.common.global.messaging.BuyTradeMatchEvent;
+import finpago.common.global.messaging.FillingNoticeEvent;
 import finpago.common.global.messaging.SellTradeMatchEvent;
 import finpago.notificationservice.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ public class NotificationConsumer {
     private final NotificationService notificationService;
     private static final String BUY_SETTLEMENT_TOPIC = "buy-settlement-topic";
     private static final String SELL_SETTLEMENT_TOPIC = "sell-settlement-topic";
-
+    private static final String FILLING_NOTICE_TOPIC = "filling-notice";
 
     @KafkaListener(topics = BUY_SETTLEMENT_TOPIC, groupId = "notification-service-group",
             containerFactory = "buyTradeRetryListenerContainerFactory")
@@ -31,5 +32,12 @@ public class NotificationConsumer {
     public void handleSellTradeSettlement(SellTradeMatchEvent event) {
         log.info("매도 정산 완료 이벤트 수신: {}", event);
         notificationService.sendSellOrderNotification(event);
+    }
+
+    @KafkaListener(topics = FILLING_NOTICE_TOPIC, groupId = "notification-service-group",
+            containerFactory = "fillingNoticeRetryListenerContainerFactory")
+    public void handleFillingNotice(FillingNoticeEvent event) {
+        log.info("공시 알림 이벤트 수신: {}", event);
+        notificationService.sendFillingNotice(event);
     }
 }

@@ -21,7 +21,7 @@ spring:
         - id: user-service
           uri: http://localhost:19092/
           predicates:
-            - Path=/v1/api/users/**, /v1/api/auth/**, /v1/api/account/**,/v1/api/holdings/**,/v1/api/tradeProfit/**,/v1/api/holdingStocks/**,/v1/api/exchange-rate/**,/v1/api/balance/**,/v1/api/notification/**,/v1/api/sse/**
+            - Path=/v1/api/users/**, /v1/api/auth/**, /v1/api/account/**,/v1/api/holdings/**,/v1/api/tradeProfit/**,/v1/api/holdingStocks/**,/v1/api/exchange-rate/**,/v1/api/balance/**,/v1/api/notification/**,/v1/api/sse/**,/v1/api/pinnedStocks/**
 
         - id: order-service
           uri: http://localhost:19093/

@@ -4,6 +4,7 @@ package finpago.userservice.user.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import finpago.common.global.common.ApiResponse;
 import finpago.common.global.exception.error.DuplicateUserPhoneException;
+import finpago.common.global.messaging.FillingNoticeEvent;
 import finpago.common.global.messaging.NoticeEvent;
 import finpago.userservice.account.entity.Account;
 import finpago.userservice.account.repository.AccountRepository;
@@ -44,7 +45,8 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
-    private static final String NOTIFICATION_KEY_PREFIX = "user:%s:notifications"; // Redis 키 패턴
+    private static final String NOTIFICATION_KEY_PREFIX = "user:%s:notifications";
+    private static final String FILLING_NOTICE_KEY_PREFIX = "user:filling-notices:%s";// Redis 키 패턴
     private static final long EXPIRATION_DAYS = 7; // 알림 보관 기간 (7일)
     private static final String BANK_NAME = "[CMA 종합 계좌]";
     private static final long DEFAULT_WITHHOLDING = 10_000_000L;
@@ -113,6 +115,19 @@ public class UserService {
             log.info("[UserService] 알림 저장 - 사용자 {}: {}", event.getUserId(), notificationJson);
         } catch (Exception e) {
             log.error("[UserService] 알림 저장 실패: {}", e.getMessage());
+        }
+    }
+    public void saveFillingNotice(FillingNoticeEvent event) {
+        try {
+            String tickerKey = String.format(FILLING_NOTICE_KEY_PREFIX, event.getTicker());
+            String fillingNoticeJson = objectMapper.writeValueAsString(event);
+
+            redisTemplate.opsForList().rightPush(tickerKey, fillingNoticeJson);
+            redisTemplate.expire(tickerKey, EXPIRATION_DAYS, TimeUnit.DAYS);
+
+            log.info("[UserService] 공시 알림 저장 - 티커 {}: {}", event.getTicker(), fillingNoticeJson);
+        } catch (Exception e) {
+            log.error("[UserService] 공시 알림 저장 실패: {}", e.getMessage());
         }
     }
 

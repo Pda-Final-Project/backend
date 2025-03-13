@@ -35,7 +35,7 @@ def get_exchange_rate():
 
 
 # 실시간 체결 내역 redis에 저장
-def save_stock_purchase_data(ticker, price, volume, trade_volume, time):
+def save_stock_purchase_data(ticker, price, volume, trade_volume, time, buy_sell_flag):
     key = f"stock:{ticker}:purchase"  # ex) stock:TSLA:purchase
 
     # 데이터 변환 (str → float/int)
@@ -100,10 +100,15 @@ def stocks_purchase_overseas(data_cnt, data):
         data_list.append(row)
 
     # DataFrame 생성 후 원하는 컬럼만 필터링
-    df = pd.DataFrame(data_list)[["종목코드","현재가", "등락율", "체결량", "거래량", "한국시간"]].fillna(0)
+    df = pd.DataFrame(data_list)[["종목코드","현재가", "등락율", "체결량", "거래량", "매도체결량", "매수체결량","한국시간"]].fillna(0)
 
-    print("\n[해외 주식 체결 데이터]")
-    print(df.to_string(index=False))
+    # 매수/매도 여부 추가
+    df["buy_sell_flag"] = df.apply(
+        lambda row: "BUY" if int(row["매수체결량"]) > int(row["매도체결량"])
+        else "SELL" if int(row["매도체결량"]) > int(row["매수체결량"])
+        else "NEUTRAL",
+        axis=1
+    )
 
     for _, row in df.iterrows():
         save_stock_purchase_data(
@@ -111,7 +116,8 @@ def stocks_purchase_overseas(data_cnt, data):
             price=row["현재가"],
             volume=row["체결량"],
             trade_volume=row["거래량"],
-            time=row["한국시간"]
+            time=row["한국시간"],
+            buy_sell_flag=row["buy_sell_flag"]
         )
         save_stock_data(ticker=row["종목코드"], price=row["현재가"], change_rate=row["등락율"], trade_volume=row["거래량"],)
 

@@ -16,7 +16,7 @@ import java.util.List;
 //보유종목 조회 데이터 반환
 @Slf4j
 @RestController
-@RequestMapping("/v1/api/stocks")
+@RequestMapping("/v1/api/holdingStocks")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class HoldingController {

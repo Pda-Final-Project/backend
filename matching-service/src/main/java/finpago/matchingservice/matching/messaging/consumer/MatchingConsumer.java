@@ -27,6 +27,6 @@ public class MatchingConsumer {
             containerFactory = "kafkaRetryListenerContainerFactory")
     public void handleFailedTrade(OrderCreateReqEvent failedOrder) {
         log.warn("체결 실패 주문 재매칭: {}", failedOrder);
-        matchingService.processOrder(failedOrder); // 실패 주문을 다시 매칭 큐에 삽입
+//        matchingService.processOrder(failedOrder); // 실패 주문을 다시 매칭 큐에 삽입
     }
 }

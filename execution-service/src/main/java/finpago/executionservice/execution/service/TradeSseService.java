@@ -67,10 +67,11 @@ public class TradeSseService implements MessageListener {
             long volume = jsonNode.get("volume").asLong();
             String time = jsonNode.get("time").asText();
             String orderType = jsonNode.get("trade_type").asText();// 매수,매도 구분
+            long tradeVolume = jsonNode.get("trade_volume").asLong();
 
             // 클라이언트에게 SSE 전송
             String tradeUpdate = objectMapper.writeValueAsString(
-                    new TradeUpdate(stockTicker,currentPrice, volume, time,orderType)
+                    new TradeUpdate(stockTicker,currentPrice, volume, time,orderType,tradeVolume)
             );
 
             sendTradeUpdate(stockTicker, tradeUpdate);
@@ -138,13 +139,15 @@ public class TradeSseService implements MessageListener {
         public long volume;
         public String time;
         public String orderType;
+        public long tradeVolume;
 
-        public TradeUpdate(String stockTicker, double currentPrice, long volume, String time,String orderType) {
+        public TradeUpdate(String stockTicker, double currentPrice, long volume, String time,String orderType,long tradeVolume) {
             this.stockTicker = stockTicker;
             this.currentPrice = currentPrice;
             this.volume = volume;
             this.time = time;
             this.orderType=orderType;
+            this.tradeVolume = tradeVolume;
         }
     }
 }

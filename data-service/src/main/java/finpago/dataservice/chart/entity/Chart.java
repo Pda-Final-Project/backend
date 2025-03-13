@@ -6,7 +6,6 @@ import lombok.*;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
-
 @Entity
 @Table(
         name = "charts",

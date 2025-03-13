@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import finpago.userservice.user.entity.User;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
     private static final long DEFAULT_BALANCE = 10000000; // 기본 예수금
     private static final long DEFAULT_STOCKS = 100; // 기본 보유 주식 수량 // 기본 예수금

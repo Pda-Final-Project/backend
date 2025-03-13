@@ -74,7 +74,7 @@ public class PinnedStockService {
                                 ticker,
                                 "정보 없음",  // 종목명 없음
                                 0.0,        // 현재가 없음
-                                0.0         // 변동률 없음
+                                "0.0"        // 변동률 없음
                         );
                     }
 
@@ -86,14 +86,17 @@ public class PinnedStockService {
                         double currentPrice = Double.parseDouble(priceStr);
                         double changeRate = Double.parseDouble(rateStr);
 
-                        return new PinnedStockResDto(ticker, name, currentPrice, changeRate);
+                        String formattedChangeRate = (changeRate > 0 ? "+" : "") + changeRate + "%";
+
+                        return new PinnedStockResDto(ticker, name, currentPrice, formattedChangeRate);
+
                     } catch (Exception e) {
                         log.error("🚨 Redis 데이터 파싱 오류 ({}): {}", ticker, e.getMessage());
                         return new PinnedStockResDto(
                                 ticker,
                                 "정보 없음",
                                 0.0,
-                                0.0
+                                "0.0"
                         );
                     }
                 })

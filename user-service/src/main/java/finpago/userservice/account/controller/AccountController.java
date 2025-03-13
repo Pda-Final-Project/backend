@@ -2,6 +2,8 @@ package finpago.userservice.account.controller;
 
 import finpago.common.global.common.ApiResponse;
 import finpago.userservice.account.dto.AccountInfoDto;
+import finpago.userservice.account.entity.Account;
+import finpago.userservice.account.repository.AccountRepository;
 import finpago.userservice.account.service.AccountService;
 import finpago.userservice.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -23,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
 
     private final AccountService accountService;
+    private final AccountRepository accountRepository;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 사용 가능 예수금 조회
@@ -54,6 +60,25 @@ public class AccountController {
         AccountInfoDto accountInfo = accountService.getAccountInfo(userId);
 
         return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "계좌 정보 조회 성공", accountInfo));
+    }
+
+    /**
+     * 간편 비밀번호(PIN) 인증
+     */
+    @PostMapping("/verify-pin")
+    public ResponseEntity<ApiResponse<String>> verifyPin(@RequestParam String pin) {
+        Long userId = getUserIdFromAuth();
+
+        Account account = accountRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("계좌 정보를 찾을 수 없습니다."));
+
+        // 입력한 PIN, 테이블의 해시값 비교
+        if (passwordEncoder.matches(pin, account.getAccountPassword())) {
+            return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "인증 성공", "PIN 인증 완료"));
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.fail(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."));
+        }
     }
 
     /**

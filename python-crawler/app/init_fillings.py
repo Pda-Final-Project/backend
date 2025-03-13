@@ -57,12 +57,12 @@ try:
             # "Form S-1MEF",
             # "S-1MEF",
             "10-Q",
-            "10-QT",
+            # "10-QT",
             "8-K", 
-            "8-K/A",
+            # "8-K/A",
             "Form 4", 
             "4"
-            , "4/A"
+            # , "4/A"
         ]
         
         # # form 값에 따라 필터링
@@ -107,6 +107,12 @@ try:
         # 파일 형식 추가
         df_filing['filling_file_type'] = df_filing['primaryDocument'].apply(lambda x: x.split('.')[-1].lower())
 
+        # ✅ 유지할 파일 형식 (xml, htm)
+        valid_file_types = ["xml", "htm"]
+
+        # ✅ xml과 htm만 남기고 나머지는 제거
+        df_filing = df_filing[df_filing['filling_file_type'].isin(valid_file_types)]
+
         # 번역된 내용을 저장할 열 추가
         df_filing['filling_translated_content_url'] = None  # 새로운 열 추가
 
@@ -136,17 +142,8 @@ try:
 
         df_filing = df_filing[['filling_id', 'filling_title', 'filling_type', 'filling_ticker', 'filling_url', 'filling_file_type', 'filling_summary_content_url', 'filling_translated_content_url', 'filling_10q_json_url', 'submit_timestamp', 'created_at', 'updated_at']]
 
-        # 번역된 파일 형식 추적
-        translated_files = {
-            "xml": False, "htm": False  # 각 파일 형식별 번역 여부 저장
-        }
-
         for index, row in df_filing.iterrows():
             file_type = row['filling_file_type']  # 확장자 확인
-
-            # 번역 대상이 아닌 경우 건너뜀
-            if file_type not in translated_files:
-                continue
 
             # S3에 요약 파일이 이미 존재하는지 확인
             s3_key = f"fillings/summary/{row['filling_id']}.json"
@@ -154,8 +151,11 @@ try:
                 print(f"요약 파일이 존재하지 않음: {s3_key}")
                 filling_url = row['filling_url']
                 summary_json = get_summary_as_json(filling_url,row['filling_type'], headers)
-                file_url = upload_json_to_s3(summary_json, s3_key)
-                df_filing.at[index, 'filling_summary_content_url'] = file_url
+                if '"error"' not in summary_json:
+                    file_url = upload_json_to_s3(summary_json, s3_key)
+                    df_filing.at[index, 'filling_summary_content_url'] = file_url
+                else:
+                    print(f"❌ 요약 실패로 인해 S3 업로드를 건너뜀: {s3_key}")
             else:
                 df_filing.at[index, 'filling_summary_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
 
@@ -166,9 +166,11 @@ try:
                 filling_url = row['filling_url']
                 # HTML 파일 처리 로직
                 translated_html = translate_html(filling_url, headers)
-                html_url = upload_translated_document_to_s3(s3_key, translated_html)
-                # html_url = "번역 초과로 인한 처리 불가"
-                df_filing.at[index, 'filling_translated_content_url'] = html_url
+                if translated_html:
+                    html_url = upload_translated_document_to_s3(s3_key, translated_html)
+                    df_filing.at[index, 'filling_translated_content_url'] = html_url
+                else:
+                    print(f"❌ 번역 실패로 인해 S3 업로드를 건너뜀: {s3_key}")
             else:
                 df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
 

@@ -98,6 +98,19 @@ for stock in stocks:
         print(f"[{tic}] 새로운 공시 없음")
         continue
 
+    # 파일 형식 추가
+    df_filing['filling_file_type'] = df_filing['primaryDocument'].apply(lambda x: x.split('.')[-1].lower())
+
+    # ✅ 유지할 파일 형식 (xml, htm)
+    valid_file_types = ["xml", "htm"]
+
+    # ✅ xml과 htm만 남기고 나머지는 제거
+    df_filing = df_filing[df_filing['filling_file_type'].isin(valid_file_types)]
+
+    if df_filing.empty:
+        print(f"[{tic}] 새로운 공시 없음")
+        continue
+
     # 데이터 처리 및 저장
     df_filing['filling_title'] = df_filing['form'].map(filling_names)
     df_filing.insert(0, 'filling_ticker', tic)

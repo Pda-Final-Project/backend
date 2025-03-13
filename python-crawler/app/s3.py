@@ -1,9 +1,14 @@
 import json
 import boto3
+import os
 
-# JSON 파일에서 AWS 자격 증명 불러오기
-with open('aws_credentials.json') as f:
-    aws_credentials = json.load(f)
+# ✅ 환경 변수에서 AWS 자격 증명 불러오기 (Kubernetes Secret 사용)
+aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+region_name = os.getenv("AWS_REGION")
+
+if not aws_access_key_id or not aws_secret_access_key or not region_name:
+    raise ValueError("❌ AWS 자격 증명 환경 변수가 설정되지 않았습니다.")
 
 # AWS 자격 증명 설정
 s3 = boto3.client(

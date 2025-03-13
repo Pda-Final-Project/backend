@@ -57,11 +57,11 @@ def translate_texts(texts, retries=3, delay=5):
                 if attempt < retries - 1:
                     time.sleep(delay)
                 else:
-                    raise
+                    return None
     return translations
 
 # 번역 요청 함수
-def translate_texts_google(texts, retries=3, delay=5):
+def translate_texts_google(texts, retries=2, delay=5):
     translator = GoogleTranslator(timeout=5, source='en', target='ko')
     translations = []
     for i in range(0, len(texts), 50):  # 최대 50개의 텍스트를 한 번에 번역
@@ -75,68 +75,86 @@ def translate_texts_google(texts, retries=3, delay=5):
                 if attempt < retries - 1:
                     time.sleep(delay)
                 else:
-                    raise
+                    return None
     return translations
 
 
 # HTML 파일 번역 함수
 def translate_html_file(original_html):
-    soup = BeautifulSoup(original_html, 'html.parser')
+    try:
+        soup = BeautifulSoup(original_html, 'html.parser')
 
-    body = soup.find('body')
-    if body:
-        # body를 문자열로 변환
-        body_str = str(body)
+        body = soup.find('body')
+        if body:
+            # body를 문자열로 변환
+            body_str = str(body)
 
-        # <i>와 <b> 태그를 제거
-        body_str = re.sub(r'</?(i|b)>', '', body_str)
-        body_str = re.sub(r'\s+', ' ', body_str)
+            # <i>와 <b> 태그를 제거
+            body_str = re.sub(r'</?(i|b)>', '', body_str)
+            body_str = re.sub(r'\s+', ' ', body_str)
 
-        # 다시 HTML로 변환
-        body = BeautifulSoup(body_str, 'html.parser').find('body')
+            # 다시 HTML로 변환
+            body = BeautifulSoup(body_str, 'html.parser').find('body')
 
-    texts_to_translate = [element for element in body.find_all(string=True) if should_translate(element)] if body else []
+        texts_to_translate = [element for element in body.find_all(string=True) if should_translate(element)] if body else []
 
-    # 번역 요청을 병렬로 처리
-    num_threads = os.cpu_count() * 2  # CPU 코어 수의 2배로 쓰레드 수 설정
-    chunk_size = len(texts_to_translate) // num_threads
-    chunks = [texts_to_translate[i:i + chunk_size] for i in range(0, len(texts_to_translate), chunk_size)]
+        if not texts_to_translate:
+            print("⚠️ 번역할 텍스트가 없음.")
+            return None  # 🔥 번역할 내용이 없으면 None 반환
 
-    pool = ThreadPool(num_threads)
-    translations = pool.map(translate_texts_google, chunks)
-    pool.close()
-    pool.join()
+        # 번역 요청을 병렬로 처리
+        num_threads = os.cpu_count() * 2  # CPU 코어 수의 2배로 쓰레드 수 설정
+        chunk_size = len(texts_to_translate) // num_threads
+        chunks = [texts_to_translate[i:i + chunk_size] for i in range(0, len(texts_to_translate), chunk_size)]
 
-    # 번역된 텍스트로 HTML 업데이트
-    translations = [item for sublist in translations for item in sublist]  # 중첩 리스트 풀기
-    for element, translated in zip(texts_to_translate, translations):
-        if translated is not None:
-            element.replace_with(translated)
-        else:
-            element.replace_with(element)
+        pool = ThreadPool(num_threads)
+        translations = pool.map(translate_texts_google, chunks)
+        pool.close()
+        pool.join()
 
-    # <meta charset="UTF-8"> 태그 추가
-    head = soup.find('head')
-    if head:
-        meta_tag = soup.new_tag('meta', charset='UTF-8')
-        head.insert(0, meta_tag)  # head의 첫 번째 위치에 추가
-    
-    soup.body.replace_with(body)
+        # 번역 중 오류 발생 시
+        if None in translations:
+            print("❌ 번역 실패로 인해 HTML 생성 불가.")
+            return None  # 🔥 번역이 실패하면 None 반환
 
-    return str(soup)
+        # 번역된 텍스트로 HTML 업데이트
+        translations = [item for sublist in translations for item in sublist]  # 중첩 리스트 풀기
+        for element, translated in zip(texts_to_translate, translations):
+            if translated is not None:
+                element.replace_with(translated)
+            else:
+                element.replace_with(element)
+
+        # <meta charset="UTF-8"> 태그 추가
+        head = soup.find('head')
+        if head:
+            meta_tag = soup.new_tag('meta', charset='UTF-8')
+            head.insert(0, meta_tag)  # head의 첫 번째 위치에 추가
+
+        soup.body.replace_with(body)
+
+        return str(soup)
+
+    except Exception as e:
+        print(f"❌ HTML 번역 중 오류 발생: {e}")
+        return None  # 🔥 번역 실패 시 None 반환
 
 def translate_html(url, headers):
-    start_time = time.time()
+    try:
+        start_time = time.time()
 
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    original_html = response.content.decode('utf-8')
-    
-    end_time = time.time()
-    print(f"Translating the HTML file took {end_time - start_time} seconds")
-    
-    # 번역된 HTML 파일 생성
-    return translate_html_file(original_html)
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        original_html = response.content.decode('utf-8')
+
+        end_time = time.time()
+        print(f"Translating the HTML file took {end_time - start_time} seconds")
+
+        # 번역된 HTML 파일 생성
+        return translate_html_file(original_html)
+    except requests.exceptions.RequestException as e:
+        print(f"❌ HTML 요청 실패: {e}")
+        return None  # 🔥 HTTP 요청 실패 시 None 반환
 
 def main():
     url = 'https://www.sec.gov/Archives/edgar/data/320193/000032019325000022/xslF345X05/wk-form4_1738712153.xml'

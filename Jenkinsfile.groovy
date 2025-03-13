@@ -131,6 +131,7 @@ pipeline {
                     updateArgoCDManifestPython('init-fillings')
                     updateArgoCDManifestPython('init-stock')
                     updateArgoCDManifestPython('stock-price-listener')
+                    updateArgoCDManifestPython('init-earning')
                 }
             }
         }

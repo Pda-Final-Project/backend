@@ -1,9 +1,6 @@
 package finpago.userservice.user.config.kafka;
 
-import finpago.common.global.messaging.BuyTradeMatchEvent;
-import finpago.common.global.messaging.NoticeEvent;
-import finpago.common.global.messaging.SellTradeMatchEvent;
-import finpago.common.global.messaging.TradeMatchingEvent;
+import finpago.common.global.messaging.*;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +15,7 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 public class KafkaRetryConfig {
 
+    private static final String FILLING_NOTICE_DLT_TOPIC="filling-notice-dlt-topic";
     private static final String NOTICE_DLT_TOPIC = "notice-dlt-topic";
     private static final String BUY_TRADE_DLT_TOPIC = "buy-trade-dlt-topic";
     private static final String SELL_TRADE_DLT_TOPIC = "sell-trade-dlt-topic";
@@ -73,6 +71,23 @@ public class KafkaRetryConfig {
         return factory;
     }
 
+
+    // FillingNoticeEvent Retry Listener Factory
+    @Bean(name = "fillingNoticeRetryListenerContainerFactory")
+    public ConcurrentKafkaListenerContainerFactory<String, FillingNoticeEvent> fillingNoticeRetryListenerContainerFactory(
+            ConsumerFactory<String, FillingNoticeEvent> consumerFactory,
+            KafkaTemplate<String, FillingNoticeEvent> kafkaTemplate) {
+
+        ConcurrentKafkaListenerContainerFactory<String, FillingNoticeEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory);
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
+                kafkaTemplate,
+                (ConsumerRecord<?, ?> record, Exception e) -> new TopicPartition(FILLING_NOTICE_DLT_TOPIC, record.partition())
+        );
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(RETRY_INTERVAL, RETRY_COUNT));
+        factory.setCommonErrorHandler(errorHandler);
+        return factory;
+    }
 
     // SellTradeMatchEvent Retry Listener Factory
     @Bean(name = "sellTradeRetryListenerContainerFactory")

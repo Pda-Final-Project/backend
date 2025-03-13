@@ -14,7 +14,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-client = openai.OpenAI(api_key="OPENAI_API_KEY")
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 MAX_CHUNK_TOKENS = 5000
 
 # 토큰 분할 함수

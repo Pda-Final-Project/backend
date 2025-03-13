@@ -5,7 +5,7 @@ import os
 # ✅ 환경 변수에서 AWS 자격 증명 가져오기
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_REGION = os.getenv("AWS_REGION", "us-east-1")  # 기본값 설정
+AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2")  # 기본값 설정
 
 # ✅ 환경 변수 값이 없을 경우 예외 처리
 if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:

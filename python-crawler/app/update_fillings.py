@@ -93,7 +93,7 @@ for stock in stocks:
     df_filing = df_filing[df_filing['form'].isin(valid_forms)]
 
     # 📌 최신 공시 시간 이후의 공시만 필터링
-    df_filing = df_filing[pd.to_datetime(df_filing['acceptanceDateTime']) > pd.to_datetime(latest_filing_date)]
+    df_filing = df_filing[pd.to_datetime(df_filing['acceptanceDateTime']) > pd.to_datetime(latest_filing_date).tz_localize('UTC')]
 
     if df_filing.empty:
         print(f"[{tic}] 새로운 공시 없음")

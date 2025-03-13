@@ -18,7 +18,7 @@ public class KafkaRetryConfig {
     private static final String ORDER_DLT_TOPIC = "order-dlt-topic";
     private static final String UNMATCHED_ORDER_DLT_TOPIC = "unmatched-order-dlt-topic";//DLT 토픽
     private static final long RETRY_INTERVAL = 10000L; // 재시도 간격 (10초)
-    private static final int RETRY_COUNT = 10
+    private static final int RETRY_COUNT = 1000; // ✅ 1000번 재시도
 
     @Bean(name = "kafkaRetryListenerContainerFactory")
     public ConcurrentKafkaListenerContainerFactory<String, OrderCreateReqEvent> kafkaRetryListenerContainerFactory(

@@ -23,7 +23,7 @@ public class KafkaRetryConfig {
     private static final String SELL_TRADE_DLT_TOPIC = "sell-trade-dlt-topic";
     private static final String DEFAULT_DLT_TOPIC = "default-dlt-topic";
     private static final long RETRY_INTERVAL = 10000L; // 재시도 간격 (10초)
-    private static final int RETRY_COUNT = 10
+    private static final int RETRY_COUNT = 1000; // ✅ 1000번 재시도
 
     @Bean(name = "noticeKafkaRetryListenerContainerFactory")
     public ConcurrentKafkaListenerContainerFactory<String, NoticeEvent> noticeKafkaRetryListenerContainerFactory(

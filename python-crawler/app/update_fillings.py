@@ -163,7 +163,7 @@ for stock in stocks:
                     # html_url = "번역 초과로 인한 처리 불가"
             else:
                 df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
-        send_kafka_notification(row['filling_ticker'], row['filling_type'])
+        # send_kafka_notification(row['filling_ticker'], row['filling_type'])
 
     # MySQL 저장
     save_df_to_mysql(df_filing)

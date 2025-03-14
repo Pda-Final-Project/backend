@@ -31,19 +31,19 @@ public class FillingServiceImpl implements FillingService {
         // 🔄 fillingType 변환 (프론트에서 보낸 값 → DB 검색용 리스트)
         List<String> fillingTypes = convertFillingType(fillingType);
 
-        if (ticker == null && fillingType == null && startDate == null && endDate == null) {
+        if (ticker == null && fillingTypes.isEmpty() && startDate == null && endDate == null) {
             fillingsPage = fillingRepository.findAllByOrderBySubmitTimestampDesc(pageable);
-        } else if (ticker == null && fillingType == null) {
+        } else if (ticker == null && fillingTypes.isEmpty()) {
             fillingsPage = fillingRepository.findBySubmitTimestampBetweenOrderBySubmitTimestampDesc(
                     LocalDateTime.parse(startDate), LocalDateTime.parse(endDate), pageable);
         } else if (ticker == null && startDate == null && endDate == null) {
             fillingsPage = fillingRepository.findByFillingTypeInOrderBySubmitTimestampDesc(fillingTypes, pageable);
-        } else if (fillingType == null && startDate == null && endDate == null) {
+        } else if (fillingTypes.isEmpty() && startDate == null && endDate == null) {
             fillingsPage = fillingRepository.findByFillingTickerOrderBySubmitTimestampDesc(ticker, pageable);
         } else if (ticker == null) {
             fillingsPage = fillingRepository.findByFillingTypeInAndSubmitTimestampBetweenOrderBySubmitTimestampDesc(
                     fillingTypes, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate), pageable);
-        } else if (fillingType == null) {
+        } else if (fillingTypes.isEmpty()) {
             fillingsPage = fillingRepository.findByFillingTickerAndSubmitTimestampBetweenOrderBySubmitTimestampDesc(
                     ticker, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate), pageable);
         } else if (startDate == null && endDate == null) {
@@ -77,6 +77,10 @@ public class FillingServiceImpl implements FillingService {
     }
 
     private List<String> convertFillingType(String fillingType) {
+        if (fillingType == null) {
+            return List.of();  // 빈 리스트 반환하여 NullPointerException 방지
+        }
+
         Map<String, List<String>> fillingTypeMap = new HashMap<>();
 
         // ✅ 프론트에서 보내는 값과 DB 저장 값을 매핑 (복수 개 반환)

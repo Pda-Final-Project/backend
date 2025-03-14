@@ -4,6 +4,8 @@ import finpago.common.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Entity
 @Table(name = "fillings")
@@ -37,6 +39,6 @@ public class Filling extends BaseEntity {
     private String filling10qJsonUrl;
 
     @Column(name = "submit_timestamp")
-    private String submitTimestamp;
+    private LocalDateTime submitTimestamp;
 
 }

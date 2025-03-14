@@ -38,11 +38,8 @@ public class SecurityConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true); // 인증 정보 포함 가능
-        config.addAllowedOrigin();
         config.setAllowedOrigins(List.of(
-                "http://172.16.1.70:5173",
                 "http://finpago-bucket.s3-website.ap-northeast-2.amazonaws.com", // S3 정적 호스팅 URL
-                "https://uvsp59ev1f.execute-api.ap-northeast-2.amazonaws.com"
         ));
         config.setAllowedHeaders(List.of("*")); // 모든 헤더 허용
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // 허용할 HTTP 메서드

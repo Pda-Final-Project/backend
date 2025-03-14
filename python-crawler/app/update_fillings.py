@@ -8,6 +8,7 @@ from redis_config import redis_client
 from stocks_data import stocks
 from kafka_producer import send_kafka_notification
 from chatGpt import get_summary_as_json
+from datetime import datetime
 
 # S3 버킷 설정
 bucket_name = 'finpago-bucket'
@@ -69,7 +70,7 @@ for stock in stocks:
     # Redis에 값이 없으면 MySQL에서 가져와 저장
     if latest_filing_date is None:
         print(f"[{tic}] Redis에 저장된 공시 날짜 없음, MySQL에서 조회 중...")
-        latest_filing_date = get_latest_filing_date_from_mysql(tic)
+        latest_filing_date = datetime.strptime(latest_filing_date, "%Y-%m-%d %H:%M:%S").isoformat() + "Z"
 
         if latest_filing_date:
             redis_client.set(redis_key, latest_filing_date)

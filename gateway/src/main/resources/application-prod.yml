@@ -10,7 +10,7 @@ spring:
         - id: user-service
           uri: http://user-service.backend.svc.cluster.local:8080
           predicates:
-            - Path= /v1/api/users/**, /v1/api/sse/**, /v1/api/notification/**, /v1/api/auth/**, /v1/api/holdingStocks/**, /v1/api/pinnedStocks/**, /v1/api/holdings/**, /v1/api/tradeProfit/**, /v1/api/transactions/**, /v1/api/account/**, /v1/api/balance/**
+            - Path= /v1/api/sse/**, /v1/api/notification/**, /v1/api/auth/**, /v1/api/holdingStocks/**, /v1/api/pinnedStocks/**, /v1/api/holdings/**, /v1/api/tradeProfit/**, /v1/api/transactions/**, /v1/api/account/**, /v1/api/balance/**
 
         - id: order-service
           uri: http://order-service.backend.svc.cluster.local:8080

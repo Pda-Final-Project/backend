@@ -39,7 +39,7 @@ def fetch_and_store_earnings(symbol):
         return
 
     # 최대 5개 데이터만 저장하도록 슬라이싱
-    earnings_data = earnings_data[2:7]
+    earnings_data = earnings_data[:7]
 
     redis_key = f"stock:{symbol}:earnings"  # List 저장용 Key
     

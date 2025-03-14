@@ -75,9 +75,9 @@ for stock in stocks:
             redis_client.set(redis_key, latest_filing_date)
             print(f"[{tic}] MySQL에서 가져온 최신 공시 날짜를 Redis에 저장: {latest_filing_date}")
         else:
-            latest_filing_date = "2025-03-01T17:15:26.000Z"
+            latest_filing_date = "2025-03-10T17:15:26.000Z"
             redis_client.set(redis_key, latest_filing_date)
-            print(f"[{tic}] MySQL에서도 공시 데이터 없음, 기본값 '2025-03-01T17:15:26.000Z' 설정")
+            print(f"[{tic}] MySQL에서도 공시 데이터 없음, 기본값 '2025-03-10T17:15:26.000Z' 설정")
     else:
         print(f"[{tic}] Redis에서 최신 공시 날짜 가져옴: {latest_filing_date}")
 

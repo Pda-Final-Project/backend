@@ -31,7 +31,7 @@ def get_approval(key, secret):
 def get_exchange_rate():
     exchange_rate = r.get("stock:TSLA:exchange_rate")  # Redis에 저장된 환율 키
     print(exchange_rate)
-    return float(exchange_rate)*1000 if exchange_rate else 0  # 환율이 없으면 0 반환 (예외 처리)
+    return float(exchange_rate) if exchange_rate else 0  # 환율이 없으면 0 반환 (예외 처리)
 
 
 # 실시간 체결 내역 redis에 저장

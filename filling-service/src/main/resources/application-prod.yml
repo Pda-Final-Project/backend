@@ -1,7 +1,9 @@
 spring:
   application:
     name: filling-service
-
+  web:
+    cors:
+      enabled: false
   datasource:
     url: jdbc:mysql://fillingdb-cluster.db.svc.cluster.local:3306/finpagodb?useSSL=false&characterEncoding=UTF-8
     username: root

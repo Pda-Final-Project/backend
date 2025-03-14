@@ -15,7 +15,7 @@ def store_stocks_in_redis(stocks):
             "volume": 0
         }
 
-        redis_client.hset(key, data)
+        redis_client.hmset(key, data)
 
     print(stocks)
     print("init stock success!")

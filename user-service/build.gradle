@@ -37,9 +37,6 @@ dependencies {
     //common
     implementation project(':common')
 
-    // FeignClient
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
-
     //eureka
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 

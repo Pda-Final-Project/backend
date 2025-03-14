@@ -41,9 +41,6 @@ dependencies {
     //eureka
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
-    // FeignClient
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
-
     //security
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'

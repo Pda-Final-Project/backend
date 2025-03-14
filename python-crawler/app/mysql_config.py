@@ -66,7 +66,7 @@ def save_df_to_mysql(df):
     except Exception as e:
         print(f"❌ MySQL 저장 중 오류 발생: {e}")
         
-def get_latest_filing_date_from_mysql(ticker):
+def get_latest_filling_date_from_mysql(ticker):
     """ 특정 종목의 최신 공시 날짜를 MySQL에서 가져오기 (날짜 값만 반환) """
     try:
         with db_connection.connect() as conn:

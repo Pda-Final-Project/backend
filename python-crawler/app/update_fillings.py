@@ -3,7 +3,7 @@ import pandas as pd
 from s3 import check_s3_file_exists, upload_translated_document_to_s3, upload_json_to_s3
 from thread import translate_html
 from json_10q import get_filtered_10q_data
-from mysql_config import save_df_to_mysql, get_latest_filing_date_from_mysql
+from mysql_config import save_df_to_mysql, get_latest_filling_date_from_mysql
 from redis_config import redis_client
 from stocks_data import stocks
 from kafka_producer import send_kafka_notification
@@ -63,24 +63,38 @@ for stock in stocks:
     tic = stock["ticker"]
     cik = df_ticker[df_ticker['ticker'] == tic]['cik_str'].iloc[0]
 
-    # Redis에서 최신 공시 날짜 가져오기
-    redis_key = f"stock:{tic}:latest_filing_date"
-    latest_filing_date = redis_client.get(redis_key)
+    redis_key = f"stock:{tic}:latest_filling_date"
+    latest_filling_date = redis_client.get(redis_key)
 
     # Redis에 값이 없으면 MySQL에서 가져와 저장
-    if latest_filing_date is None:
+    if latest_filling_date is None:
         print(f"[{tic}] Redis에 저장된 공시 날짜 없음, MySQL에서 조회 중...")
-        latest_filing_date = datetime.strptime(latest_filing_date, "%Y-%m-%d %H:%M:%S").isoformat() + "Z"
+        latest_filling_date = get_latest_filling_date_from_mysql(tic)  # MySQL에서 조회
 
-        if latest_filing_date:
-            redis_client.set(redis_key, latest_filing_date)
-            print(f"[{tic}] MySQL에서 가져온 최신 공시 날짜를 Redis에 저장: {latest_filing_date}")
+        if latest_filling_date:
+            # ✅ MySQL에서 가져온 날짜가 None이 아닌 경우 변환 후 Redis에 저장
+            if isinstance(latest_filling_date, datetime):
+                latest_filling_date = latest_filling_date.isoformat() + "Z"  # datetime 객체 처리
+            elif isinstance(latest_filling_date, str):
+                try:
+                    latest_filling_date = datetime.strptime(latest_filling_date, "%Y-%m-%d %H:%M:%S").isoformat() + "Z"
+                except ValueError:
+                    print(f"[{tic}] MySQL에서 가져온 날짜 변환 실패, 기본값 설정")
+                    latest_filling_date = "2025-03-10T17:15:26.000Z"
+            else:
+                latest_filling_date = "2025-03-10T17:15:26.000Z"
+
+            redis_client.set(redis_key, latest_filling_date)
+            print(f"[{tic}] MySQL에서 가져온 최신 공시 날짜를 Redis에 저장: {latest_filling_date}")
         else:
-            latest_filing_date = "2025-03-10T17:15:26.000Z"
-            redis_client.set(redis_key, latest_filing_date)
-            print(f"[{tic}] MySQL에서도 공시 데이터 없음, 기본값 '2025-03-10T17:15:26.000Z' 설정")
+            # ✅ MySQL에서도 데이터가 없으면 기본값 설정
+            latest_filling_date = "2025-03-10T17:15:26.000Z"
+            redis_client.set(redis_key, latest_filling_date)
+            print(f"[{tic}] MySQL에서도 공시 데이터 없음, 기본값 설정: {latest_filling_date}")
     else:
-        print(f"[{tic}] Redis에서 최신 공시 날짜 가져옴: {latest_filing_date}")
+        # ✅ Redis에서 가져온 값이 byte 형식일 경우 변환
+        latest_filling_date = latest_filling_date.decode("utf-8") if isinstance(latest_filling_date, bytes) else latest_filling_date
+        print(f"[{tic}] Redis에서 최신 공시 날짜 가져옴: {latest_filling_date}")
 
     # SEC에서 최신 공시 가져오기
     url = f"https://data.sec.gov/submissions/CIK{cik}.json"
@@ -94,14 +108,14 @@ for stock in stocks:
     df_filing = df_filing[df_filing['form'].isin(valid_forms)]
 
     # 📌 최신 공시 시간 이후의 공시만 필터링
-    latest_filing_date = pd.to_datetime(latest_filing_date)
+    latest_filling_date = pd.to_datetime(latest_filling_date)
 
-    if latest_filing_date.tzinfo is None:  # naive datetime인 경우
-        latest_filing_date = latest_filing_date.tz_localize('UTC')
+    if latest_filling_date.tzinfo is None:  # naive datetime인 경우
+        latest_filling_date = latest_filling_date.tz_localize('UTC')
     else:  # 이미 timezone-aware datetime인 경우
-        latest_filing_date = latest_filing_date.tz_convert('UTC')
+        latest_filling_date = latest_filling_date.tz_convert('UTC')
 
-    df_filing = df_filing[pd.to_datetime(df_filing['acceptanceDateTime']) > latest_filing_date]
+    df_filing = df_filing[pd.to_datetime(df_filing['acceptanceDateTime']) > latest_filling_date]
 
     if df_filing.empty:
         print(f"[{tic}] 새로운 공시 없음")

@@ -10,6 +10,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,20 +46,29 @@ public class SSEController {
     }
 
     /**
-     * 특정 유저에게 알림 보내기
+     * 현재 SSE에 연결된 사용자 목록 가져오기
      */
-    public static void sendNotification(Long userId, String message) {
-        SseEmitter emitter = emitters.get(userId);
-        if (emitter != null) {
-            try {
-                emitter.send(SseEmitter.event().name("notification").data(message));
-                log.info("SSE 알림 전송 - 사용자 ID: {}, 메시지: {}", userId, message);
-            } catch (IOException e) {
-                log.error("SSE 전송 실패 - 사용자 ID: {}", userId);
-                emitters.remove(userId);
+    public static List<Long> getConnectedUsers() {
+        return List.copyOf(emitters.keySet());
+    }
+
+    /**
+     * SSE 연결된 모든 사용자에게 알림 전송
+     */
+    public static void broadcastNotification(String message, List<Long> targetUserIds) {
+        for (Long userId : targetUserIds) {
+            SseEmitter emitter = emitters.get(userId);
+            if (emitter != null) {
+                try {
+                    emitter.send(SseEmitter.event().name("notification").data(message));
+                    log.info("SSE 알림 전송 - 사용자 ID: {}, 메시지: {}", userId, message);
+                } catch (IOException e) {
+                    log.error("SSE 전송 실패 - 사용자 ID: {}", userId);
+                    emitters.remove(userId);
+                }
+            } else {
+                log.warn("SSE 연결 없음 - 사용자 ID: {}", userId);
             }
-        } else {
-            log.warn("SSE 연결 없음 - 사용자 ID: {}", userId);
         }
     }
 

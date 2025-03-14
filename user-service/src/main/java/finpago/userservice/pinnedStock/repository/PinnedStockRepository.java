@@ -16,4 +16,7 @@ public interface PinnedStockRepository extends JpaRepository<PinnedStock, String
 
     // 모든 관심 종목 조회
     List<PinnedStock> findByUser(User user);
+
+    // 티커로 조회
+    List<PinnedStock> findByStockTicker(String stockTicker);
 }

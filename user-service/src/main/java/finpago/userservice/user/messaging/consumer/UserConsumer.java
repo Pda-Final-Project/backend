@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 public class UserConsumer {
 
     private final UserService userService;
-    private final UserRepository userRepository;
     private final PinnedStockRepository pinnedStockRepository;
     private static final String NOTICE_TOPIC = "notice-topic";
     private static final String FILLING_NOTICE_TOPIC = "filling-notice-topic";
@@ -74,38 +73,34 @@ public class UserConsumer {
     }
 
     /**
-     * 관심 종목에 해당하는 공시만 알림 전송 (기존 consumeNotification과 분리)
+     * 관심 종목에 해당하는 공시만 알림 전송
      */
-    @KafkaListener(topics = NOTICE_TOPIC, groupId = "notification-group")
+    @KafkaListener(topics = FILLING_NOTICE_TOPIC, groupId = "userservice-group")
     public void consumeFilteredNotification(ConsumerRecord<String, String> record) {
         try {
-            // JSON 문자열을 NoticeEvent 객체로 변환
-            NoticeEvent noticeEvent = objectMapper.readValue(record.value(), NoticeEvent.class);
+            // JSON 문자열 NoticeEvent 객체로 변환
+            FillingNoticeEvent fillingNoticeEvent = objectMapper.readValue(record.value(), FillingNoticeEvent.class);
+            log.info("공시 알림 수신: {}", fillingNoticeEvent);
 
-            log.info("공시 알림 수신: {}", noticeEvent);
+            String stockTicker = fillingNoticeEvent.getTicker();
 
-            Long userId = noticeEvent.getUserId();
-            String stockTicker = noticeEvent.getStockTicker();
-
-            // 사용자 정보 조회 (유효한 사용자 확인)
-            User user = userRepository.findById(userId).orElse(null);
-            if (user == null) {
-                log.warn("존재하지 않는 사용자 ID: {}", userId);
-                return;
-            }
-
-            // MySQL에서 관심 종목 조회
-            List<String> userPinnedTickers = pinnedStockRepository.findByUser(user)
+            // MySQL에서 관심 종목이 해당 티커인 유저목록 조회
+            List<Long> userIds = pinnedStockRepository.findByStockTicker(stockTicker)
                     .stream()
-                    .map(pinnedStock -> pinnedStock.getStockTicker()) // 관심 종목 티커 리스트 생성
+                    .map(pinnedStock -> pinnedStock.getUser().getUserId()) // 관심종목 등록한 userId 리스트
                     .collect(Collectors.toList());
 
-            // 관심 종목에 해당하는 공시만 SSE로 전송
-            if (userPinnedTickers.contains(stockTicker)) {
-                log.info("관심 종목 공시 알림 전송: 사용자 {} - {}", userId, stockTicker);
-                SSEController.sendNotification(userId, "[공시] " + noticeEvent.getTitle());
+            // 현재 SSE 연결된 유저중 관심종목에 해당하는 유저만 필터링
+            List<Long> connectedUsers = userIds.stream()
+                    .filter(SSEController.getConnectedUsers()::contains) // SSE에 연결된 유저만 필터링
+                    .collect(Collectors.toList());
+
+            // 필터링된 유저에게만 알림 전송
+            if (!connectedUsers.isEmpty()) {
+                log.info("관심 종목 공시 알림 전송: {}", stockTicker);
+                SSEController.broadcastNotification("[공시] " + fillingNoticeEvent.getTicker(), connectedUsers);
             } else {
-                log.info("관심 종목에 해당하지 않아 알림 제외됨: 사용자 {} - {}", userId, stockTicker);
+                log.info("관심 종목이지만 SSE 연결된 사용자가 없어 알림 제외됨: {}", stockTicker);
             }
 
         } catch (Exception e) {

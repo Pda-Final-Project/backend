@@ -3,7 +3,7 @@ stocks = [
     { "ticker": "MSFT", "name": "마이크로소프트" },
     { "ticker": "NVDA", "name": "엔비디아" },
     { "ticker": "AMZN", "name": "아마존닷컴" },
-    { "ticker": "GOOGL", "name": "알파벳 A주" },
+    { "ticker": "GOOG", "name": "알파벳 C주" },
     { "ticker": "META", "name": "메타 플랫폼스(페이스북)" },
     { "ticker": "AVGO", "name": "브로드컴" },
     { "ticker": "TSLA", "name": "테슬라" },

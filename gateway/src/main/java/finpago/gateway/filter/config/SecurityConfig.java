@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable) // CSRF 비활성화
                 .securityContextRepository(new StatelessWebSessionSecurityContextRepository()) // Stateless 인증 유지
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/auth/login", "/auth/join").permitAll() // 로그인 및 회원가입 경로 허용
+                        .pathMatchers("/auth/login", "/auth/join", "/filings").permitAll() // 로그인 및 회원가입 경로 허용
                         .anyExchange().permitAll() // 모든 요청 허용
                 )
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable) // 기본 HTTP 인증 비활성화
@@ -34,23 +34,23 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public CorsWebFilter corsWebFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(false); // 인증 정보 포함 가능
+//    @Bean
+//    public CorsWebFilter corsWebFilter() {
+//        CorsConfiguration config = new CorsConfiguration();
+//        config.setAllowCredentials(false); // 인증 정보 포함 가능
+////        config.setAllowedOrigins(List.of(
+////                "http://finpago-bucket.s3-website.ap-northeast-2.amazonaws.com" // S3 정적 호스팅 URL
+////        ));
 //        config.setAllowedOrigins(List.of(
-//                "http://finpago-bucket.s3-website.ap-northeast-2.amazonaws.com" // S3 정적 호스팅 URL
+//                "*"
 //        ));
-        config.setAllowedOrigins(List.of(
-                "*"
-        ));
-        config.setAllowedHeaders(List.of("*")); // 모든 헤더 허용
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // 허용할 HTTP 메서드
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return new CorsWebFilter(source);
-    }
+//        config.setAllowedHeaders(List.of("*")); // 모든 헤더 허용
+//        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // 허용할 HTTP 메서드
+//
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", config);
+//        return new CorsWebFilter(source);
+//    }
 
     private static class StatelessWebSessionSecurityContextRepository implements ServerSecurityContextRepository {
         private static final Mono<SecurityContext> EMPTY_CONTEXT = Mono.empty();

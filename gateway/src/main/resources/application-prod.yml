@@ -3,6 +3,9 @@ spring:
     name: gateway
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  web:
+    cors:
+      enabled: false
   cloud:
     gateway:
       routes:

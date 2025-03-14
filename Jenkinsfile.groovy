@@ -124,6 +124,9 @@ pipeline {
                     updateArgoCDManifest('user-service')
                     updateArgoCDManifest('order-service')
                     updateArgoCDManifest('data-service')
+                }
+                dir('python') {
+                    sh 'ls -l'
                     updateArgoCDManifestPython('update-chart')
                     updateArgoCDManifestPython('update-fillings')
                     updateArgoCDManifestPython('update-news')

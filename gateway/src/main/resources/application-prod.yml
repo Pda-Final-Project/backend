@@ -30,7 +30,6 @@ spring:
             - name: RemoveResponseHeader
               args:
                 name: Transfer-Encoding
-            - name: StripPrefix
 
         - id: trade-stream
           uri: http://execution-service.backend.svc.cluster.local:8080
@@ -56,7 +55,6 @@ spring:
             - name: RemoveResponseHeader
               args:
                 name: Transfer-Encoding
-            - name: StripPrefix
 
         - id: sse-stream
           uri: http://user-service.backend.svc.cluster.local:8080
@@ -82,7 +80,6 @@ spring:
             - name: RemoveResponseHeader
               args:
                 name: Transfer-Encoding
-            - name: StripPrefix
 
         - id: user-service
           uri: http://user-service.backend.svc.cluster.local:8080

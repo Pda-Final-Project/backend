@@ -1,14 +1,15 @@
 spring:
   application:
     name: gateway
-
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
   cloud:
     gateway:
       routes:
         - id: stock-stream
           uri: http://data-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/v1/api/stocks/stream
+            - Path=/v1/api/stocks/stream/**
           filters:
             - name: SetResponseHeader
               args:
@@ -30,13 +31,11 @@ spring:
               args:
                 name: Transfer-Encoding
             - name: StripPrefix
-              args:
-                parts: 1
 
         - id: trade-stream
           uri: http://execution-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/v1/api/trades/stream
+            - Path=/v1/api/trades/stream/**
           filters:
             - name: SetResponseHeader
               args:
@@ -58,8 +57,6 @@ spring:
               args:
                 name: Transfer-Encoding
             - name: StripPrefix
-              args:
-                parts: 1
 
         - id: sse-stream
           uri: http://user-service.backend.svc.cluster.local:8080
@@ -86,8 +83,6 @@ spring:
               args:
                 name: Transfer-Encoding
             - name: StripPrefix
-              args:
-                parts: 1
 
         - id: user-service
           uri: http://user-service.backend.svc.cluster.local:8080

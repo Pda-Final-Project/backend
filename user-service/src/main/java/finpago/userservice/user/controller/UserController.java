@@ -44,10 +44,30 @@ public class UserController {
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginReqDto loginReqDto) {
+        System.out.println("요청들옹ㅁ");
         String token = userService.login(loginReqDto);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success(HttpStatus.OK, "로그인 성공", token));
+    }
+
+    /**
+     * 사용자 정보 조회 (인증 필요)
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<String>> getUserInfo(@RequestHeader(value = "X-Authenticated-User", required = false) String userIdHeader) {
+        Long userId = getUserIdFromHeader(userIdHeader);
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK, "사용자 정보 조회 성공", "User ID: " + userId));
+    }
+
+    /**
+     * HTTP 요청 헤더에서 userId 가져오기
+     */
+    private Long getUserIdFromHeader(String userIdHeader) {
+        if (userIdHeader == null || userIdHeader.isEmpty()) {
+            throw new IllegalStateException("인증되지 않은 사용자");
+        }
+        return Long.parseLong(userIdHeader);
     }
 
 

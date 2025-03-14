@@ -177,5 +177,6 @@ for stock in stocks:
 
     latest_datetime = df_filing['submit_timestamp'].max()
     redis_client.set(redis_key, latest_datetime)
+    print(f"✅ [{tic}] 최신 공시 날짜를 Redis에 저장: {latest_datetime}")
 
     print(f"✅ [{tic}] 새로운 공시 {len(df_filing)}건 저장 완료")

@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 
 @Getter
 @NoArgsConstructor
@@ -20,7 +22,7 @@ public class FillingResponseDto {
     private String fillingFileType;
     private String fillingTranslatedContentUrl;
     private String filling10qJsonUrl;
-    private String submitTimestamp;
+    private LocalDateTime submitTimestamp;
 
     public FillingResponseDto(Filling filling) {
         this.fillingId = filling.getFillingId();

@@ -34,9 +34,9 @@ spring:
             - Path=/v1/api/execution/**,/v1/api/trades/**
 
         - id: filling-service
-          uri: lb://filling-service
+          uri: http://localhost:19098/
           predicates:
-            - Path=/v1/api/filling/**
+            - Path=/v1/api/fillings/**
 
         - id: data-service
           uri: http://localhost:19099/

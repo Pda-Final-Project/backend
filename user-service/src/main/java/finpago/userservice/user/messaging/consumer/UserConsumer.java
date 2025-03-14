@@ -1,12 +1,11 @@
 package finpago.userservice.user.messaging.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import finpago.common.global.enums.TradeStatus;
 import finpago.common.global.messaging.FillingNoticeEvent;
 import finpago.common.global.messaging.NoticeEvent;
 import finpago.userservice.pinnedStock.repository.PinnedStockRepository;
 import finpago.userservice.user.controller.SSEController;
-import finpago.userservice.user.entity.User;
-import finpago.userservice.user.repository.UserRepository;
 import finpago.userservice.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,9 +43,8 @@ public class UserConsumer {
         userService.saveFillingNotice(event);
     }
 
-
-    @KafkaListener(topics = NOTICE_TOPIC, groupId = "user-service-group")
-    public void consumeNotification(ConsumerRecord<String, String> record) {
+    @KafkaListener(topics = NOTICE_TOPIC, groupId = "user-notice-group")
+    public void consumeExecutionNotification(ConsumerRecord<String, String> record) {
         try {
             String message = record.value();
 
@@ -63,19 +61,32 @@ public class UserConsumer {
                 return;
             }
 
-            log.info("Kafka 알림 수신: {}", noticeEvent);
+            log.info("Kafka 체결 알림 수신: {}", noticeEvent);
 
-            // SSE -> 클라이언트로 알림 전송
-            SSEController.sendNotification(noticeEvent.getUserId(), noticeEvent.getTitle());
+            // 현재 SSE에 연결된 유저 목록 가져오기
+            List<Long> connectedUsers = SSEController.getConnectedUsers();
+
+            // 연결된 사용자 중 해당 알림을 받을 대상 필터링
+            List<Long> targetUsers = connectedUsers.stream()
+                    .filter(userId -> userId.equals(noticeEvent.getUserId())) // 해당 알림 대상 유저만 필터링
+                    .collect(Collectors.toList());
+
+            if (!targetUsers.isEmpty()) {
+                log.info("체결 알림 SSE 전송 - 사용자: {}, 메시지: {}", targetUsers, noticeEvent.getTitle());
+                SSEController.broadcastNotification(noticeEvent.getTitle(), targetUsers);
+            } else {
+                log.info("SSE에 연결된 사용자가 없어 체결 알림 미전송 - 사용자 ID: {}", noticeEvent.getUserId());
+            }
+
         } catch (Exception e) {
-            log.error("Kafka 메시지 변환 오류: {}", e.getMessage());
+            log.error("Kafka 체결 메시지 변환 오류: {}", e.getMessage());
         }
     }
 
     /**
      * 관심 종목에 해당하는 공시만 알림 전송
      */
-    @KafkaListener(topics = FILLING_NOTICE_TOPIC, groupId = "userservice-group")
+    @KafkaListener(topics = FILLING_NOTICE_TOPIC, groupId = "user-filling-group")
     public void consumeFilteredNotification(ConsumerRecord<String, String> record) {
         try {
             // JSON 문자열 NoticeEvent 객체로 변환
@@ -98,7 +109,7 @@ public class UserConsumer {
             // 필터링된 유저에게만 알림 전송
             if (!connectedUsers.isEmpty()) {
                 log.info("관심 종목 공시 알림 전송: {}", stockTicker);
-                SSEController.broadcastNotification("[공시] " + fillingNoticeEvent.getTicker(), connectedUsers);
+                SSEController.broadcastNotification(  fillingNoticeEvent.getTicker()+"의 새로운 공시가 발행되었습니다!", connectedUsers);
             } else {
                 log.info("관심 종목이지만 SSE 연결된 사용자가 없어 알림 제외됨: {}", stockTicker);
             }

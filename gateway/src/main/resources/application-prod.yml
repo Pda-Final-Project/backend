@@ -25,7 +25,7 @@ spring:
         - id: filling-service
           uri: http://filling-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/v1/api/filling/**
+            - Path=/v1/api/fillings/**
 
         - id: data-service
           uri: http://data-service.backend.svc.cluster.local:8080

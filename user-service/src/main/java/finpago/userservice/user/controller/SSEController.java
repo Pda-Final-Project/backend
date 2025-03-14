@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/v1/api/sse")
@@ -53,23 +54,38 @@ public class SSEController {
     }
 
     /**
+     * 특정 사용자에게 알림 전송
+     */
+    public static void sendNotification(Long userId, String message) {
+        SseEmitter emitter = emitters.get(userId);
+        if (emitter != null) {
+            try {
+                emitter.send(SseEmitter.event().name("notification").data(message));
+                log.info("SSE 알림 전송 - 사용자 ID: {}, 메시지: {}", userId, message);
+            } catch (IOException e) {
+                log.error("SSE 전송 실패 - 사용자 ID: {}", userId);
+                emitters.remove(userId);
+            }
+        } else {
+            log.warn("SSE 연결 없음 - 사용자 ID: {}", userId);
+        }
+    }
+
+    /**
      * SSE 연결된 모든 사용자에게 알림 전송
      */
-    public static void broadcastNotification(String message, List<Long> targetUserIds) {
-        for (Long userId : targetUserIds) {
-            SseEmitter emitter = emitters.get(userId);
-            if (emitter != null) {
-                try {
-                    emitter.send(SseEmitter.event().name("notification").data(message));
-                    log.info("SSE 알림 전송 - 사용자 ID: {}, 메시지: {}", userId, message);
-                } catch (IOException e) {
-                    log.error("SSE 전송 실패 - 사용자 ID: {}", userId);
-                    emitters.remove(userId);
-                }
-            } else {
-                log.warn("SSE 연결 없음 - 사용자 ID: {}", userId);
-            }
+    public static void broadcastNotification(String message, List<Long> userIds) {
+        List<Long> connectedUsers = userIds.stream()
+                .filter(emitters::containsKey) // 현재 SSE 연결된 사용자만 필터링
+                .collect(Collectors.toList());
+
+        if (connectedUsers.isEmpty()) {
+            log.info("SSE 연결된 사용자가 없어 알림 전송 안 함");
+            return;
         }
+
+        log.info("SSE 공시 알림 전송 - 대상 사용자: {}", connectedUsers);
+        connectedUsers.forEach(userId -> sendNotification(userId, message));
     }
 
     private Long getUserIdFromAuth() {

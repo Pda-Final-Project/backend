@@ -39,6 +39,11 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true); // 인증 정보 포함 가능
         config.addAllowedOrigin("http://172.16.1.70:5173");
+        config.setAllowedOrigins(List.of(
+                "http://finpago-bucket.s3-website.ap-northeast-2.amazonaws.com", // S3 정적 호스팅 URL
+                "https://uvsp59ev1f.execute-api.ap-northeast-2.amazonaws.com/finpago/api", // API Gateway Invoke URL, // S3 정적 호스팅 URL
+                "https://uvsp59ev1f.execute-api.ap-northeast-2.amazonaws.com/finpago/**" // API Gateway Invoke URL
+        ));
         config.setAllowedOriginPatterns(List.of("*")); // 특정 Origin 허용
         config.setAllowedHeaders(List.of("*")); // 모든 헤더 허용
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // 허용할 HTTP 메서드

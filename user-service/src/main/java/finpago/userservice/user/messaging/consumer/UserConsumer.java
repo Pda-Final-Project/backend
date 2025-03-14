@@ -82,7 +82,7 @@ public class UserConsumer {
             // JSON 문자열을 NoticeEvent 객체로 변환
             NoticeEvent noticeEvent = objectMapper.readValue(record.value(), NoticeEvent.class);
 
-            log.info("📢 Kafka 공시 알림 수신: {}", noticeEvent);
+            log.info("공시 알림 수신: {}", noticeEvent);
 
             Long userId = noticeEvent.getUserId();
             String stockTicker = noticeEvent.getStockTicker();
@@ -90,7 +90,7 @@ public class UserConsumer {
             // 사용자 정보 조회 (유효한 사용자 확인)
             User user = userRepository.findById(userId).orElse(null);
             if (user == null) {
-                log.warn("⚠️ 존재하지 않는 사용자 ID: {}", userId);
+                log.warn("존재하지 않는 사용자 ID: {}", userId);
                 return;
             }
 
@@ -102,14 +102,14 @@ public class UserConsumer {
 
             // 관심 종목에 해당하는 공시만 SSE로 전송
             if (userPinnedTickers.contains(stockTicker)) {
-                log.info("✅ 관심 종목 공시 알림 전송: 사용자 {} - {}", userId, stockTicker);
+                log.info("관심 종목 공시 알림 전송: 사용자 {} - {}", userId, stockTicker);
                 SSEController.sendNotification(userId, "[공시] " + noticeEvent.getTitle());
             } else {
-                log.info("❌ 관심 종목에 해당하지 않아 알림 제외됨: 사용자 {} - {}", userId, stockTicker);
+                log.info("관심 종목에 해당하지 않아 알림 제외됨: 사용자 {} - {}", userId, stockTicker);
             }
 
         } catch (Exception e) {
-            log.error("❌ Kafka 공시 메시지 변환 오류: {}", e.getMessage());
+            log.error("공시 메시지 변환 오류: {}", e.getMessage());
         }
     }
 }

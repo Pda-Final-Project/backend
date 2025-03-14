@@ -19,8 +19,8 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)  // CSRF 비활성화 (API에서는 불필요)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ CORS 설정 적용
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)  // CSRF 비활성화
+                .cors(cors -> cors.disable()) // ❌ corsConfigurationSource() 대신 직접 비활성화
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/v1/api/auth/**", "/v1/api/fillings/**").permitAll()  // 🔥 인증 없이 허용할 경로
                         .anyExchange().authenticated()  // 나머지 요청은 인증 필요
@@ -29,17 +29,18 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ✅ CORS 설정을 별도의 Bean으로 제공 (중복 문제 해결)
+    // ✅ CORS 필터를 Bean으로 등록 (WebFlux에서 권장)
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOrigins(List.of("*"));  // ✅ 프론트엔드 도메인으로 변경하는 것이 좋음
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        return source;
+
+        return new CorsWebFilter((CorsConfigurationSource) source);  // ✅ `CorsWebFilter`로 감싸서 반환 (WebFlux 지원)
     }
 }

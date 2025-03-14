@@ -155,20 +155,20 @@ def create_charts_table_if_not_exists():
             port=3306
         )
         cursor = conn.cursor()
-        
+
         create_table_query = """
         CREATE TABLE IF NOT EXISTS charts (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            report_date DATE NOT NULL,
+            report_date DATETIME(6) NOT NULL,
             stock_ticker VARCHAR(10) NOT NULL,
-            chart_type ENUM('D', 'W', 'M') NOT NULL,
-            chart_open INT NOT NULL,
-            chart_high INT NOT NULL,
-            chart_low INT NOT NULL,
-            chart_close INT NOT NULL,
-            chart_volume BIGINT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE KEY unique_chart (report_date, stock_ticker, chart_type)
+            chart_type VARCHAR(10) NOT NULL,
+            chart_open DECIMAL(38,0),
+            chart_high DECIMAL(38,0),
+            chart_low DECIMAL(38,0),
+            chart_close DECIMAL(38,0),
+            chart_volume DECIMAL(38,0),
+            created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
+            updated_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+            PRIMARY KEY (report_date, stock_ticker, chart_type)  -- 복합 PRIMARY KEY 적용
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """
         

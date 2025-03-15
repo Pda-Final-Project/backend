@@ -22,7 +22,7 @@ public class AccountService {
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
     private static final long DEFAULT_BALANCE = 10000000; // 기본 예수금
-    private static final long DEFAULT_STOCKS = 100; // 기본 보유 주식 수량 // 기본 예수금
+    private static final long DEFAULT_STOCKS = 0; // 기본 보유 주식 수량 // 기본 예수금
 
 
     /**

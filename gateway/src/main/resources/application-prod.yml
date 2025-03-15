@@ -34,7 +34,7 @@ spring:
               args:
                 name: Transfer-Encoding
           metadata:
-            response-timeout: 0
+            response-timeout: -1
             connect-timeout: 5000
 
         - id: trade-stream
@@ -62,7 +62,7 @@ spring:
               args:
                 name: Transfer-Encoding
           metadata:
-            response-timeout: 0
+            response-timeout: -1
             connect-timeout: 5000
 
         - id: sse-stream
@@ -90,7 +90,7 @@ spring:
               args:
                 name: Transfer-Encoding
           metadata:
-            response-timeout: 0
+            response-timeout: -1
             connect-timeout: 5000
 
         - id: user-service

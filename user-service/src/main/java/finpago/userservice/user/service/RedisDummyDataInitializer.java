@@ -17,7 +17,7 @@ public class RedisDummyDataInitializer {
     private final StringRedisTemplate redisTemplate;
 
     private static final long DEFAULT_BALANCE = 10000000; // 기본 예수금
-    private static final long DEFAULT_STOCKS = 100; // 기본 보유 주식 수량
+    private static final long DEFAULT_STOCKS = 0; // 기본 보유 주식 수량
     private static final long DEFAULT_PRICE = 5000; // 기본 종목 가격
     private static final int EXPIRATION_DAYS = 10; // 데이터 보관 기간
 

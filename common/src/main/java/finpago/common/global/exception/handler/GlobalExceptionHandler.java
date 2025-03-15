@@ -237,7 +237,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
-//    // 예상치 못한 예외 처리
+    // 예상치 못한 예외 처리
 //    @ExceptionHandler(Exception.class)
 //    protected ResponseEntity<CommonResponse> handleGeneralException(Exception exception) {
 //        log.error("[서버 오류] {}", exception.getMessage());
@@ -256,45 +256,45 @@ public class GlobalExceptionHandler {
 //        return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus()).body(response);
 //    }
 
-//    @ExceptionHandler(Exception.class)
-//    protected ResponseEntity<?> handleGeneralException(Exception exception, HttpServletRequest request) {
-//        log.error("[서버 오류] {}", exception.getMessage());
-//
-//        // SSE 요청인지 확인
-//        if ("text/event-stream".equals(request.getHeader("Accept"))) {
-//            log.error("SSE 요청 중 예외 발생: {}", exception.getMessage());
-//
-//            SseEmitter emitter = new SseEmitter();
-//            try {
-//                emitter.send("event: error\ndata: SSE 요청 중 오류 발생 - " + exception.getMessage() + "\n\n");
-//                emitter.complete();
-//            } catch (IOException e) {
-//                emitter.completeWithError(e);
-//            }
-//
-//            return ResponseEntity.internalServerError().build();
-//        }
-//
-//        // 일반 HTTP 요청에 대한 응답 처리
-//        ErrorResponse error = ErrorResponse.builder()
-//                .status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus().value())
-//                .message(ErrorCode.INTERNAL_SERVER_ERROR.getMessage())
-//                .code(ErrorCode.INTERNAL_SERVER_ERROR.getCode())
-//                .build();
-//
-//        CommonResponse response = CommonResponse.builder()
-//                .success(false)
-//                .error(error)
-//                .build();
-//
-//        return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus()).body(response);
-//    }
-
     @ExceptionHandler(Exception.class)
-    public Mono<ResponseEntity<?>> handleGeneralException(Exception ex, ServerRequest request) {
-        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", ex.getMessage(), "path", request.path())));
+    protected ResponseEntity<?> handleGeneralException(Exception exception, HttpServletRequest request) {
+        log.error("[서버 오류] {}", exception.getMessage());
+
+        // SSE 요청인지 확인
+        if ("text/event-stream".equals(request.getHeader("Accept"))) {
+            log.error("SSE 요청 중 예외 발생: {}", exception.getMessage());
+
+            SseEmitter emitter = new SseEmitter();
+            try {
+                emitter.send("event: error\ndata: SSE 요청 중 오류 발생 - " + exception.getMessage() + "\n\n");
+                emitter.complete();
+            } catch (IOException e) {
+                emitter.completeWithError(e);
+            }
+
+            return ResponseEntity.internalServerError().build();
+        }
+
+        // 일반 HTTP 요청에 대한 응답 처리
+        ErrorResponse error = ErrorResponse.builder()
+                .status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus().value())
+                .message(ErrorCode.INTERNAL_SERVER_ERROR.getMessage())
+                .code(ErrorCode.INTERNAL_SERVER_ERROR.getCode())
+                .build();
+
+        CommonResponse response = CommonResponse.builder()
+                .success(false)
+                .error(error)
+                .build();
+
+        return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus()).body(response);
     }
+
+//    @ExceptionHandler(Exception.class)
+//    public Mono<ResponseEntity<?>> handleGeneralException(Exception ex, ServerRequest request) {
+//        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                .body(Map.of("error", ex.getMessage(), "path", request.path())));
+//    }
 
 
 }

@@ -38,7 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         jwt = authHeader.substring(7);
         userId = jwtUtil.extractUserId(jwt); // 토큰에서 userId 추출
 
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (userId != null || SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 jwtUtil.validateToken(jwt);
 

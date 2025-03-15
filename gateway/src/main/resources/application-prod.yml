@@ -7,9 +7,21 @@ spring:
     cors:
       enabled: false
   cloud:
-    default-filters:
-      - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: '*'
+            allow-credentials: true
+            allowedHeaders: '*'
+            allowedMethods:
+              - PUT
+              - GET
+              - POST
+              - DELETE
+              - OPTIONS
       routes:
         - id: user-service
           uri: http://user-service.backend.svc.cluster.local:8080
@@ -42,15 +54,6 @@ spring:
 
       httpclient:
         response-timeout: 600000  # 10분 동안 SSE 요청 유지
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health, info, prometheus, httpexchanges
-  endpoint:
-    health:
-      show-details: ALWAYS
 
 jwt:
   secret: "greenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonTgreenlemonT"

@@ -14,7 +14,7 @@ spring:
         cors-configurations:
           '[/**]':
             allowedOrigins: '*'
-            allow-credentials: true
+            allow-credentials: false
             allowedHeaders: '*'
             allowedMethods:
               - PUT

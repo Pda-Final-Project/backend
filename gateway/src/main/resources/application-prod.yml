@@ -33,6 +33,9 @@ spring:
             - name: RemoveResponseHeader
               args:
                 name: Transfer-Encoding
+          metadata:
+            response-timeout: 0
+            connect-timeout: 5000
 
         - id: trade-stream
           uri: http://execution-service.backend.svc.cluster.local:8080
@@ -58,6 +61,9 @@ spring:
             - name: RemoveResponseHeader
               args:
                 name: Transfer-Encoding
+          metadata:
+            response-timeout: 0
+            connect-timeout: 5000
 
         - id: sse-stream
           uri: http://user-service.backend.svc.cluster.local:8080
@@ -83,6 +89,9 @@ spring:
             - name: RemoveResponseHeader
               args:
                 name: Transfer-Encoding
+          metadata:
+            response-timeout: 0
+            connect-timeout: 5000
 
         - id: user-service
           uri: http://user-service.backend.svc.cluster.local:8080

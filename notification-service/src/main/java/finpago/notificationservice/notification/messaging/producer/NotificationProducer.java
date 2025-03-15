@@ -20,13 +20,28 @@ public class NotificationProducer {
     private final KafkaTemplate<String, NoticeEvent> kafkaTemplate;
 
     public void sendNotification(NoticeEvent noticeEvent) {
-        kafkaTemplate.send(NOTICE_TOPIC, noticeEvent);
-        log.info("알림 메시지 발행 완료: {}", noticeEvent);
+        kafkaTemplate.send(NOTICE_TOPIC, noticeEvent)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("알림 메시지 발행 실패: {}", ex.getMessage());
+                    } else {
+                        log.info("알림 메시지 발행 성공: {}, 파티션: {}",
+                                noticeEvent, result.getRecordMetadata().partition());
+                    }
+                });
     }
 
     public void sendFillingNotice(FillingNoticeEvent event) {
-        fillingkafkaTemplate.send(FILLING_NOTICE_TOPIC, event);
-        log.info("공시 알림 메시지 발행 완료: {}", event);
+        fillingkafkaTemplate.send(FILLING_NOTICE_TOPIC, event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("공시 알림 메시지 발행 실패: {}", ex.getMessage());
+                    } else {
+                        log.info("공시 알림 메시지 발행 성공: {}, 파티션: {}",
+                                event, result.getRecordMetadata().partition());
+                    }
+                });
     }
+
 
 }

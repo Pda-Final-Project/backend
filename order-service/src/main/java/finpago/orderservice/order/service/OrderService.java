@@ -29,7 +29,7 @@ public class OrderService {
     private final StringRedisTemplate redisTemplate;
 
     private static final long DEFAULT_BALANCE = 10000000; // 기본 예수금
-    private static final long DEFAULT_STOCKS = 100; // 기본 보유 주식 수량
+    private static final long DEFAULT_STOCKS = 0; // 기본 보유 주식 수량
     private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
     @Transactional
@@ -120,9 +120,6 @@ public class OrderService {
      * 사용 가능 예수금 업데이트 (30일 보관)
      */
     private void updateAvailableBalance(Long userId, Long amount) {
-        System.out.println("유저아이딩: " + userId);
-        System.out.println("돈은용: " + amount);
-
         String key = "user:" + userId + ":available_balance";
         Long current = getCachedAvailableBalance(userId);
         redisTemplate.opsForValue().set(key, String.valueOf(current + amount), EXPIRATION_DAYS, TimeUnit.DAYS);

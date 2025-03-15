@@ -151,7 +151,7 @@ public class ExecutionService {
         tradeData.put("current_price", trade.getTradePrice()); // 체결가
         tradeData.put("volume", trade.getTradeQuantity()); // 체결량
         tradeData.put("trade_volume", 0); // 거래량 (0으로 채움)
-        tradeData.put("time", trade.getTradeDate().format(DateTimeFormatter.ofPattern("HHmmss"))); // 체결 시간
+        tradeData.put("time", trade.getTradeDate().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))); // 년도, 날짜, 시간 포함
         tradeData.put("trade_type", "SELL");
 
         try {

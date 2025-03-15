@@ -169,23 +169,13 @@ for stock in stocks:
             s3_key = f"fillings/{row['filling_id']}.html"
             if not check_s3_file_exists(s3_key):
                 filling_url = row['filling_url']
-                if file_type == 'txt':
-                    # txt 파일 처리 로직 추가
-                    response = requests.get(filling_url, headers=headers)
-                    response.raise_for_status()
-                    original_text = response.text
-                    translated_text = translate_texts_google([original_text])
-                    translated_html = f"<html><body><pre>{translated_text[0]}</pre></body></html>"
-                    html_url = upload_translated_document_to_s3(s3_key, translated_html)
-                    # html_url = "번역 초과로 인한 처리 불가"
-                else:
                     # HTML 파일 처리 로직
                     translated_html = translate_html(filling_url, headers)
                     html_url = upload_translated_document_to_s3(s3_key, translated_html)
                     # html_url = "번역 초과로 인한 처리 불가"
+                    send_kafka_notification(row['filling_ticker'], row['filling_type'])
             else:
                 df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
-        send_kafka_notification(row['filling_ticker'], row['filling_type'])
 
     # MySQL 저장
     save_df_to_mysql(df_filing)

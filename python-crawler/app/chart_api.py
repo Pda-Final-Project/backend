@@ -218,8 +218,8 @@ def calculate_date_ranges(period_code):
     
     if period_code == "D":  # 일별 데이터 (300일 전까지 요청)
         previous_start_date = today
-        for i in range(0, 300, 100):
-            start_date = today - timedelta(days=i + 150)
+        for i in range(0, 700, 100):
+            start_date = today - timedelta(days=i + 100)
             end_date = previous_start_date - timedelta(days=1)  # 이전 요청의 start_date - 1일
             previous_start_date = start_date  # 다음 요청을 위해 start_date 업데이트
             date_ranges.append((start_date.strftime("%Y%m%d"), end_date.strftime("%Y%m%d")))

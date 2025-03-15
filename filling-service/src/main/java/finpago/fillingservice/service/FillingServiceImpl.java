@@ -11,7 +11,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,45 +31,55 @@ public class FillingServiceImpl implements FillingService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Filling> fillingsPage;
 
-        // 🔄 fillingType 변환 (프론트에서 보낸 값 → DB 검색용 리스트)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
         List<String> fillingTypes = convertFillingType(fillingType);
 
-        if (ticker == null && fillingTypes.isEmpty() && startDate == null && endDate == null) {
-            fillingsPage = fillingRepository.findAllByOrderBySubmitTimestampDesc(pageable);
-        } else if (ticker == null && fillingTypes.isEmpty()) {
-            fillingsPage = fillingRepository.findBySubmitTimestampBetweenOrderBySubmitTimestampDesc(
-                    LocalDateTime.parse(startDate), LocalDateTime.parse(endDate), pageable);
-        } else if (ticker == null && startDate == null && endDate == null) {
-            fillingsPage = fillingRepository.findByFillingTypeInOrderBySubmitTimestampDesc(fillingTypes, pageable);
-        } else if (fillingTypes.isEmpty() && startDate == null && endDate == null) {
-            fillingsPage = fillingRepository.findByFillingTickerOrderBySubmitTimestampDesc(ticker, pageable);
-        } else if (ticker == null) {
-            fillingsPage = fillingRepository.findByFillingTypeInAndSubmitTimestampBetweenOrderBySubmitTimestampDesc(
-                    fillingTypes, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate), pageable);
-        } else if (fillingTypes.isEmpty()) {
-            fillingsPage = fillingRepository.findByFillingTickerAndSubmitTimestampBetweenOrderBySubmitTimestampDesc(
-                    ticker, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate), pageable);
-        } else if (startDate == null && endDate == null) {
-            fillingsPage = fillingRepository.findByFillingTickerAndFillingTypeInOrderBySubmitTimestampDesc(
-                    ticker, fillingTypes, pageable);
-        } else {
-            fillingsPage = fillingRepository.findByFillingTickerAndFillingTypeInAndSubmitTimestampBetweenOrderBySubmitTimestampDesc(
-                    ticker, fillingTypes, LocalDateTime.parse(startDate), LocalDateTime.parse(endDate), pageable);
+        try {
+            LocalDate start = startDate != null ? LocalDate.parse(startDate, formatter) : null;
+            LocalDate end = endDate != null ? LocalDate.parse(endDate, formatter) : null;
+
+            if (ticker == null && fillingTypes.isEmpty() && startDate == null && endDate == null) {
+                fillingsPage = fillingRepository.findAllByOrderBySubmitTimestampDesc(pageable);
+            } else if (ticker == null && fillingTypes.isEmpty()) {
+                fillingsPage = fillingRepository.findBySubmitTimestampBetweenOrderBySubmitTimestampDesc(start.atStartOfDay(), end.atTime(23, 59, 59), pageable);
+            } else if (ticker == null && startDate == null && endDate == null) {
+                fillingsPage = fillingRepository.findByFillingTypeInOrderBySubmitTimestampDesc(fillingTypes, pageable);
+            } else if (fillingTypes.isEmpty() && startDate == null && endDate == null) {
+                fillingsPage = fillingRepository.findByFillingTickerOrderBySubmitTimestampDesc(ticker, pageable);
+            } else if (ticker == null) {
+                fillingsPage = fillingRepository.findByFillingTypeInAndSubmitTimestampBetweenOrderBySubmitTimestampDesc(
+                        fillingTypes, start.atStartOfDay(), end.atTime(23, 59, 59), pageable);
+            } else if (fillingTypes.isEmpty()) {
+                fillingsPage = fillingRepository.findByFillingTickerAndSubmitTimestampBetweenOrderBySubmitTimestampDesc(
+                        ticker, start.atStartOfDay(), end.atTime(23, 59, 59), pageable);
+            } else if (startDate == null && endDate == null) {
+                fillingsPage = fillingRepository.findByFillingTickerAndFillingTypeInOrderBySubmitTimestampDesc(
+                        ticker, fillingTypes, pageable);
+            } else {
+                fillingsPage = fillingRepository.findByFillingTickerAndFillingTypeInAndSubmitTimestampBetweenOrderBySubmitTimestampDesc(
+                        ticker, fillingTypes, start.atStartOfDay(), end.atTime(23, 59, 59), pageable);
+            }
+
+            if (fillingsPage.isEmpty()) {
+                throw new NotFoundFillingException("해당 조건의 공시가 존재하지 않습니다.");
+            }
+
+            return FillingsResponseDto.builder()
+                    .page(fillingsPage.getNumber())
+                    .size(fillingsPage.getSize())
+                    .totalElements(fillingsPage.getTotalElements())
+                    .totalPages(fillingsPage.getTotalPages())
+                    .content(fillingsPage.getContent().stream()
+                            .map(FillingResponseDto::new)
+                            .collect(Collectors.toList()))
+                    .build();
+
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("날짜 형식이 잘못되었습니다. 'yyyy-MM-dd' 형식으로 입력해 주세요.");
         }
 
-        if (fillingsPage.isEmpty()) {
-            throw new NotFoundFillingException("해당 조건의 공시가 존재하지 않습니다.");
-        }
 
-        return FillingsResponseDto.builder()
-                .page(fillingsPage.getNumber())
-                .size(fillingsPage.getSize())
-                .totalElements(fillingsPage.getTotalElements())
-                .totalPages(fillingsPage.getTotalPages())
-                .content(fillingsPage.getContent().stream()
-                        .map(FillingResponseDto::new)
-                        .collect(Collectors.toList()))
-                .build();
     }
 
     @Override

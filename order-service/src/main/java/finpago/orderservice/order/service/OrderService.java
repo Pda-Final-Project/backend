@@ -28,7 +28,7 @@ public class OrderService {
     private final OrderProducer orderProducer;
     private final StringRedisTemplate redisTemplate;
 
-    private static final long DEFAULT_BALANCE = 10000000; // 기본 예수금
+    private static final long DEFAULT_BALANCE = 100000000; // 기본 예수금
     private static final long DEFAULT_STOCKS = 0; // 기본 보유 주식 수량
     private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
@@ -86,7 +86,7 @@ public class OrderService {
         updateAvailableBalance(userId, -requiredAmount);
 //        updateBalance(orderCreateReqDto.getUserId(), -requiredAmount);
         updateAvailableStocks(userId, orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
-//        updateHoldings(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
+        updateHoldings(userId, orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
     }
 
     /**
@@ -102,7 +102,7 @@ public class OrderService {
         }
 
         updateAvailableStocks(userId, orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
-//        updateHoldings(orderCreateReqDto.getUserId(), orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
+//        updateHoldings(userId, orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
         updateAvailableBalance(userId, orderCreateReqDto.getOfferPrice() * orderCreateReqDto.getOfferQuantity());
     }
 

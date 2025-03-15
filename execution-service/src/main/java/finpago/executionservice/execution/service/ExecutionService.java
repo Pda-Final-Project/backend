@@ -37,7 +37,7 @@ public class ExecutionService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
-    private static final long DEFAULT_BALANCE = 1_000_000L; // 기본 예수금 (1,000,000)
+    private static final long DEFAULT_BALANCE = 100000000; // 기본 예수금
     private static final long DEFAULT_STOCKS = 0; // 기본 보유 주식 수량 (0주)
     private static final float DEFAULT_EXCHANGE_RATE = 1000.0f; // 기본 환율 (1.0)
 
@@ -126,7 +126,7 @@ public class ExecutionService {
         tradeData.put("current_price", trade.getTradePrice()); // 체결가
         tradeData.put("volume", trade.getTradeQuantity()); // 체결량
         tradeData.put("trade_volume", 0); // 거래량 (0으로 채움)
-        tradeData.put("time", trade.getTradeDate().format(DateTimeFormatter.ofPattern("HHmmss"))); // 체결 시간
+        tradeData.put("time", trade.getTradeDate().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))); // 체결 시간
         tradeData.put("trade_type", "BUY");
 
         try {
@@ -223,7 +223,7 @@ public class ExecutionService {
     }
 
     private Long getCachedStocks(Long userId, String stockTicker) {
-        String stockKey = "user:" + userId + ":stocks:" + stockTicker;
+        String stockKey = "user:" + userId + ":holdings:" + stockTicker;
         String stockStr = redisTemplate.opsForValue().get(stockKey);
         return stockStr != null ? Long.parseLong(stockStr) : DEFAULT_STOCKS;
     }

@@ -18,17 +18,14 @@ public class StockSseService implements MessageListener {
     private final Set<SseEmitter> emitters = ConcurrentHashMap.newKeySet(); // 중복 방지
 
     public SseEmitter createEmitter() {
-        // 기존 Emitter 삭제 (중복 방지)
-        for (SseEmitter existingEmitter : emitters) {
-            existingEmitter.complete();
-            emitters.remove(existingEmitter);
-            log.info("[SSE] 기존 Emitter 삭제됨.");
-        }
-
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        SseEmitter emitter = new SseEmitter(0L);
         emitters.add(emitter);
         log.info("[SSE] 새로운 클라이언트 연결됨. 현재 활성 Emitter 개수: {}", emitters.size());
-
+        try {
+            emitter.send(SseEmitter.event().data("[SSE] 새로운 클라이언트 연결됨. 현재 활성 Emitter 개수: " + emitters.size()));
+        } catch (IOException e) {
+            log.error("[SSE] 초기 메시지 전송 실패", e);
+        }
         emitter.onCompletion(() -> {
             emitter.complete();
             emitters.remove(emitter);

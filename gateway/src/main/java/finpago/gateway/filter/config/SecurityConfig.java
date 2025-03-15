@@ -41,10 +41,8 @@ public class SecurityConfig {
 //        config.setAllowedOrigins(List.of(
 //                "http://finpago-bucket.s3-website.ap-northeast-2.amazonaws.com" // S3 정적 호스팅 URL
 //        ));
-        config.setAllowedOrigins(List.of(
-                "*"
-        ));
-        config.setAllowedHeaders(List.of("*")); // 모든 헤더 허용
+        config.addAllowedOrigin("*"); // 모든 Origin 허용
+        config.addAllowedHeader("*"); // 모든 헤더 허용
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // 허용할 HTTP 메서드
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

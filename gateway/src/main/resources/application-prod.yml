@@ -7,6 +7,8 @@ spring:
     cors:
       enabled: false
   cloud:
+    default-filters:
+      - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
     gateway:
       routes:
         - id: user-service

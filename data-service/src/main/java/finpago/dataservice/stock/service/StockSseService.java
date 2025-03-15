@@ -18,14 +18,11 @@ public class StockSseService implements MessageListener {
     private final Set<SseEmitter> emitters = ConcurrentHashMap.newKeySet(); // 중복 방지
 
     public SseEmitter createEmitter() {
-        SseEmitter emitter = new SseEmitter(0L);
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
         emitters.add(emitter);
         log.info("[SSE] 새로운 클라이언트 연결됨. 현재 활성 Emitter 개수: {}", emitters.size());
-        try {
-            emitter.send(SseEmitter.event().data("[SSE] 새로운 클라이언트 연결됨. 현재 활성 Emitter 개수: " + emitters.size()));
-        } catch (IOException e) {
-            log.error("[SSE] 초기 메시지 전송 실패", e);
-        }
+        log.info("현재 활성 Emitter: {}", emitters);
+
         emitter.onCompletion(() -> {
             emitter.complete();
             emitters.remove(emitter);
@@ -38,6 +35,21 @@ public class StockSseService implements MessageListener {
             log.warn("[SSE] 클라이언트 연결 타임아웃됨. 현재 활성 Emitter 개수: {}", emitters.size());
         });
 
+//        new Thread(() -> {
+//            while (emitters.contains(emitter)) {
+//                try {
+//                    emitter.send(SseEmitter.event().name("ping").data("keep-alive"));
+//                    log.debug("[SSE] Ping 전송 - 클라이언트 유지 중. 현재 활성 Emitter 개수: {}", emitters.size());
+//                    Thread.sleep(5000);
+//                } catch (IOException | IllegalStateException | InterruptedException e) {
+//                    emitter.complete();
+//                    emitters.remove(emitter);
+//                    log.warn("[SSE] Ping 전송 실패 - 클라이언트 연결이 끊어짐. 현재 활성 Emitter 개수: {}", emitters.size());
+//                    break;
+//                }
+//            }
+//        }).start();
+
         return emitter;
     }
 
@@ -46,9 +58,10 @@ public class StockSseService implements MessageListener {
         try {
             String jsonData = new String(message.getBody());
             log.info("[SSE] Stock Update 수신: {}", jsonData);
-
+            System.out.println("emitters = " + emitters);
             for (SseEmitter emitter : Set.copyOf(emitters)) { // ConcurrentModificationException 방지
                 try {
+                    System.out.println("emitter = " + emitter);
                     emitter.send(SseEmitter.event().name("stockUpdate").data(jsonData));
                     log.debug("[SSE] Stock Update 전송 성공 - 데이터: {}", jsonData);
                 } catch (IOException | IllegalStateException e) {

@@ -117,7 +117,7 @@ public class MatchingService {
 
                 if (order.getOfferType() == OrderType.BUY) {
 
-                    long currentPrice = maxTradePrice;
+                    long currentPrice = minTradePrice;
                     System.out.println("들어와요33");
                     if (order.getOfferPrice() > maxTradePrice) {
                         System.out.println("들어와요44");
@@ -174,7 +174,7 @@ public class MatchingService {
                         }
                     }
                 } else {
-                    long currentPrice = minTradePrice;
+                    long currentPrice = maxTradePrice;
                     if (order.getOfferPrice() < minTradePrice) {
 
                         handleTradeExecution(order, order.getOfferQuantity(), 0L, currentPrice, false);

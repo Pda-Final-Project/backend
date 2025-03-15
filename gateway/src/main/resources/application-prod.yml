@@ -9,94 +9,10 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: stock-stream
-          uri: http://data-service.backend.svc.cluster.local:8080
-          predicates:
-            - Path=/v1/api/stocks/stream/**
-          filters:
-            - name: SetResponseHeader
-              args:
-                name: Connection
-                value: keep-alive
-            - name: SetResponseHeader
-              args:
-                name: Cache-Control
-                value: no-store, no-cache, must-revalidate
-            - name: SetResponseHeader
-              args:
-                name: X-Accel-Buffering
-                value: no
-            - name: SetResponseHeader
-              args:
-                name: Content-Type
-                value: text/event-stream;charset=UTF-8
-            - name: RemoveResponseHeader
-              args:
-                name: Transfer-Encoding
-          metadata:
-            response-timeout: -1
-            connect-timeout: 5000
-
-        - id: trade-stream
-          uri: http://execution-service.backend.svc.cluster.local:8080
-          predicates:
-            - Path=/v1/api/trades/stream/**
-          filters:
-            - name: SetResponseHeader
-              args:
-                name: Connection
-                value: keep-alive
-            - name: SetResponseHeader
-              args:
-                name: Cache-Control
-                value: no-store, no-cache, must-revalidate
-            - name: SetResponseHeader
-              args:
-                name: X-Accel-Buffering
-                value: no
-            - name: SetResponseHeader
-              args:
-                name: Content-Type
-                value: text/event-stream;charset=UTF-8
-            - name: RemoveResponseHeader
-              args:
-                name: Transfer-Encoding
-          metadata:
-            response-timeout: -1
-            connect-timeout: 5000
-
-        - id: sse-stream
-          uri: http://user-service.backend.svc.cluster.local:8080
-          predicates:
-            - Path=/v1/api/sse/**
-          filters:
-            - name: SetResponseHeader
-              args:
-                name: Connection
-                value: keep-alive
-            - name: SetResponseHeader
-              args:
-                name: Cache-Control
-                value: no-store, no-cache, must-revalidate
-            - name: SetResponseHeader
-              args:
-                name: X-Accel-Buffering
-                value: no
-            - name: SetResponseHeader
-              args:
-                name: Content-Type
-                value: text/event-stream;charset=UTF-8
-            - name: RemoveResponseHeader
-              args:
-                name: Transfer-Encoding
-          metadata:
-            response-timeout: -1
-            connect-timeout: 5000
-
         - id: user-service
           uri: http://user-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/v1/api/notification/**, /v1/api/auth/**, /v1/api/holdingStocks/**, /v1/api/pinnedStocks/**, /v1/api/holdings/**, /v1/api/tradeProfit/**, /v1/api/transactions/**, /v1/api/account/**, /v1/api/balance/**
+            - Path=/v1/api/sse/**, /v1/api/notification/**, /v1/api/auth/**, /v1/api/holdingStocks/**, /v1/api/pinnedStocks/**, /v1/api/holdings/**, /v1/api/tradeProfit/**, /v1/api/transactions/**, /v1/api/account/**, /v1/api/balance/**
 
         - id: order-service
           uri: http://order-service.backend.svc.cluster.local:8080
@@ -106,7 +22,7 @@ spring:
         - id: execution-service
           uri: http://execution-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/v1/api/execution/**, /v1/api/trades/**
+            - Path=/v1/api/execution/**, /v1/api/trades/**, /v1/api/trades/stream/**
 
         - id: filling-service
           uri: http://filling-service.backend.svc.cluster.local:8080
@@ -116,7 +32,7 @@ spring:
         - id: data-service
           uri: http://data-service.backend.svc.cluster.local:8080
           predicates:
-            - Path=/v1/api/news/**, /v1/api/stocks/**, /v1/api/exchange-rate/**, /v1/api/earnings/**, /v1/api/chart/**
+            - Path=/v1/api/news/**, /v1/api/stocks/**, /v1/api/exchange-rate/**, /v1/api/earnings/**, /v1/api/chart/**, /v1/api/stocks/stream/**
 
       discovery:
         locator:

@@ -169,11 +169,11 @@ for stock in stocks:
             s3_key = f"fillings/{row['filling_id']}.html"
             if not check_s3_file_exists(s3_key):
                 filling_url = row['filling_url']
-                    # HTML 파일 처리 로직
-                    translated_html = translate_html(filling_url, headers)
-                    html_url = upload_translated_document_to_s3(s3_key, translated_html)
-                    # html_url = "번역 초과로 인한 처리 불가"
-                    send_kafka_notification(row['filling_ticker'], row['filling_type'])
+                # HTML 파일 처리 로직
+                translated_html = translate_html(filling_url, headers)
+                html_url = upload_translated_document_to_s3(s3_key, translated_html)
+                # html_url = "번역 초과로 인한 처리 불가"
+                send_kafka_notification(row['filling_ticker'], row['filling_type'])
             else:
                 df_filing.at[index, 'filling_translated_content_url'] = f"https://{bucket_name}.s3.amazonaws.com/{s3_key}"
 

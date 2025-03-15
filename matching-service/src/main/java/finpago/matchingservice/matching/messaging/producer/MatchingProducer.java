@@ -29,7 +29,7 @@ public class MatchingProducer {
                     if (ex != null) {
                         log.error("매수 체결 이벤트 전송 실패: {}", ex.getMessage());
                     } else {
-                        log.info("매수 체결 이벤트 Execution 모듈로 비동기 전송 완료: {}, 파티션: {}",
+                        log.info("매수 체결 이벤트 Execution 모듈로 전송 완료: {}, 파티션: {}",
                                 event, result.getRecordMetadata().partition());
                     }
                 });
@@ -41,7 +41,7 @@ public class MatchingProducer {
                     if (ex != null) {
                         log.error("매도 체결 이벤트 전송 실패: {}", ex.getMessage());
                     } else {
-                        log.info("매도 체결 이벤트 Execution 모듈로 비동기 전송 완료: {}, 파티션: {}",
+                        log.info("매도 체결 이벤트 Execution 모듈로 전송 완료: {}, 파티션: {}",
                                 event, result.getRecordMetadata().partition());
                     }
                 });
@@ -49,7 +49,15 @@ public class MatchingProducer {
 
 
     public void sendUnmatchedOrderToOrderService(OrderCreateReqEvent orderEvent) {
-        orderKafkaTemplate.send(UNMATCHED_ORDER_TOPIC, orderEvent);
-        log.warn("5분 동안 매칭되지 않은 주문을 Order 모듈로 재전송: {}", orderEvent);
+        orderKafkaTemplate.send(UNMATCHED_ORDER_TOPIC, orderEvent)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("매칭되지 않은 주문 재전송 실패: {}", ex.getMessage());
+                    } else {
+                        log.info("매칭되지 않은 주문을 Order 모듈로 비동기 완료: {}, 파티션: {}",
+                                orderEvent, result.getRecordMetadata().partition());
+                    }
+                });
     }
+
 }

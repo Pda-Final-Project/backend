@@ -25,8 +25,8 @@ public class SettlementService {
     private final SettlementProducer settlementProducer;
 
     private static final long DEFAULT_BALANCE = 10000000; // 기본 예수금
-    private static final long DEFAULT_STOCKS = 100; // 기본 보유 주식 수량
-    private static final float DEFAULT_EXCHANGE_RATE = 1.0f; // 기본 환율 (1.0)
+    private static final long DEFAULT_STOCKS = 0; // 기본 보유 주식 수량
+    private static final float DEFAULT_EXCHANGE_RATE = 1000.0f; // 기본 환율 (1.0)
     private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 

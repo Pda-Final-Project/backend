@@ -38,8 +38,8 @@ public class ExecutionService {
     private final ObjectMapper objectMapper;
 
     private static final long DEFAULT_BALANCE = 1_000_000L; // 기본 예수금 (1,000,000)
-    private static final long DEFAULT_STOCKS = 100L; // 기본 보유 주식 수량 (100주)
-    private static final float DEFAULT_EXCHANGE_RATE = 1.0f; // 기본 환율 (1.0)
+    private static final long DEFAULT_STOCKS = 0; // 기본 보유 주식 수량 (0주)
+    private static final float DEFAULT_EXCHANGE_RATE = 1000.0f; // 기본 환율 (1.0)
 
 
     @Transactional

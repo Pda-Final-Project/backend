@@ -278,7 +278,6 @@ public class MatchingService {
      * Kafka 통해 Execution 모듈로 체결된 주문을 전송
      */
     private void sendBuyTradeToExecution(BuyTradeMatchEvent event) {
-        System.out.println("카프카 메시지 전송 직전");
         matchingProducer.sendBuyTradeToExecution(event);
     }
 
@@ -331,10 +330,10 @@ public class MatchingService {
         String redisKey = "stock:" + stockTicker + ":exchange_rate";
         String exchangeRateStr = redisTemplate.opsForValue().get(redisKey);
         try {
-            return exchangeRateStr != null ? Float.parseFloat(exchangeRateStr) : 1.0f;
+            return exchangeRateStr != null ? Float.parseFloat(exchangeRateStr) : 1000.0f;
         } catch (NumberFormatException e) {
             log.error("Redis 환율 데이터 변환 오류: {}", e.getMessage());
-            return 1.0f;
+            return 1000.0f;
         }
     }
 

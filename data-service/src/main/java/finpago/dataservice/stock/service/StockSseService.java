@@ -41,22 +41,6 @@ public class StockSseService implements MessageListener {
             log.warn("[SSE] 클라이언트 연결 타임아웃됨. 현재 활성 Emitter 개수: {}", emitters.size());
         });
 
-        // 5초마다 Ping 이벤트 전송 (연결 유지)
-        new Thread(() -> {
-            while (emitters.contains(emitter)) {
-                try {
-                    emitter.send(SseEmitter.event().name("ping").data("keep-alive"));
-                    log.debug("[SSE] Ping 전송 - 클라이언트 유지 중. 현재 활성 Emitter 개수: {}", emitters.size());
-                    Thread.sleep(5000);
-                } catch (IOException | IllegalStateException | InterruptedException e) {
-                    emitter.complete();
-                    emitters.remove(emitter);
-                    log.warn("[SSE] Ping 전송 실패 - 클라이언트 연결이 끊어짐. 현재 활성 Emitter 개수: {}", emitters.size());
-                    break;
-                }
-            }
-        }).start();
-
         return emitter;
     }
 

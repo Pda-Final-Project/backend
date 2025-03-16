@@ -124,7 +124,6 @@ public class BalanceService {
     private Long getLatestBalance(String key, Long defaultValue) {
         String balanceStr = redisTemplate.opsForValue().get(key);
 
-        // 데이터가 없으면 기본값 유지
         if (balanceStr == null) {
             return defaultValue;
         }

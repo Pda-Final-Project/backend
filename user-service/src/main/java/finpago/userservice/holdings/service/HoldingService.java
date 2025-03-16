@@ -152,11 +152,11 @@ public class HoldingService {
     /**
      * 매도 체결 시 보유 주식 업데이트 (매도 체결 시 주식 감소)
      */
-    @Transactional
     public void updateHoldingsForSell(SellTradeMatchEvent event) {
+        log.info("매도 처리 들어옵니다~~");
         Optional<Holdings> existingHolding = holdingsRepository.findByUserIdAndStockTicker(
                 event.getSellerUserId(), event.getStockTicker());
-
+        log.info("존재하는 보유주식: {}", existingHolding);
         if (existingHolding.isEmpty()) {
             throw new IllegalArgumentException("매도할 보유 주식이 존재하지 않습니다.");
         }

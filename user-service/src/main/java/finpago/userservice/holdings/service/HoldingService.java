@@ -34,7 +34,7 @@ public class HoldingService {
      * 사용 가능 주식 조회
      */
     public Long getAvailableStocks(Long userId, String stockTicker) {
-        String key = "user:" + userId + ":available_stocks:" + stockTicker;
+        String key = "user:" + userId + ":holdings:" + stockTicker;
         String value = redisTemplate.opsForValue().get(key);
         return value != null ? Long.parseLong(value) : DEFAULT_STOCKS;
     }
@@ -162,6 +162,12 @@ public class HoldingService {
         }
 
         Holdings holdings = existingHolding.get();
+
+        // 매도 수량이 보유 수량보다 많으면 예외 발생
+        if (holdings.getHoldingQuantity() < event.getTradeQuantity()) {
+            throw new IllegalArgumentException("보유 수량보다 많은 수량을 매도할 수 없습니다.");
+        }
+
         holdings.updateHoldingsForSell(event.getTradeQuantity(), event.getTradePrice(), event.getExchangeRate());
 
         // 남은 수량이 0이면 삭제

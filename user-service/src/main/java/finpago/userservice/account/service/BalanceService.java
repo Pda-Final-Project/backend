@@ -19,12 +19,12 @@ public class BalanceService {
     private final StringRedisTemplate redisTemplate;
 
 
-    private static final String BALANCE_KEY = "user:%d:available_balance";
+    private static final String BALANCE_KEY = "user:%d:balance";
     private static final String AVAILABLE_BALANCE_KEY = "user:%d:available_balance";  // 주문 가능 금액
     private static final String BATCH_BALANCE_KEY = "user:%d:batch_balance";  // 배치 예수금
     private static final String PENDING_UPDATE_KEY = "pending_update:%s:balance:%d"; // D+1, D+2 업데이트 예약 키
 
-    private static final long DEFAULT_BALANCE = 10_000_000L; // 기본 예수금 (1,000만원)
+    private static final long DEFAULT_BALANCE = 10000000; // 기본 예수금 (1,000만원)
     private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
     /**
@@ -124,7 +124,6 @@ public class BalanceService {
     private Long getLatestBalance(String key, Long defaultValue) {
         String balanceStr = redisTemplate.opsForValue().get(key);
 
-        // 데이터가 없으면 기본값 유지
         if (balanceStr == null) {
             return defaultValue;
         }

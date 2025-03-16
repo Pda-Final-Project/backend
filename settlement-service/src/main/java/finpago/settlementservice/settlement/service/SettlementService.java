@@ -4,7 +4,6 @@ import finpago.common.global.exception.error.InsufficientBalanceException;
 import finpago.common.global.exception.error.InsufficientStockException;
 import finpago.common.global.messaging.BuyTradeMatchEvent;
 import finpago.common.global.messaging.SellTradeMatchEvent;
-import finpago.common.global.messaging.TradeMatchingEvent;
 import finpago.settlementservice.settlement.messaging.producer.SettlementProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +38,8 @@ public class SettlementService {
         Float exchangeRate = getExchangeRate(event.getStockTicker());
         event.setExchangeRate(exchangeRate);
 
-        updateBatchBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
-//        updateBalance(event.getBuyerUserId(), -event.getTradePrice() * event.getTradeQuantity());
+        updateBatchBalance(event.getBuyerUserId());
+        updateBalance(event.getBuyerUserId());
 //        updateHoldings(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity());
         updateStockForFxTracking(event.getBuyerUserId(), event.getStockTicker(), event.getTradeQuantity(), exchangeRate, event.getTradePrice());
 
@@ -55,9 +54,10 @@ public class SettlementService {
 
         Float exchangeRate = getExchangeRate(event.getStockTicker());
         event.setExchangeRate(exchangeRate);
-
-        updateBatchBalance(event.getSellerUserId(), event.getTradePrice() * event.getTradeQuantity());
-        updateHoldings(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity());
+        Long requireAmount=event.getTradeQuantity()*event.getTradePrice();
+        updateBatchBalance(event.getSellerUserId());
+        updateSellerBalance(event.getSellerUserId(),requireAmount);
+//        updateHoldings(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity());
         updateStockForFxTracking(event.getSellerUserId(), event.getStockTicker(), -event.getTradeQuantity(), exchangeRate, event.getTradePrice());
 
         settlementProducer.sendSellSettlementSuccess(event);
@@ -71,7 +71,7 @@ public class SettlementService {
         Long buyerAvailableBalance = getCachedAvailableBalance(event.getBuyerUserId());
         Long requiredAmount = event.getTradePrice() * event.getTradeQuantity();
 
-        if (buyerAvailableBalance < requiredAmount) {
+        if (buyerAvailableBalance+requiredAmount < requiredAmount) {
             log.error("예수금 부족 - 매수자 ID: {}, 필요 금액: {}, 보유 금액: {}",
                     event.getBuyerUserId(), requiredAmount, buyerAvailableBalance);
             settlementProducer.sendBuySettlementFailure(event);
@@ -85,7 +85,7 @@ public class SettlementService {
     private void validateSellerStocks(SellTradeMatchEvent event) {
         Long sellerAvailableStocks = getCachedAvailableStocks(event.getSellerUserId(), event.getStockTicker());
 
-        if (sellerAvailableStocks < event.getTradeQuantity()) {
+        if (sellerAvailableStocks+event.getTradeQuantity() < event.getTradeQuantity()) {
             log.error("보유 주식 부족 - 매도자 ID: {}, 필요 주식: {}, 보유 주식: {}",
                     event.getSellerUserId(), event.getTradeQuantity(), sellerAvailableStocks);
             settlementProducer.sendSellSettlementFailure(event);
@@ -97,7 +97,7 @@ public class SettlementService {
      * 사용 가능 예수금 조회
      */
     private Long getCachedAvailableBalance(Long userId) {
-        String balanceKey = "user:" + userId + ":balance";
+        String balanceKey = "user:" + userId + ":available_balance";
         String balanceStr = redisTemplate.opsForValue().get(balanceKey);
         return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE;
     }
@@ -139,10 +139,20 @@ public class SettlementService {
     /**
      * 실제 예수금 업데이트
      */
-    private void updateBalance(Long userId, Long amount) {
+    private void updateBalance(Long userId) {
         String balanceKey = "user:" + userId + ":balance";
         Long currentBalance = getCachedAvailableBalance(userId);
-        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance), EXPIRATION_DAYS, TimeUnit.DAYS);
+    }
+
+
+    /**
+     * 실제 예수금 업데이트 (매도자는 매도 즉시 출금가능 금액 증가하면 안됨 -> - amount해준다)
+     */
+    private void updateSellerBalance(Long userId,Long amount) {
+        String balanceKey = "user:" + userId + ":balance";
+        Long currentBalance = getCachedAvailableBalance(userId);
+        redisTemplate.opsForValue().set(balanceKey, String.valueOf(currentBalance-amount), EXPIRATION_DAYS, TimeUnit.DAYS);
     }
 
     /**
@@ -150,14 +160,14 @@ public class SettlementService {
      * - 실제 balance 업데이트를 위한 중간 저장소 역할
      * - 사용자가 직접 조회하는 출금 가능 예수금과는 별도로 관리됨
      */
-    private void updateBatchBalance(Long userId, Long amount) {
+    private void updateBatchBalance(Long userId) {
         String pendingDate = LocalDate.now().plusDays(2).format(DATE_FORMATTER); // D+2 날짜 계산
         String batchBalanceKey = "user:" + userId + ":batch_balance:" + pendingDate;
 
         Long currentBalance = getCachedAvailableBalance(userId);
-        redisTemplate.opsForValue().set(batchBalanceKey, String.valueOf(currentBalance + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(batchBalanceKey, String.valueOf(currentBalance), EXPIRATION_DAYS, TimeUnit.DAYS);
 
-        log.info("[배치 예수금 저장] 사용자ID: {}, 날짜: {}, 변경 후 예수금: {}", userId, pendingDate, currentBalance + amount);
+        log.info("[배치 예수금 저장] 사용자ID: {}, 날짜: {}, 변경 후 예수금: {}", userId, pendingDate, currentBalance);
     }
 
     /**

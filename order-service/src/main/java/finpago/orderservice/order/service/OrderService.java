@@ -85,7 +85,7 @@ public class OrderService {
 
         updateAvailableBalance(userId, -requiredAmount);
 //        updateBalance(orderCreateReqDto.getUserId(), -requiredAmount);
-        updateAvailableStocks(userId, orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
+//        updateAvailableStocks(userId, orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
         updateHoldings(userId, orderCreateReqDto.getStockTicker(), orderCreateReqDto.getOfferQuantity());
     }
 
@@ -93,7 +93,7 @@ public class OrderService {
      * 매도 주문 시 사용 가능 주식 검증 후 차감
      */
     private void validateAndDeductAvailableStocks(Long userId, OrderCreateReqDto orderCreateReqDto) {
-        Long availableStocks = getCachedAvailableStocks(userId, orderCreateReqDto.getStockTicker());
+        Long availableStocks = getCachedStocks(userId, orderCreateReqDto.getStockTicker());
 
         System.out.println("캐싱된사용가능 주식수:"+availableStocks);
 
@@ -101,8 +101,8 @@ public class OrderService {
             throw new InsufficientStockException("보유 주식이 부족합니다");
         }
 
-        updateAvailableStocks(userId, orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
-//        updateHoldings(userId, orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
+//        updateAvailableStocks(userId, orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
+        updateHoldings(userId, orderCreateReqDto.getStockTicker(), -orderCreateReqDto.getOfferQuantity());
         updateAvailableBalance(userId, orderCreateReqDto.getOfferPrice() * orderCreateReqDto.getOfferQuantity());
     }
 
@@ -111,8 +111,8 @@ public class OrderService {
         return redisTemplate.opsForValue().get(key) != null ? Long.parseLong(redisTemplate.opsForValue().get(key)) : DEFAULT_BALANCE;
     }
 
-    private Long getCachedAvailableStocks(Long userId, String stockTicker) {
-        String key = "user:" + userId + ":available_stocks:" + stockTicker;
+    private Long getCachedStocks(Long userId, String stockTicker) {
+        String key = "user:" + userId + ":holdings:" + stockTicker;
         return redisTemplate.opsForValue().get(key) != null ? Long.parseLong(redisTemplate.opsForValue().get(key)) : DEFAULT_STOCKS;
     }
 
@@ -125,33 +125,33 @@ public class OrderService {
         redisTemplate.opsForValue().set(key, String.valueOf(current + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
     }
 
-    /**
-     * 실제 예수금 업데이트 (30일 보관)
-     */
-    private void updateBalance(Long userId, Long amount) {
-        String key = "user:" + userId + ":balance";
-        Long current = getCachedAvailableBalance(userId);
-        redisTemplate.opsForValue().set(key, String.valueOf(current + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
-    }
+//    /**
+//     * 실제 예수금 업데이트 (30일 보관)
+//     */
+//    private void updateBalance(Long userId, Long amount) {
+//        String key = "user:" + userId + ":balance";
+//        Long current = getCachedAvailableBalance(userId);
+//        redisTemplate.opsForValue().set(key, String.valueOf(current + amount), EXPIRATION_DAYS, TimeUnit.DAYS);
+//    }
 
-    /**
-     * 사용 가능 주식 업데이트 (30일 보관)
-     */
-    private void updateAvailableStocks(Long userId, String stockTicker, Long quantity) {
-        System.out.println("유저아이딩: " + userId);
-        System.out.println("주식종목은용: " + stockTicker);
-        System.out.println("수량은용: " + quantity);
-        String key = "user:" + userId + ":available_stocks:" + stockTicker;
-        Long current = getCachedAvailableStocks(userId, stockTicker);
-        redisTemplate.opsForValue().set(key, String.valueOf(current + quantity), EXPIRATION_DAYS, TimeUnit.DAYS);
-    }
+//    /**
+//     * 사용 가능 주식 업데이트 (30일 보관)
+//     */
+//    private void updateAvailableStocks(Long userId, String stockTicker, Long quantity) {
+//        System.out.println("유저아이딩: " + userId);
+//        System.out.println("주식종목은용: " + stockTicker);
+//        System.out.println("수량은용: " + quantity);
+//        String key = "user:" + userId + ":available_stocks:" + stockTicker;
+//        Long current = getCachedStocks(userId, stockTicker);
+//        redisTemplate.opsForValue().set(key, String.valueOf(current + quantity), EXPIRATION_DAYS, TimeUnit.DAYS);
+//    }
 
     /**
      * 보유 주식 업데이트 (30일 보관)
      */
     private void updateHoldings(Long userId, String stockTicker, Long quantity) {
         String key = "user:" + userId + ":holdings:" + stockTicker;
-        Long current = getCachedAvailableStocks(userId, stockTicker);
+        Long current = getCachedStocks(userId, stockTicker);
         redisTemplate.opsForValue().set(key, String.valueOf(current + quantity), EXPIRATION_DAYS, TimeUnit.DAYS);
     }
 

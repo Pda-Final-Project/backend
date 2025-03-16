@@ -19,7 +19,7 @@ public class KafkaRetryConfig {
 
     private static final String DLT_TOPIC = "execution-dlt-topic"; // DLT 토픽
     private static final long RETRY_INTERVAL = 10000L; // 재시도 간격 (10초)
-    private static final int RETRY_COUNT = 1000; // ✅ 1000번 재시도
+    private static final int RETRY_COUNT = 5; // ✅ 5번 재시도
 
     // Default Retry Listener Factory (Generic)
     @Bean(name = "kafkaRetryListenerContainerFactory")

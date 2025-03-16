@@ -4,6 +4,7 @@ import finpago.userservice.holdings.entity.Holdings;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,10 @@ public interface HoldingsRepository extends JpaRepository<Holdings, Long> {
 
     // 특정 사용자가 보유한 특정 종목 정보 조회
     Optional<Holdings> findByUserIdAndStockTicker(Long userId, String stockTicker);
+
+
+    @Query("SELECT h FROM Holdings h WHERE h.userId = :userId AND h.stockTicker = :stockTicker")
+    Optional<Holdings> findHoldingByUserIdAndStockTicker(@Param("userId") Long userId, @Param("stockTicker") String stockTicker);
 
     // 특정 사용자의 모든 보유 주식 조회
     List<Holdings> findByUserId(Long userId);

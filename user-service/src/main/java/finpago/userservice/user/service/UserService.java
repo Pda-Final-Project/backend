@@ -166,20 +166,25 @@ public class UserService {
         }
 
         return IntStream.range(0, Math.min(notifications.size(), timestamps.size()))
-                .mapToObj(i -> {
-                    try {
-                        NoticeEvent event = objectMapper.readValue(notifications.get(i), NoticeEvent.class);
-                        long timestamp = Long.parseLong(timestamps.get(i));
-
-                        return ApiResponse.success(HttpStatus.OK, "알림 조회 성공",
-                                Map.of("event", event, "timestamp", timestamp));
-                    } catch (Exception e) {
-                        log.error("알림 데이터 파싱 오류: {}", e.getMessage());
-                        return null;  // 변환 실패한 경우 무시
-                    }
-                })
-                .filter(Objects::nonNull) // 변환 실패한 항목 제거
+                .mapToObj(i -> parseNotification(notifications.get(i), timestamps.get(i)))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * JSON 데이터 파싱 -> 체결 알림 이벤트로 변환
+     */
+    private ApiResponse<Map<String, Object>> parseNotification(String json, String timestamp) {
+        try {
+            NoticeEvent event = objectMapper.readValue(json, NoticeEvent.class);
+            long parsedTimestamp = Long.parseLong(timestamp);
+
+            return ApiResponse.success(HttpStatus.OK, "알림 리스트 조회 성공",
+                    Map.of("event", event, "timestamp", parsedTimestamp));
+        } catch (Exception e) {
+            log.error("체결 알림 데이터 파싱 오류: {}", e.getMessage());
+            return null;
+        }
     }
 
 

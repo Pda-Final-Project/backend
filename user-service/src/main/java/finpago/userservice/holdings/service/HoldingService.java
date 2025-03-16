@@ -154,19 +154,19 @@ public class HoldingService {
      */
     public void updateHoldingsForSell(SellTradeMatchEvent event) {
         log.info("매도 처리 들어옵니다~~");
-        Optional<Holdings> existingHolding = holdingsRepository.findByUserIdAndStockTicker(
+        log.info("매도 요청: userId={}, stockTicker={}", event.getSellerUserId(), event.getStockTicker());
+
+        Optional<Holdings> existingHolding = holdingsRepository.findHoldingByUserIdAndStockTicker(
                 event.getSellerUserId(), event.getStockTicker());
+
         log.info("존재하는 보유주식: {}", existingHolding);
+
         if (existingHolding.isEmpty()) {
             throw new IllegalArgumentException("매도할 보유 주식이 존재하지 않습니다.");
         }
 
         Holdings holdings = existingHolding.get();
         log.info("매도 처리하기전 보유주식 상태: {}", holdings);
-//        // 매도 수량이 보유 수량보다 많으면 예외 발생
-//        if (holdings.getHoldingQuantity() < event.getTradeQuantity()) {
-//            throw new IllegalArgumentException("보유 수량보다 많은 수량을 매도할 수 없습니다.");
-//        }
 
         holdings.updateHoldingsForSell(event.getTradeQuantity(), event.getTradePrice(), event.getExchangeRate());
 

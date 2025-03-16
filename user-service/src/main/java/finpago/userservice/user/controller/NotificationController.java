@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -25,7 +26,7 @@ public class NotificationController {
      * 사용자의 알림 리스트 조회
      */
     @GetMapping
-    public ResponseEntity<List<ApiResponse<Object>>> getNotifications() {
+    public ResponseEntity<List<ApiResponse<Map<String, Object>>>> getNotifications() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || "anonymousUser".equals(authentication.getPrincipal())) {
@@ -41,7 +42,7 @@ public class NotificationController {
                     .body(List.of(ApiResponse.fail(HttpStatus.BAD_REQUEST, "잘못된 사용자 정보")));
         }
 
-        List<ApiResponse<Object>> notifications = userService.getNotifications(userId.toString());
+        List<ApiResponse<Map<String, Object>>> notifications = userService.getNotifications(userId.toString());
 
         return ResponseEntity.ok(notifications);
     }

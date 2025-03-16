@@ -33,6 +33,13 @@ public class KafkaConfig {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+
+        props.put(ProducerConfig.ACKS_CONFIG, "all"); // 모든 리플리카가 데이터 저장 확인 후 응답
+        props.put(ProducerConfig.RETRIES_CONFIG, 10); // 최대 10번 재시도
+        props.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000); // 재시도 간격 (1초)
+        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000); // 요청 타임아웃 (30초)
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 10); // 배치 전송을 위해 대기 시간 설정 (10ms)
+
         return new DefaultKafkaProducerFactory<>(props);
     }
 
@@ -50,6 +57,13 @@ public class KafkaConfig {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+
+        props.put(ProducerConfig.ACKS_CONFIG, "all"); // 모든 리플리카가 데이터 저장 확인 후 응답
+        props.put(ProducerConfig.RETRIES_CONFIG, 10); // 최대 10번 재시도
+        props.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000); // 재시도 간격 (1초)
+        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000); // 요청 타임아웃 (30초)
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 10); // 배치 전송을 위해 대기 시간 설정 (10ms)
+
         return new DefaultKafkaProducerFactory<>(props);
     }
 
@@ -66,6 +80,13 @@ public class KafkaConfig {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+
+        props.put(ProducerConfig.ACKS_CONFIG, "all"); // 모든 리플리카가 데이터 저장 확인 후 응답
+        props.put(ProducerConfig.RETRIES_CONFIG, 10); // 최대 10번 재시도
+        props.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000); // 재시도 간격 (1초)
+        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000); // 요청 타임아웃 (30초)
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 10); // 배치 전송을 위해 대기 시간 설정 (10ms)
+
         return new DefaultKafkaProducerFactory<>(props);
     }
 
@@ -85,6 +106,12 @@ public class KafkaConfig {
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.BuyTradeMatchEvent");
+
+        props.put(ProducerConfig.ACKS_CONFIG, "all"); // 모든 리플리카가 데이터 저장 확인 후 응답
+        props.put(ProducerConfig.RETRIES_CONFIG, 10); // 최대 10번 재시도
+        props.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000); // 재시도 간격 (1초)
+        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000); // 요청 타임아웃 (30초)
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 10); // 배치 전송을 위해 대기 시간 설정 (10ms)
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
@@ -107,6 +134,12 @@ public class KafkaConfig {
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "finpago.common.global.messaging.SellTradeMatchEvent");
+
+        props.put(ProducerConfig.ACKS_CONFIG, "all"); // 모든 리플리카가 데이터 저장 확인 후 응답
+        props.put(ProducerConfig.RETRIES_CONFIG, 10); // 최대 10번 재시도
+        props.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000); // 재시도 간격 (1초)
+        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000); // 요청 타임아웃 (30초)
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 10); // 배치 전송을 위해 대기 시간 설정 (10ms)
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
@@ -131,6 +164,11 @@ public class KafkaConfig {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.springframework.kafka.support.serializer.ErrorHandlingDeserializer");
         props.put("spring.deserializer.value.delegate.class", "org.springframework.kafka.support.serializer.JsonDeserializer");
 
+        props.put(ProducerConfig.ACKS_CONFIG, "all"); // 모든 리플리카가 데이터 저장 확인 후 응답
+        props.put(ProducerConfig.RETRIES_CONFIG, 10); // 최대 10번 재시도
+        props.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000); // 재시도 간격 (1초)
+        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000); // 요청 타임아웃 (30초)
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 10); // 배치 전송을 위해 대기 시간 설정 (10ms)
 
         return new DefaultKafkaConsumerFactory<>(props);
     }

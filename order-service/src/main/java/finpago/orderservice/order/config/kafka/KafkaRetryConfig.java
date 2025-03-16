@@ -41,7 +41,9 @@ public class KafkaRetryConfig {
                 }
         );
 
+        // 3번 재시도 후 DLT로 이동하는 ErrorHandler
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(RETRY_INTERVAL, RETRY_COUNT));
+
         factory.setCommonErrorHandler(errorHandler);
 
         return factory;

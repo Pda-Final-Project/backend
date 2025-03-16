@@ -27,12 +27,14 @@ public class KafkaRetryConfig {
         ConcurrentKafkaListenerContainerFactory<String, OrderCreateReqEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
 
+        // 실패한 메시지를 DLT(Dead Letter Topic)으로 이동하는 Recoverer 설정
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 kafkaTemplate,
                 (ConsumerRecord<?, ?> record, Exception e) ->
                         new TopicPartition(DLT_TOPIC, record.partition())
         );
 
+        // 3번 재시도 후 DLT로 이동하는 ErrorHandler
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(RETRY_INTERVAL, RETRY_COUNT));
 
         factory.setCommonErrorHandler(errorHandler);

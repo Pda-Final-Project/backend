@@ -162,11 +162,11 @@ public class HoldingService {
         }
 
         Holdings holdings = existingHolding.get();
-
-        // 매도 수량이 보유 수량보다 많으면 예외 발생
-        if (holdings.getHoldingQuantity() < event.getTradeQuantity()) {
-            throw new IllegalArgumentException("보유 수량보다 많은 수량을 매도할 수 없습니다.");
-        }
+        log.info("매도 처리하기전 보유주식 상태: {}", holdings);
+//        // 매도 수량이 보유 수량보다 많으면 예외 발생
+//        if (holdings.getHoldingQuantity() < event.getTradeQuantity()) {
+//            throw new IllegalArgumentException("보유 수량보다 많은 수량을 매도할 수 없습니다.");
+//        }
 
         holdings.updateHoldingsForSell(event.getTradeQuantity(), event.getTradePrice(), event.getExchangeRate());
 

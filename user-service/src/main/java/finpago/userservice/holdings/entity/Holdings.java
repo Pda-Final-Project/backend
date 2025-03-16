@@ -3,6 +3,7 @@ package finpago.userservice.holdings.entity;
 import finpago.common.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Entity
 @Table(name = "holdings")
@@ -10,6 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Slf4j
 public class Holdings extends BaseEntity {
 
     @Id
@@ -65,15 +67,15 @@ public class Holdings extends BaseEntity {
         this.holdingTotalPrice = newTotalCost;
         this.exchangeRate = newAverageExchangeRate;
     }
+
     /**
      * 매도 체결 시 보유 주식 차감
      */
     public void updateHoldingsForSell(Long sellQuantity, Long tradePrice, Float tradeExchangeRate) {
-        if (this.holdingQuantity < sellQuantity) {
-            throw new IllegalArgumentException("매도할 주식이 부족합니다.");
-        }
-
-        long newTotalQuantity = this.holdingQuantity - sellQuantity;
+        log.info("매도 처리 보유주식 깎기전~");
+        log.info("매도 처리하기전 보유주식 수 상태: {}", this.holdingQuantity);
+        log.info("깎아야 할 보유주식 수 : {}", sellQuantity);
+        Long newTotalQuantity = this.holdingQuantity - sellQuantity;
 
         // 보유 수량이 0이 되면 초기화
         if (newTotalQuantity == 0) {
@@ -98,6 +100,7 @@ public class Holdings extends BaseEntity {
         this.holdingPrice = newAveragePrice;
         this.holdingTotalPrice = newTotalCost;
         this.exchangeRate = newAverageExchangeRate;
+        log.info("매도 처리 후 보유주식 수 상태: {}", this.holdingQuantity);
     }
 
 }

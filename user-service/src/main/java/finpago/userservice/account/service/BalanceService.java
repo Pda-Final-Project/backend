@@ -24,7 +24,7 @@ public class BalanceService {
     private static final String BATCH_BALANCE_KEY = "user:%d:batch_balance";  // 배치 예수금
     private static final String PENDING_UPDATE_KEY = "pending_update:%s:balance:%d"; // D+1, D+2 업데이트 예약 키
 
-    private static final long DEFAULT_BALANCE = 10000000; // 기본 예수금 (1,000만원)
+    private static final long DEFAULT_BALANCE = 100000000; // 기본 예수금 (1,000만원)
     private static final long EXPIRATION_DAYS = 30; // Redis 데이터 보관 기간 (30일)
 
     /**

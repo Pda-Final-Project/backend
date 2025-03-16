@@ -26,9 +26,12 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 @Service
@@ -49,7 +52,7 @@ public class UserService {
     private static final String FILLING_NOTICE_KEY_PREFIX = "user:filling-notices:%s";// Redis 키 패턴
     private static final long EXPIRATION_DAYS = 7; // 알림 보관 기간 (7일)
     private static final String BANK_NAME = "[CMA 종합 계좌]";
-    private static final long DEFAULT_WITHHOLDING = 100000000;
+    private static final long DEFAULT_WITHHOLDING = 10_000_000L;
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String NOTIFICATION_SETTING_KEY = "user:%d:notification-settings";
 
@@ -85,8 +88,8 @@ public class UserService {
     }
 
     private String generateRandomAccountNumber() {
-        StringBuilder accountNumber = new StringBuilder();
-        for (int i = 0; i < 12; i++) { // 12자리 계좌번호 생성
+        StringBuilder accountNumber = new StringBuilder("270"); // 계좌번호 앞자리 "270" 고정
+        for (int i = 0; i < 9; i++) { // 나머지 9자리 랜덤 생성
             accountNumber.append(RANDOM.nextInt(10));
         }
         return accountNumber.toString();
@@ -102,15 +105,19 @@ public class UserService {
         return jwtUtil.generateToken(user.getUserId());
     }
 
-   //알림 메시지를 Redis에 저장
+    //알림 메시지를 Redis에 저장
     public void saveNotification(NoticeEvent event) {
         try {
             String userKey = String.format(NOTIFICATION_KEY_PREFIX, event.getUserId());
+            String timestampKey = userKey + ":timestamps";
             String notificationJson = objectMapper.writeValueAsString(event);
 
             // Redis List에 알림 추가 (FIFO 구조)
             redisTemplate.opsForList().rightPush(userKey, notificationJson);
+            redisTemplate.opsForList().rightPush(timestampKey, String.valueOf(System.currentTimeMillis()));
+
             redisTemplate.expire(userKey, EXPIRATION_DAYS, TimeUnit.DAYS);
+            redisTemplate.expire(timestampKey, EXPIRATION_DAYS, TimeUnit.DAYS);
 
             log.info("[UserService] 알림 저장 - 사용자 {}: {}", event.getUserId(), notificationJson);
         } catch (Exception e) {
@@ -120,10 +127,14 @@ public class UserService {
     public void saveFillingNotice(FillingNoticeEvent event) {
         try {
             String tickerKey = String.format(FILLING_NOTICE_KEY_PREFIX, event.getTicker());
+            String timestampKey = tickerKey + ":timestamps";
             String fillingNoticeJson = objectMapper.writeValueAsString(event);
 
             redisTemplate.opsForList().rightPush(tickerKey, fillingNoticeJson);
+            redisTemplate.opsForList().rightPush(timestampKey, String.valueOf(System.currentTimeMillis()));
+
             redisTemplate.expire(tickerKey, EXPIRATION_DAYS, TimeUnit.DAYS);
+            redisTemplate.expire(timestampKey, EXPIRATION_DAYS, TimeUnit.DAYS);
 
             log.info("[UserService] 공시 알림 저장 - 티커 {}: {}", event.getTicker(), fillingNoticeJson);
         } catch (Exception e) {
@@ -134,20 +145,43 @@ public class UserService {
     /**
      * 사용자 알림 리스트 조회
      */
-    public List<ApiResponse<Object>> getNotifications(String userId) {
+    public List<ApiResponse<Map<String, Object>>> getNotifications(String userId) {
         String userKey = String.format(NOTIFICATION_KEY_PREFIX, userId);
-        List<Object> notifications = redisTemplate.opsForList().range(userKey, 0, -1);
+        String timestampKey = userKey + ":timestamps";
 
-        if (notifications == null || notifications.isEmpty()) {
-            return List.of(ApiResponse.fail(HttpStatus.NO_CONTENT, "알림이 없습니다."));
-
-        }
-
-        return notifications.stream()
-                .map(notification -> ApiResponse.success(HttpStatus.OK, "알림 조회 성공", notification))
+        List<String> notifications = Optional.ofNullable(redisTemplate.opsForList().range(userKey, 0, -1))
+                .orElse(List.of())  // null 방지
+                .stream()
+                .map(Object::toString)
                 .collect(Collectors.toList());
 
+        List<String> timestamps = Optional.ofNullable(redisTemplate.opsForList().range(timestampKey, 0, -1))
+                .orElse(List.of())
+                .stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
+
+        if (notifications.isEmpty()) {
+            return List.of(ApiResponse.fail(HttpStatus.NO_CONTENT, "알림이 없습니다."));
+        }
+
+        return IntStream.range(0, Math.min(notifications.size(), timestamps.size()))
+                .mapToObj(i -> {
+                    try {
+                        NoticeEvent event = objectMapper.readValue(notifications.get(i), NoticeEvent.class);
+                        long timestamp = Long.parseLong(timestamps.get(i));
+
+                        return ApiResponse.success(HttpStatus.OK, "알림 조회 성공",
+                                Map.of("event", event, "timestamp", timestamp));
+                    } catch (Exception e) {
+                        log.error("알림 데이터 파싱 오류: {}", e.getMessage());
+                        return null;  // 변환 실패한 경우 무시
+                    }
+                })
+                .filter(Objects::nonNull) // 변환 실패한 항목 제거
+                .collect(Collectors.toList());
     }
+
 
     /**
      * 사용자 알림 설정 변경

@@ -194,7 +194,7 @@ public class ExecutionService {
         System.out.println(buyerAvailableBalance);
         Long requiredAmount = event.getTradePrice() * event.getTradeQuantity();
         System.out.println(requiredAmount);
-        if (buyerAvailableBalance < requiredAmount) {
+        if (buyerAvailableBalance+requiredAmount < requiredAmount) {
             log.error("예수금 부족 - 매수자 ID: {}, 필요 금액: {}, 보유 금액: {}",
                     event.getBuyerUserId(), requiredAmount, buyerAvailableBalance);
             sendFailedBuyTradeToMatching(event);
@@ -208,7 +208,7 @@ public class ExecutionService {
     private void validateSellerStocks(SellTradeMatchEvent event) {
         Long sellerAvailableStocks = getCachedStocks(event.getSellerUserId(), event.getStockTicker());
 
-        if (sellerAvailableStocks < event.getTradeQuantity()) {
+        if (sellerAvailableStocks+event.getTradeQuantity() < event.getTradeQuantity()) {
             log.error("보유 주식 부족 - 매도자 ID: {}, 필요 주식: {}, 보유 주식: {}",
                     event.getSellerUserId(), event.getTradeQuantity(), sellerAvailableStocks);
             sendFailedSellTradeToMatching(event);
@@ -217,7 +217,7 @@ public class ExecutionService {
     }
 
     private Long getCachedBalance(Long userId) {
-        String balanceKey = "user:" + userId + ":balance";
+        String balanceKey = "user:" + userId + ":available_balance";
         String balanceStr = redisTemplate.opsForValue().get(balanceKey);
         return balanceStr != null ? Long.parseLong(balanceStr) : DEFAULT_BALANCE;
     }

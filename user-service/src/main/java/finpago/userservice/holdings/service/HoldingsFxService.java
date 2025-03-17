@@ -126,26 +126,49 @@ public class HoldingsFxService {
 //        return estimatedSellAmount - buyAmount;
 //    }
 
+//
+//    /**
+//     * 매매손익(KRW) 계산 메서드 (사용자의 전체 BuyTrade 손익 합산)
+//     * @param userId 사용자 ID
+//     * @return 매매손익 (KRW)
+//     */
+//    public double calculateTradeProfit(Long userId) {
+//        List<TradeFetchService.BuyTrade> buyTrades = tradeFetchService.getUserBuyTrades(userId);
+//        double totalTradeProfit = 0.0;
+//
+//        for (TradeFetchService.BuyTrade trade : buyTrades) {
+//            HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
+//            String stockInfoKey = "stock:" + trade.getTradeTicker();
+//            String currentPriceStr = hashOps.get(stockInfoKey, "current_price");
+//            double currentPrice = currentPriceStr != null ? Double.parseDouble(currentPriceStr) : 0.0;
+//            double evaluationAmount = currentPrice * trade.getTradeQuantity();
+//            double buyAmount = trade.getTradePrice() * trade.getTradeQuantity();
+//            totalTradeProfit += (evaluationAmount - buyAmount);
+//        }
+//        return totalTradeProfit;
+//    }
+
+
 
     /**
-     * 매매손익(KRW) 계산 메서드 (사용자의 전체 BuyTrade 손익 합산)
+     * 사용자의 전체 보유 주식 손익등락 합산 메서드
      * @param userId 사용자 ID
-     * @return 매매손익 (KRW)
+     * @return 총 손익등락 (KRW)
      */
     public double calculateTradeProfit(Long userId) {
-        List<TradeFetchService.BuyTrade> buyTrades = tradeFetchService.getUserBuyTrades(userId);
-        double totalTradeProfit = 0.0;
+        List<Holdings> userHoldings = holdingsRepository.findByUserId(userId);
+        double totalProfitChange = 0.0;
 
-        for (TradeFetchService.BuyTrade trade : buyTrades) {
+        for (Holdings holding : userHoldings) {
             HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
-            String stockInfoKey = "stock:" + trade.getTradeTicker();
+            String stockInfoKey = "stock:" + holding.getStockTicker();
             String currentPriceStr = hashOps.get(stockInfoKey, "current_price");
             double currentPrice = currentPriceStr != null ? Double.parseDouble(currentPriceStr) : 0.0;
-            double evaluationAmount = currentPrice * trade.getTradeQuantity();
-            double buyAmount = trade.getTradePrice() * trade.getTradeQuantity();
-            totalTradeProfit += (evaluationAmount - buyAmount);
+            double evaluationAmount = holding.getHoldingQuantity() * currentPrice;
+            double buyAmount = holding.getHoldingPrice() * holding.getHoldingQuantity();
+            totalProfitChange += (evaluationAmount - buyAmount);
         }
-        return totalTradeProfit;
+        return totalProfitChange;
     }
 
     /**

@@ -27,7 +27,8 @@ public class HoldingsFxService {
      */
     public TradeSummaryDto getUserTradeSummary(Long userId) {
         // 사용자의 전체 매도 체결 내역 가져오기
-        List<TradeFetchService.SellTrade> sellTrades = tradeFetchService.getUserSellTrades(userId);
+//        List<TradeFetchService.SellTrade> sellTrades = tradeFetchService.getUserSellTrades(userId);
+        List<TradeFetchService.BuyTrade> buyTrades = tradeFetchService.getUserBuyTrades(userId);
 
         // 합산 값 초기화
         double totalEvaluationAmount = 0.0; //평가금액
@@ -37,7 +38,7 @@ public class HoldingsFxService {
         double totalFxProfit = 0.0; //환차손익
 
         // 모든 Trade를 순회하면서 합산
-        for (TradeFetchService.SellTrade trade : sellTrades) {
+        for (TradeFetchService.BuyTrade trade : buyTrades) {
             totalEvaluationAmount += calculateEvaluationAmount(userId, trade);
             totalProfitChange += calculateProfitChange(userId, trade);
             totalBuyAmount += calculateBuyAmount(userId, trade.getTradeTicker());
@@ -65,15 +66,11 @@ public class HoldingsFxService {
      * @param trade 단일 Trade 객체
      * @return 환차손익 (KRW)
      */
-    public double calculateFxProfit(Long userId, TradeFetchService.SellTrade trade) {
-        if (!trade.getSellerUserId().equals(userId)) {
-            return 0.0; // 매도한 거래가 아니면 0 반환
-        }
+    public double calculateFxProfit(Long userId, TradeFetchService.BuyTrade trade) {
 
         // 매도 시 환율(KRW/USD) 가져오기
         double sellExchangeRate = trade.getTradeExchangeRate();
 
-        // 매도한 종목의 holdings 데이터 가져오기
         Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, trade.getTradeTicker());
         if (holdingsOptional.isEmpty()) {
             return 0.0; // holdings 데이터가 없으면 환차손익 0 반환
@@ -103,13 +100,16 @@ public class HoldingsFxService {
      * @param trade 단일 Trade 객체
      * @return 매매손익 (KRW)
      */
-    public double calculateTradeProfit(Long userId, TradeFetchService.SellTrade trade) {
-        if (!trade.getSellerUserId().equals(userId)) {
-            return 0.0; // 매도한 거래가 아니면 0 반환
-        }
+    public double calculateTradeProfit(Long userId, TradeFetchService.BuyTrade trade) {
 
-        // 매도 금액(KRW) 계산
-        double sellAmount = trade.getTradePrice() * trade.getTradeQuantity();
+//        // 매도 금액(KRW) 계산
+//        double sellAmount = trade.getTradePrice() * trade.getTradeQuantity();
+
+        HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
+        String stockInfoKey = "stock:" + trade.getTradeTicker();
+        String currentPriceStr = hashOps.get(stockInfoKey, "current_price");
+        double currentPrice = currentPriceStr != null ? Double.parseDouble(currentPriceStr) : 0.0;
+        double estimatedSellAmount = currentPrice * trade.getTradeQuantity();
 
         // 매도한 종목의 holdings 데이터 가져오기
         Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, trade.getTradeTicker());
@@ -120,10 +120,10 @@ public class HoldingsFxService {
         Holdings holdings = holdingsOptional.get();
 
         // 매수 금액(KRW) 계산
-        double buyAmount = holdings.getHoldingPrice() * holdings.getHoldingQuantity();
+        double buyAmount = ((double) holdings.getHoldingPrice()) * ((double) trade.getTradeQuantity() / (double) holdings.getHoldingQuantity());
 
         // 매매손익(KRW) 계산
-        return sellAmount - buyAmount;
+        return estimatedSellAmount - buyAmount;
     }
 
     /**
@@ -151,7 +151,7 @@ public class HoldingsFxService {
      * @param trade 단일 Trade 객체
      * @return 손익 등락 (KRW)
      */
-    public double calculateProfitChange(Long userId, TradeFetchService.SellTrade trade) {
+    public double calculateProfitChange(Long userId, TradeFetchService.BuyTrade trade) {
         // 매매손익(KRW) 계산
         double tradeProfit = calculateTradeProfit(userId, trade);
 
@@ -168,7 +168,7 @@ public class HoldingsFxService {
      * @param trade 단일 Trade 객체
      * @return 평가금액 (KRW)
      */
-    public double calculateEvaluationAmount(Long userId, TradeFetchService.SellTrade trade) {
+    public double calculateEvaluationAmount(Long userId, TradeFetchService.BuyTrade trade) {
         // 매수금액(KRW) 계산
         double buyAmount = calculateBuyAmount(userId, trade.getTradeTicker());
 
@@ -188,7 +188,7 @@ public class HoldingsFxService {
      * @param trade 단일 Trade 객체
      * @return 수익률 (%)
      */
-    public double calculateReturnRate(Long userId, TradeFetchService.SellTrade trade) {
+    public double calculateReturnRate(Long userId, TradeFetchService.BuyTrade trade) {
         // 손익 등락(KRW) 계산
         double profitChange = calculateProfitChange(userId, trade);
 

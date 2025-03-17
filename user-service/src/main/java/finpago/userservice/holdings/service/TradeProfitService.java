@@ -5,6 +5,8 @@ import finpago.userservice.holdings.dto.TradeProfitSumDto;
 import finpago.userservice.holdings.entity.Holdings;
 import finpago.userservice.holdings.repository.HoldingsRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +20,7 @@ public class TradeProfitService {
     private final HoldingsRepository holdingsRepository;
     private final TradeFetchService tradeFetchService;
     private final HoldingsFxService holdingsFxService;
+    private final StringRedisTemplate redisTemplate;
 
     /**
      * 사용자의 매도 손익 내역을 계산하여 DTO 리스트로 반환
@@ -69,7 +72,7 @@ public class TradeProfitService {
             double buyAmount = calculateTradeVolumes(userId, trade)[1]; // 매수 금액
             double sellBuyProfit = sellAmount - buyAmount; // 매매손익
             double realizedProfit = calculateRealizedProfit(userId, trade); // 실현 손익
-            double fxProfit = holdingsFxService.calculateFxProfit(userId, trade); // 환차손익
+            double fxProfit = calculateFxProfit2(userId, trade); // 환차손익
 
             totalRealizedProfit += realizedProfit;
             totalSellBuyProfit += sellBuyProfit;
@@ -86,6 +89,45 @@ public class TradeProfitService {
                 .buyAmount(totalBuyAmount)
                 .fxProfit(totalFxProfit)
                 .build();
+    }
+
+
+    /**
+     * 환차손익(KRW) 계산 메서드 (단일 Trade 객체)
+     * @param userId 사용자 ID
+     * @param trade 단일 Trade 객체
+     * @return 환차손익 (KRW)
+     */
+    public double calculateFxProfit2(Long userId, TradeFetchService.SellTrade trade) {
+        if (!trade.getSellerUserId().equals(userId)) {
+            return 0.0; // 매도한 거래가 아니면 0 반환
+        }
+
+        // 매도 시 환율(KRW/USD) 가져오기
+        double sellExchangeRate = trade.getTradeExchangeRate();
+
+        // 매도한 종목의 holdings 데이터 가져오기
+        Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, trade.getTradeTicker());
+        if (holdingsOptional.isEmpty()) {
+            return 0.0; // holdings 데이터가 없으면 환차손익 0 반환
+        }
+
+        Holdings holdings = holdingsOptional.get();
+
+        // 매수 시 환율(KRW/USD) 가져오기
+        double buyExchangeRate = holdings.getExchangeRate();
+
+        // Redis에서 현재가 가져오기
+        HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
+        String stockInfoKey = "stock:" + trade.getTradeTicker();
+        String currentPriceStr = hashOps.get(stockInfoKey, "current_price");
+        double currentPrice = currentPriceStr != null ? Double.parseDouble(currentPriceStr) : 0.0;
+
+        // 현재가로 매도 금액(KRW) 계산
+        double sellAmountCurrentPrice = currentPrice * trade.getTradeQuantity();
+
+        // 환차손익(KRW) 계산
+        return (sellExchangeRate - buyExchangeRate) * sellAmountCurrentPrice;
     }
 
     /**
@@ -118,7 +160,7 @@ public class TradeProfitService {
         double tradeProfit = sellAmount - buyAmount;
 
         // 환차손익(KRW) 계산
-        double fxProfit = holdingsFxService.calculateFxProfit(userId, trade);
+        double fxProfit = calculateFxProfit2(userId, trade);
 
         // 실현 손익(KRW) = 매매손익 + 환차손익
         return tradeProfit + fxProfit;

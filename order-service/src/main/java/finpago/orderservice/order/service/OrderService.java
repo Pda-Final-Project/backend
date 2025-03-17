@@ -76,9 +76,6 @@ public class OrderService {
         Long availableBalance = getCachedAvailableBalance(userId);
         Long requiredAmount = orderCreateReqDto.getOfferPrice() * orderCreateReqDto.getOfferQuantity();
 
-        System.out.println("캐싱된사용가능예수금:"+availableBalance);
-        System.out.println("필요한 돈이용:"+requiredAmount);
-
         if (availableBalance < requiredAmount) {
             throw new InsufficientBalanceException("예수금이 부족합니다");
         }

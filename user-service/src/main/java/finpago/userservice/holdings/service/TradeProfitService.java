@@ -112,7 +112,7 @@ public class TradeProfitService {
         Holdings holdings = holdingsOptional.get();
 
         // 매수 금액(KRW) 계산
-        double buyAmount = holdings.getHoldingPrice() * holdings.getHoldingQuantity();
+        double buyAmount = ((double) holdings.getHoldingPrice()) * ((double) trade.getTradeQuantity() / (double) holdings.getHoldingQuantity());
 
         // 매매손익(KRW) 계산
         double tradeProfit = sellAmount - buyAmount;

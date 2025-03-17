@@ -66,10 +66,24 @@ public class TradeProfitService {
         double totalBuyAmount = 0.0;
         double totalFxProfit = 0.0;
 
+
+
+
         // 모든 Trade를 순회하면서 합산
         for (TradeFetchService.SellTrade trade : sellTrades) {
+            //매도수량
+            double sellQuantity = trade.getTradeQuantity();
+
+            // 매도한 종목의 holdings 데이터 가져오기
+            Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, trade.getTradeTicker());
+            Holdings holdings = holdingsOptional.get();
+
             double sellAmount = calculateTradeVolumes(userId, trade)[0]; // 매도 금액
-            double buyAmount = calculateTradeVolumes(userId, trade)[1]; // 매수 금액
+//            double buyAmount = calculateTradeVolumes(userId, trade)[1]; // 매수 금액
+
+            // 매수 금액(KRW) 계산
+            double buyAmount = ((double) holdings.getHoldingPrice()) * ((double) trade.getTradeQuantity() / (double) holdings.getHoldingQuantity());
+
             double sellBuyProfit = sellAmount - buyAmount; // 매매손익
             double realizedProfit = calculateRealizedProfit(userId, trade); // 실현 손익
             double fxProfit = calculateFxProfit2(userId, trade); // 환차손익
@@ -250,6 +264,7 @@ public class TradeProfitService {
 
         // 매수 금액(USD) = holdingPrice * holdingQuantity
         double buyAmount = holdings.getHoldingPrice() * holdings.getHoldingQuantity();
+
 
         // 매수 수량 = holdingQuantity
         double buyQuantity = holdings.getHoldingQuantity();

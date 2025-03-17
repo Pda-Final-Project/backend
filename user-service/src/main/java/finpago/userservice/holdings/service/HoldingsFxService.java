@@ -42,7 +42,7 @@ public class HoldingsFxService {
             totalEvaluationAmount += calculateEvaluationAmount(userId, trade);
             totalProfitChange += calculateProfitChange(userId, trade);
             totalBuyAmount += calculateBuyAmount(userId, trade.getTradeTicker());
-            totalTradeProfit += calculateTradeProfit(userId, trade);
+            totalTradeProfit += calculateTradeProfit(userId);
             totalFxProfit += calculateFxProfit(userId, trade);
         }
 
@@ -94,36 +94,58 @@ public class HoldingsFxService {
         return (sellExchangeRate - buyExchangeRate) * sellAmountCurrentPrice;
     }
 
+//    /**
+//     * 매매손익(KRW) 계산 메서드 (단일 Trade 객체)
+//     * @param userId 사용자 ID
+//     * @param trade 단일 Trade 객체
+//     * @return 매매손익 (KRW)
+//     */
+//    public double calculateTradeProfit(Long userId, TradeFetchService.BuyTrade trade) {
+//
+////        // 매도 금액(KRW) 계산
+////        double sellAmount = trade.getTradePrice() * trade.getTradeQuantity();
+//
+//        HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
+//        String stockInfoKey = "stock:" + trade.getTradeTicker();
+//        String currentPriceStr = hashOps.get(stockInfoKey, "current_price");
+//        double currentPrice = currentPriceStr != null ? Double.parseDouble(currentPriceStr) : 0.0;
+//        double estimatedSellAmount = currentPrice * trade.getTradeQuantity();
+//
+//        // 매도한 종목의 holdings 데이터 가져오기
+//        Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, trade.getTradeTicker());
+//        if (holdingsOptional.isEmpty()) {
+//            return 0.0; // holdings 데이터가 없으면 매수 금액을 구할 수 없으므로 0 반환
+//        }
+//
+//        Holdings holdings = holdingsOptional.get();
+//
+//        // 매수 금액(KRW) 계산
+//        double buyAmount = ((double) holdings.getHoldingPrice()) * ((double) trade.getTradeQuantity() / (double) holdings.getHoldingQuantity());
+//
+//        // 매매손익(KRW) 계산
+//        return estimatedSellAmount - buyAmount;
+//    }
+
+
     /**
-     * 매매손익(KRW) 계산 메서드 (단일 Trade 객체)
+     * 매매손익(KRW) 계산 메서드 (사용자의 전체 BuyTrade 손익 합산)
      * @param userId 사용자 ID
-     * @param trade 단일 Trade 객체
      * @return 매매손익 (KRW)
      */
-    public double calculateTradeProfit(Long userId, TradeFetchService.BuyTrade trade) {
+    public double calculateTradeProfit(Long userId) {
+        List<TradeFetchService.BuyTrade> buyTrades = tradeFetchService.getUserBuyTrades(userId);
+        double totalTradeProfit = 0.0;
 
-//        // 매도 금액(KRW) 계산
-//        double sellAmount = trade.getTradePrice() * trade.getTradeQuantity();
-
-        HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
-        String stockInfoKey = "stock:" + trade.getTradeTicker();
-        String currentPriceStr = hashOps.get(stockInfoKey, "current_price");
-        double currentPrice = currentPriceStr != null ? Double.parseDouble(currentPriceStr) : 0.0;
-        double estimatedSellAmount = currentPrice * trade.getTradeQuantity();
-
-        // 매도한 종목의 holdings 데이터 가져오기
-        Optional<Holdings> holdingsOptional = holdingsRepository.findByUserIdAndStockTicker(userId, trade.getTradeTicker());
-        if (holdingsOptional.isEmpty()) {
-            return 0.0; // holdings 데이터가 없으면 매수 금액을 구할 수 없으므로 0 반환
+        for (TradeFetchService.BuyTrade trade : buyTrades) {
+            HashOperations<String, String, String> hashOps = redisTemplate.opsForHash();
+            String stockInfoKey = "stock:" + trade.getTradeTicker();
+            String currentPriceStr = hashOps.get(stockInfoKey, "current_price");
+            double currentPrice = currentPriceStr != null ? Double.parseDouble(currentPriceStr) : 0.0;
+            double evaluationAmount = currentPrice * trade.getTradeQuantity();
+            double buyAmount = trade.getTradePrice() * trade.getTradeQuantity();
+            totalTradeProfit += (evaluationAmount - buyAmount);
         }
-
-        Holdings holdings = holdingsOptional.get();
-
-        // 매수 금액(KRW) 계산
-        double buyAmount = ((double) holdings.getHoldingPrice()) * ((double) trade.getTradeQuantity() / (double) holdings.getHoldingQuantity());
-
-        // 매매손익(KRW) 계산
-        return estimatedSellAmount - buyAmount;
+        return totalTradeProfit;
     }
 
     /**
@@ -153,7 +175,7 @@ public class HoldingsFxService {
      */
     public double calculateProfitChange(Long userId, TradeFetchService.BuyTrade trade) {
         // 매매손익(KRW) 계산
-        double tradeProfit = calculateTradeProfit(userId, trade);
+        double tradeProfit = calculateTradeProfit(userId);
 
         // 환차손익(KRW) 계산
         double fxProfit = calculateFxProfit(userId, trade);
@@ -173,7 +195,7 @@ public class HoldingsFxService {
         double buyAmount = calculateBuyAmount(userId, trade.getTradeTicker());
 
         // 매매손익(KRW) 계산
-        double tradeProfit = calculateTradeProfit(userId, trade);
+        double tradeProfit = calculateTradeProfit(userId);
 
         // 환차손익(KRW) 계산
         double fxProfit = calculateFxProfit(userId, trade);

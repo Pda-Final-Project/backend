@@ -3,19 +3,16 @@ spring:
     name: filling-service
 
   datasource:
-    url: jdbc:mysql:replication://fillingdb-router.db.svc.cluster.local:6446,6447/finpagodb
-    username: root
-    password: admin
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 30000
-      max-lifetime: 1800000
-    properties:
-      useSSL: false
-      characterEncoding: UTF-8
-      readOnlyPropagatesToServer: true
+    write:
+      jdbc-url: jdbc:mysql://fillingdb-router.db.svc.cluster.local:6446/finpagodb?useSSL=false&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+      username: root
+      password: admin
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    read:
+      jdbc-url: jdbc:mysql://fillingdb-router.db.svc.cluster.local:6447/finpagodb?useSSL=false&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+      username: root
+      password: admin
+      driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     database: mysql
     generate-ddl: true

@@ -1,11 +1,9 @@
 spring:
   application:
     name: filling-service
-  web:
-    cors:
-      enabled: false
+
   datasource:
-    url: jdbc:mysql://fillingdb-cluster.db.svc.cluster.local:3306/finpagodb?useSSL=false&characterEncoding=UTF-8
+    url: jdbc:mysql:replication://fillingdb-router.db.svc.cluster.local:6446,6447/finpagodb
     username: root
     password: admin
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -14,11 +12,15 @@ spring:
       minimum-idle: 5
       idle-timeout: 30000
       max-lifetime: 1800000
+    properties:
+      useSSL: false
+      characterEncoding: UTF-8
+      readOnlyPropagatesToServer: true
   jpa:
     database: mysql
     generate-ddl: true
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
